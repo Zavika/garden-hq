@@ -1,0 +1,18 @@
+{
+  "baseRate": {
+    "minutesPerCompost": 10,
+    "organicMatterPerCompost": 4000,
+    "fuelPerCompost": 2000
+  },
+  "upgrades": {
+    "speed": { "effectPerTier": 0.2, "maxEffect": 5.0, "maxTier": 25 },
+    "multiDrop": { "effectPerTier": 0.03, "maxEffect": 0.75, "maxTier": 25 },
+    "fuelCap": { "effectPerTier": 30000, "maxEffect": 850000, "maxTier": null },
+    "organicMatterCap": {
+      "effectPerTier": 30000,
+      "maxEffect": 790000,
+      "maxTier": null
+    },
+    "costReduction": { "effectPerTier": 0.01, "maxEffect": 0.25, "maxTier": 25 }
+  }
+}

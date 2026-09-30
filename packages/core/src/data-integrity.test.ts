@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import composter from "../../../data/composter.json";
 import crops from "../../../data/crops.json";
 import gardenLevels from "../../../data/garden-levels.json";
 import pests from "../../../data/pests.json";
@@ -41,5 +42,19 @@ describe("data/plots.json", () => {
     expect(plots.tiers).toHaveLength(4);
     const total = plots.tiers.reduce((sum, tier) => sum + tier.plots.length, 0);
     expect(total).toBe(24);
+  });
+});
+
+describe("data/composter.json", () => {
+  it("defines all 5 upgrade curves", () => {
+    expect(Object.keys(composter.upgrades).sort()).toEqual(
+      [
+        "costReduction",
+        "fuelCap",
+        "multiDrop",
+        "organicMatterCap",
+        "speed",
+      ].sort(),
+    );
   });
 });
