@@ -1,6 +1,6 @@
 # Phase 1 — Core + Data Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build the curated game-data files (`data/crops.json`, `data/pests.json`, `data/garden-levels.json`, `data/plots.json`, `data/composter.json`) and the four Phase 1 `packages/core` modules (`calendar.ts`, `garden.ts`, `plots.ts`, `composter.ts`) with vitest coverage, per CLAUDE.md §8 "Phase 1 — core + data."
 
@@ -45,7 +45,7 @@
 **Interfaces:**
 - Produces: `data/garden-levels.json` — a 15-entry array `{ level: number; xpRequired: number; cumulativeXp: number }[]`, consumed by `garden.ts` (Task 6). `data-integrity.test.ts` will grow across Tasks 1, 3, 4, 5 as each data file lands — this task creates it.
 
-- [ ] **Step 1: Write `data/VERIFY.md`**
+- [x] **Step 1: Write `data/VERIFY.md`**
 
 ```markdown
 # VERIFY — open game-fact questions
@@ -84,7 +84,7 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - The 12 SkyBlock month names (Early Spring, Spring, ... Late Winter) are from general knowledge, not independently fetched from the wiki this session. Low risk (widely documented, stable content) but flagged in `calendar.ts` with `// VERIFY:`.
 ```
 
-- [ ] **Step 2: Write `data/garden-levels.json`**
+- [x] **Step 2: Write `data/garden-levels.json`**
 
 ```json
 [
@@ -106,7 +106,7 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 ]
 ```
 
-- [ ] **Step 3: Write the failing test — `packages/core/src/data-integrity.test.ts`**
+- [x] **Step 3: Write the failing test — `packages/core/src/data-integrity.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -126,7 +126,7 @@ describe("data/garden-levels.json", () => {
 });
 ```
 
-- [ ] **Step 4: Confirm it passes (there's nothing to fail here — the data and test are written together; this step just proves the JSON parses and the math checks out)**
+- [x] **Step 4: Confirm it passes (there's nothing to fail here — the data and test are written together; this step just proves the JSON parses and the math checks out)**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -134,7 +134,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 1 test.
 
-- [ ] **Step 5: Typecheck and lint**
+- [x] **Step 5: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -143,7 +143,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add data/VERIFY.md data/garden-levels.json packages/core/src/data-integrity.test.ts
@@ -162,7 +162,7 @@ git commit -m "chore(data): seed VERIFY.md and add garden-levels.json"
 **Interfaces:**
 - Produces: `GardenState`, `ComposterState`, `ComposterUpgrades` (from `types.ts`, consumed by `garden.ts` and `composter.ts` in later tasks); `skyblockDate(date: Date): SkyblockDate` and `isDaytime(date: Date): boolean` (from `calendar.ts`).
 
-- [ ] **Step 1: Write `packages/core/src/types.ts`**
+- [x] **Step 1: Write `packages/core/src/types.ts`**
 
 ```ts
 export interface ComposterUpgrades {
@@ -190,7 +190,7 @@ export interface GardenState {
 }
 ```
 
-- [ ] **Step 2: Write the failing test — `packages/core/src/calendar.test.ts`**
+- [x] **Step 2: Write the failing test — `packages/core/src/calendar.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -230,7 +230,7 @@ describe("isDaytime", () => {
 });
 ```
 
-- [ ] **Step 3: Run it and confirm it fails**
+- [x] **Step 3: Run it and confirm it fails**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -238,7 +238,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: FAIL — `./calendar` cannot be resolved.
 
-- [ ] **Step 4: Write `packages/core/src/calendar.ts`**
+- [x] **Step 4: Write `packages/core/src/calendar.ts`**
 
 ```ts
 export const SKYBLOCK_EPOCH_MS = 1560275700000;
@@ -303,7 +303,7 @@ export function isDaytime(date: Date): boolean {
 }
 ```
 
-- [ ] **Step 5: Run it and confirm it passes**
+- [x] **Step 5: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -311,7 +311,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 5 tests (1 from Task 1 + 4 here).
 
-- [ ] **Step 6: Typecheck and lint**
+- [x] **Step 6: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -320,7 +320,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/core/src/types.ts packages/core/src/calendar.ts packages/core/src/calendar.test.ts
@@ -339,7 +339,7 @@ git commit -m "feat(core): add types.ts and calendar.ts"
 **Interfaces:**
 - Produces: `data/crops.json` (13 entries) and `data/pests.json` (14 entries) — not consumed by any Phase 1 `core` module yet (no `crops.ts`/`pests.ts` in this phase's build order), but validated for internal consistency by `data-integrity.test.ts`. Later phases (planner, pest warnings) will import these directly.
 
-- [ ] **Step 1: Write `data/pests.json`**
+- [x] **Step 1: Write `data/pests.json`**
 
 ```json
 [
@@ -360,7 +360,7 @@ git commit -m "feat(core): add types.ts and calendar.ts"
 ]
 ```
 
-- [ ] **Step 2: Write `data/crops.json`**
+- [x] **Step 2: Write `data/crops.json`**
 
 ```json
 [
@@ -380,7 +380,7 @@ git commit -m "feat(core): add types.ts and calendar.ts"
 ]
 ```
 
-- [ ] **Step 3: Write the failing test — extend `packages/core/src/data-integrity.test.ts`**
+- [x] **Step 3: Write the failing test — extend `packages/core/src/data-integrity.test.ts`**
 
 Add to the existing file (do not remove the `garden-levels.json` describe block from Task 1):
 
@@ -408,7 +408,7 @@ describe("data/crops.json", () => {
 });
 ```
 
-- [ ] **Step 4: Run it and confirm it passes**
+- [x] **Step 4: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -416,7 +416,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 7 tests (5 from Task 2 + 2 here).
 
-- [ ] **Step 5: Typecheck and lint**
+- [x] **Step 5: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -425,7 +425,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add data/crops.json data/pests.json packages/core/src/data-integrity.test.ts
@@ -445,7 +445,7 @@ git commit -m "chore(data): add crops.json and pests.json (corrected 7-bait pest
 **Interfaces:**
 - Produces: `PlotDefinition` interface, `ALL_PLOTS: PlotDefinition[]`, `getPlot(id: string): PlotDefinition | undefined`, `cheapestNextPlot(unlockedIds: string[], gardenLevel: number): PlotDefinition | undefined` — consumed by later phases' planner (`cheapest next plot unlock`, CLAUDE.md §7).
 
-- [ ] **Step 1: Write `data/plots.json`**
+- [x] **Step 1: Write `data/plots.json`**
 
 ```json
 {
@@ -502,7 +502,7 @@ git commit -m "chore(data): add crops.json and pests.json (corrected 7-bait pest
 }
 ```
 
-- [ ] **Step 2: Write the failing test — `packages/core/src/plots.test.ts`**
+- [x] **Step 2: Write the failing test — `packages/core/src/plots.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -563,7 +563,7 @@ describe("cheapestNextPlot", () => {
 });
 ```
 
-- [ ] **Step 3: Run it and confirm it fails**
+- [x] **Step 3: Run it and confirm it fails**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -571,7 +571,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: FAIL — `./plots` cannot be resolved.
 
-- [ ] **Step 4: Write `packages/core/src/plots.ts`**
+- [x] **Step 4: Write `packages/core/src/plots.ts`**
 
 ```ts
 import plotsData from "../../../data/plots.json";
@@ -638,7 +638,7 @@ export function cheapestNextPlot(
 }
 ```
 
-- [ ] **Step 5: Run it and confirm it passes**
+- [x] **Step 5: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -646,7 +646,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 15 tests (7 from Task 3 + 8 here).
 
-- [ ] **Step 6: Extend `data-integrity.test.ts` with a plots check**
+- [x] **Step 6: Extend `data-integrity.test.ts` with a plots check**
 
 Add to the existing file:
 
@@ -662,7 +662,7 @@ describe("data/plots.json", () => {
 });
 ```
 
-- [ ] **Step 7: Run it and confirm it still passes**
+- [x] **Step 7: Run it and confirm it still passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -670,7 +670,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 16 tests.
 
-- [ ] **Step 8: Typecheck and lint**
+- [x] **Step 8: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -679,7 +679,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add data/plots.json packages/core/src/plots.ts packages/core/src/plots.test.ts packages/core/src/data-integrity.test.ts
@@ -700,7 +700,7 @@ git commit -m "feat(core): add plots.json and plots.ts"
 - Consumes: `ComposterState`, `ComposterUpgrades` from `types.ts` (Task 2).
 - Produces: `compostPerHour(upgrades)`, `organicMatterPerHour(upgrades)`, `fuelPerHour(upgrades)`, `forecastComposter(state, nowMs): ComposterForecast` — consumed by the planner in a later phase ("composter out of fuel / full," CLAUDE.md §7) and the map's composter gauge.
 
-- [ ] **Step 1: Write `data/composter.json`**
+- [x] **Step 1: Write `data/composter.json`**
 
 ```json
 {
@@ -719,7 +719,7 @@ git commit -m "feat(core): add plots.json and plots.ts"
 }
 ```
 
-- [ ] **Step 2: Write the failing test — `packages/core/src/composter.test.ts`**
+- [x] **Step 2: Write the failing test — `packages/core/src/composter.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -782,7 +782,7 @@ describe("forecastComposter", () => {
 });
 ```
 
-- [ ] **Step 3: Run it and confirm it fails**
+- [x] **Step 3: Run it and confirm it fails**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -790,7 +790,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: FAIL — `./composter` cannot be resolved.
 
-- [ ] **Step 4: Write `packages/core/src/composter.ts`**
+- [x] **Step 4: Write `packages/core/src/composter.ts`**
 
 ```ts
 import composterData from "../../../data/composter.json";
@@ -879,7 +879,7 @@ export function forecastComposter(
 }
 ```
 
-- [ ] **Step 5: Run it and confirm it passes**
+- [x] **Step 5: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -887,7 +887,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 21 tests (16 from Task 4 + 5 here).
 
-- [ ] **Step 6: Extend `data-integrity.test.ts` with a composter check**
+- [x] **Step 6: Extend `data-integrity.test.ts` with a composter check**
 
 Add to the existing file:
 
@@ -909,7 +909,7 @@ describe("data/composter.json", () => {
 });
 ```
 
-- [ ] **Step 7: Run it and confirm it still passes**
+- [x] **Step 7: Run it and confirm it still passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -917,7 +917,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 22 tests.
 
-- [ ] **Step 8: Typecheck and lint**
+- [x] **Step 8: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -926,7 +926,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add data/composter.json packages/core/src/composter.ts packages/core/src/composter.test.ts packages/core/src/data-integrity.test.ts
@@ -946,7 +946,7 @@ git commit -m "feat(core): add composter.json and composter.ts"
 - Consumes: `data/garden-levels.json` (Task 1), `GardenState`/`ComposterState` from `types.ts` (Task 2).
 - Produces: `levelForExperience(experience: number): number`, `normalizeGarden(raw: unknown): GardenState` — the boundary function CLAUDE.md §9 requires ("Normalize API responses at the boundary... the rest of the app uses `GardenState`, not raw JSON").
 
-- [ ] **Step 1: Write `packages/core/fixtures/garden-response.sample.json`**
+- [x] **Step 1: Write `packages/core/fixtures/garden-response.sample.json`**
 
 ```json
 {
@@ -985,7 +985,7 @@ git commit -m "feat(core): add composter.json and composter.ts"
 }
 ```
 
-- [ ] **Step 2: Write the failing test — `packages/core/src/garden.test.ts`**
+- [x] **Step 2: Write the failing test — `packages/core/src/garden.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1059,7 +1059,7 @@ describe("normalizeGarden", () => {
 });
 ```
 
-- [ ] **Step 3: Run it and confirm it fails**
+- [x] **Step 3: Run it and confirm it fails**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -1067,7 +1067,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: FAIL — `./garden` cannot be resolved.
 
-- [ ] **Step 4: Write `packages/core/src/garden.ts`**
+- [x] **Step 4: Write `packages/core/src/garden.ts`**
 
 ```ts
 import gardenLevels from "../../../data/garden-levels.json";
@@ -1144,7 +1144,7 @@ export function normalizeGarden(raw: unknown): GardenState {
 }
 ```
 
-- [ ] **Step 5: Run it and confirm it passes**
+- [x] **Step 5: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -1152,7 +1152,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 28 tests (actual count as executed; this plan's intermediate per-task counts drifted slightly from the arithmetic sketched in earlier tasks -- trust the real `vitest run` output at each step over these comments).
 
-- [ ] **Step 6: Typecheck and lint**
+- [x] **Step 6: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -1161,7 +1161,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/core/fixtures packages/core/src/garden.ts packages/core/src/garden.test.ts
@@ -1174,7 +1174,7 @@ git commit -m "feat(core): add garden.ts with a sample-fixture-driven normalizer
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Clean install and run every workspace script from the root**
+- [x] **Step 1: Clean install and run every workspace script from the root**
 
 ```bash
 pnpm install
@@ -1186,7 +1186,7 @@ pnpm build
 
 Expected: all exit 0. `pnpm test` shows 28 passing tests in `@garden-hq/core` (plus the existing `@garden-hq/worker` test from Phase 0).
 
-- [ ] **Step 2: Confirm the Phase 1 file set matches CLAUDE.md §5**
+- [x] **Step 2: Confirm the Phase 1 file set matches CLAUDE.md §5**
 
 ```bash
 ls data
@@ -1196,7 +1196,7 @@ ls packages/core/fixtures
 
 Expected: `data/` has `crops.json`, `pests.json`, `garden-levels.json`, `plots.json`, `composter.json`, `VERIFY.md`; `packages/core/src` has `types.ts`, `calendar.ts`, `garden.ts`, `plots.ts`, `composter.ts`, `data-integrity.test.ts`, and each module's `.test.ts`; `packages/core/fixtures` has `garden-response.sample.json`.
 
-- [ ] **Step 3: Commit anything left over (e.g. a refreshed lockfile)**
+- [x] **Step 3: Commit anything left over (e.g. a refreshed lockfile)**
 
 ```bash
 git status
