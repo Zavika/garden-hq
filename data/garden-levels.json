@@ -1,0 +1,17 @@
+[
+  { "level": 1, "xpRequired": 0, "cumulativeXp": 0 },
+  { "level": 2, "xpRequired": 70, "cumulativeXp": 70 },
+  { "level": 3, "xpRequired": 70, "cumulativeXp": 140 },
+  { "level": 4, "xpRequired": 140, "cumulativeXp": 280 },
+  { "level": 5, "xpRequired": 240, "cumulativeXp": 520 },
+  { "level": 6, "xpRequired": 600, "cumulativeXp": 1120 },
+  { "level": 7, "xpRequired": 1500, "cumulativeXp": 2620 },
+  { "level": 8, "xpRequired": 2000, "cumulativeXp": 4620 },
+  { "level": 9, "xpRequired": 2500, "cumulativeXp": 7120 },
+  { "level": 10, "xpRequired": 3000, "cumulativeXp": 10120 },
+  { "level": 11, "xpRequired": 10000, "cumulativeXp": 20120 },
+  { "level": 12, "xpRequired": 10000, "cumulativeXp": 30120 },
+  { "level": 13, "xpRequired": 10000, "cumulativeXp": 40120 },
+  { "level": 14, "xpRequired": 10000, "cumulativeXp": 50120 },
+  { "level": 15, "xpRequired": 10000, "cumulativeXp": 60120 }
+]
