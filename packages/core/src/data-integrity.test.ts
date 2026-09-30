@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import crops from "../../../data/crops.json";
 import gardenLevels from "../../../data/garden-levels.json";
 import pests from "../../../data/pests.json";
+import plots from "../../../data/plots.json";
 
 describe("data/garden-levels.json", () => {
   it("has 15 levels with correct cumulative XP", () => {
@@ -32,5 +33,13 @@ describe("data/crops.json", () => {
     for (const crop of crops) {
       expect(pestIds.has(crop.pest)).toBe(true);
     }
+  });
+});
+
+describe("data/plots.json", () => {
+  it("has 4 tiers totaling 24 plots", () => {
+    expect(plots.tiers).toHaveLength(4);
+    const total = plots.tiers.reduce((sum, tier) => sum + tier.plots.length, 0);
+    expect(total).toBe(24);
   });
 });
