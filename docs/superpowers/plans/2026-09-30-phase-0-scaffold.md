@@ -1,6 +1,6 @@
 # Phase 0 — Monorepo Scaffold Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Stand up the Garden HQ pnpm monorepo — shared TS/ESLint/Prettier tooling, an empty `packages/core` (vitest-tested), an empty `apps/web` (Vite+React+TS) that imports `core`, an empty `apps/worker` (Hono on Cloudflare Workers via Wrangler) that imports `core`, and a CI workflow that typechecks/lints/tests/builds everything — matching CLAUDE.md section 8, "Phase 0 — scaffold."
 
@@ -42,7 +42,7 @@ Until those three things happen, the `deploy` job in CI is expected to fail — 
 **Interfaces:**
 - Produces: the pnpm workspace itself — every later task's `pnpm --filter <name>` and `pnpm -r` commands depend on this existing and `packages: [apps/*, packages/*]` being registered.
 
-- [ ] **Step 1: Initialize git**
+- [x] **Step 1: Initialize git**
 
 ```bash
 git init
@@ -51,7 +51,7 @@ git status
 
 Expected: `Initialized empty Git repository...`, and `CLAUDE.md` shows as untracked.
 
-- [ ] **Step 2: Write `.gitignore`**
+- [x] **Step 2: Write `.gitignore`**
 
 ```
 node_modules/
@@ -66,7 +66,7 @@ coverage/
 !.env.example
 ```
 
-- [ ] **Step 3: Enable pnpm via corepack and record the resolved version**
+- [x] **Step 3: Enable pnpm via corepack and record the resolved version**
 
 ```bash
 corepack enable
@@ -76,7 +76,7 @@ pnpm -v
 
 Expected: prints a version like `9.x.x` or `10.x.x`. Note this exact value — it's used as `<PNPM_VERSION>` in the next step.
 
-- [ ] **Step 4: Write `pnpm-workspace.yaml`**
+- [x] **Step 4: Write `pnpm-workspace.yaml`**
 
 ```yaml
 packages:
@@ -84,7 +84,7 @@ packages:
   - "packages/*"
 ```
 
-- [ ] **Step 5: Write root `package.json`**
+- [x] **Step 5: Write root `package.json`**
 
 Replace `<PNPM_VERSION>` with the exact value from Step 3.
 
@@ -105,7 +105,7 @@ Replace `<PNPM_VERSION>` with the exact value from Step 3.
 }
 ```
 
-- [ ] **Step 6: Verify the workspace installs cleanly**
+- [x] **Step 6: Verify the workspace installs cleanly**
 
 ```bash
 pnpm install
@@ -113,7 +113,7 @@ pnpm install
 
 Expected: exits 0. No packages exist under `apps/` or `packages/` yet, so pnpm just creates the root lockfile — that's fine.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .gitignore pnpm-workspace.yaml package.json pnpm-lock.yaml CLAUDE.md
@@ -134,13 +134,13 @@ git commit -m "chore: bootstrap pnpm workspace"
 **Interfaces:**
 - Produces: `tsconfig.base.json` (every package's `tsconfig.json` will `"extends": "../../tsconfig.base.json"`), root `eslint.config.js` (lints the whole repo from one place — no per-package ESLint config), `pnpm lint` / `pnpm format` / `pnpm format:write` root scripts.
 
-- [ ] **Step 1: Add root devDependencies**
+- [x] **Step 1: Add root devDependencies**
 
 ```bash
 pnpm add -D -w typescript eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh eslint-config-prettier prettier
 ```
 
-- [ ] **Step 2: Write `tsconfig.base.json`**
+- [x] **Step 2: Write `tsconfig.base.json`**
 
 ```json
 {
@@ -160,7 +160,7 @@ pnpm add -D -w typescript eslint @eslint/js typescript-eslint eslint-plugin-reac
 }
 ```
 
-- [ ] **Step 3: Write `eslint.config.js`**
+- [x] **Step 3: Write `eslint.config.js`**
 
 ```js
 import js from "@eslint/js";
@@ -197,7 +197,7 @@ export default tseslint.config(
 );
 ```
 
-- [ ] **Step 4: Write `.prettierrc.json`**
+- [x] **Step 4: Write `.prettierrc.json`**
 
 ```json
 {
@@ -207,7 +207,7 @@ export default tseslint.config(
 }
 ```
 
-- [ ] **Step 5: Write `.prettierignore`**
+- [x] **Step 5: Write `.prettierignore`**
 
 ```
 pnpm-lock.yaml
@@ -215,7 +215,7 @@ dist
 .wrangler
 ```
 
-- [ ] **Step 6: Add lint/format scripts to root `package.json`**
+- [x] **Step 6: Add lint/format scripts to root `package.json`**
 
 Modify the `"scripts"` block to:
 
@@ -232,7 +232,7 @@ Modify the `"scripts"` block to:
 }
 ```
 
-- [ ] **Step 7: Format and verify**
+- [x] **Step 7: Format and verify**
 
 ```bash
 pnpm run format:write
@@ -242,7 +242,7 @@ pnpm run lint
 
 Expected: `format` reports no files need changes; `lint` exits 0.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add tsconfig.base.json eslint.config.js .prettierrc.json .prettierignore package.json pnpm-lock.yaml
@@ -262,7 +262,7 @@ git commit -m "chore: add shared TypeScript, ESLint, and Prettier config"
 **Interfaces:**
 - Produces: `@garden-hq/core` package, exporting `pingCore(): string` from `./src/index.ts` (via `"exports": { ".": "./src/index.ts" }` — consumed as source, no build step). Phase 1 replaces this file with the real `calendar.ts`, `garden.ts`, etc. per CLAUDE.md §5.
 
-- [ ] **Step 1: Write `packages/core/package.json`**
+- [x] **Step 1: Write `packages/core/package.json`**
 
 ```json
 {
@@ -281,13 +281,13 @@ git commit -m "chore: add shared TypeScript, ESLint, and Prettier config"
 }
 ```
 
-- [ ] **Step 2: Add devDependencies**
+- [x] **Step 2: Add devDependencies**
 
 ```bash
 pnpm add -D --filter @garden-hq/core typescript vitest
 ```
 
-- [ ] **Step 3: Write `packages/core/tsconfig.json`**
+- [x] **Step 3: Write `packages/core/tsconfig.json`**
 
 ```json
 {
@@ -299,7 +299,7 @@ pnpm add -D --filter @garden-hq/core typescript vitest
 }
 ```
 
-- [ ] **Step 4: Write the failing test — `packages/core/src/index.test.ts`**
+- [x] **Step 4: Write the failing test — `packages/core/src/index.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -312,7 +312,7 @@ describe("pingCore", () => {
 });
 ```
 
-- [ ] **Step 5: Run it and confirm it fails**
+- [x] **Step 5: Run it and confirm it fails**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -320,7 +320,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: FAIL — `./index` cannot be resolved (the file doesn't exist yet).
 
-- [ ] **Step 6: Write `packages/core/src/index.ts`**
+- [x] **Step 6: Write `packages/core/src/index.ts`**
 
 ```ts
 export function pingCore(): string {
@@ -328,7 +328,7 @@ export function pingCore(): string {
 }
 ```
 
-- [ ] **Step 7: Run it and confirm it passes**
+- [x] **Step 7: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/core test
@@ -336,7 +336,7 @@ pnpm --filter @garden-hq/core test
 
 Expected: PASS, 1 test.
 
-- [ ] **Step 8: Typecheck and lint**
+- [x] **Step 8: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/core typecheck
@@ -345,7 +345,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/core package.json pnpm-lock.yaml
@@ -367,7 +367,7 @@ git commit -m "feat(core): scaffold @garden-hq/core with a vitest smoke test"
 - Consumes: `pingCore` from `@garden-hq/core` (Task 3).
 - Produces: `@garden-hq/web`, buildable via `pnpm --filter @garden-hq/web build` → `apps/web/dist`.
 
-- [ ] **Step 1: Scaffold with create-vite**
+- [x] **Step 1: Scaffold with create-vite**
 
 ```bash
 pnpm create vite@latest apps/web -- --template react-ts
@@ -375,11 +375,11 @@ pnpm create vite@latest apps/web -- --template react-ts
 
 Expected: creates `apps/web/` with the standard Vite React+TS template (non-interactive because both the project path and `--template` are given as args).
 
-- [ ] **Step 2: Rename the package and mark it private**
+- [x] **Step 2: Rename the package and mark it private**
 
 Open `apps/web/package.json` and change `"name"` to `"@garden-hq/web"`, ensure `"private": true` is present.
 
-- [ ] **Step 3: Add the `typecheck` script**
+- [x] **Step 3: Add the `typecheck` script**
 
 Add to `apps/web/package.json` `"scripts"`:
 
@@ -387,13 +387,13 @@ Add to `apps/web/package.json` `"scripts"`:
 "typecheck": "tsc -b --noEmit"
 ```
 
-- [ ] **Step 4: Link `@garden-hq/core` as a workspace dependency**
+- [x] **Step 4: Link `@garden-hq/core` as a workspace dependency**
 
 ```bash
 pnpm add --filter @garden-hq/web @garden-hq/core@workspace:*
 ```
 
-- [ ] **Step 5: Remove the template's own ESLint setup**
+- [x] **Step 5: Remove the template's own ESLint setup**
 
 Open `apps/web/package.json`, find every devDependency whose name starts with `eslint` or is `globals` or `typescript-eslint` (added by the `create-vite` template), then:
 
@@ -409,7 +409,7 @@ rm apps/web/eslint.config.js
 
 (Root `eslint.config.js` from Task 2 already covers `apps/web/**/*.{ts,tsx}` — a second config would conflict.)
 
-- [ ] **Step 6: Point the app tsconfig at the shared base**
+- [x] **Step 6: Point the app tsconfig at the shared base**
 
 Open `apps/web/tsconfig.app.json` and add a top-level `"extends"` key (alongside the existing `"compilerOptions"`, `"include"`, etc. — don't remove those):
 
@@ -420,7 +420,7 @@ Open `apps/web/tsconfig.app.json` and add a top-level `"extends"` key (alongside
 }
 ```
 
-- [ ] **Step 7: Wire in `pingCore` to prove the workspace link**
+- [x] **Step 7: Wire in `pingCore` to prove the workspace link**
 
 In `apps/web/src/App.tsx`, add near the top:
 
@@ -434,7 +434,7 @@ And inside the JSX the component returns, add:
 <p>{pingCore()}</p>
 ```
 
-- [ ] **Step 8: Install and build**
+- [x] **Step 8: Install and build**
 
 ```bash
 pnpm install
@@ -443,7 +443,7 @@ pnpm --filter @garden-hq/web build
 
 Expected: exits 0, creates `apps/web/dist/`.
 
-- [ ] **Step 9: Typecheck and lint**
+- [x] **Step 9: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/web typecheck
@@ -452,7 +452,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add apps/web package.json pnpm-lock.yaml
@@ -474,7 +474,7 @@ git commit -m "feat(web): scaffold Vite+React+TS app consuming @garden-hq/core"
 - Consumes: `pingCore` from `@garden-hq/core` (Task 3).
 - Produces: `@garden-hq/worker`, a Hono app default-exported from `src/index.ts`, with a `GET /health` route. `pnpm --filter @garden-hq/worker dev` runs it locally; `pnpm --filter @garden-hq/worker deploy` deploys it (requires the manual Cloudflare setup noted above).
 
-- [ ] **Step 1: Write `apps/worker/package.json`**
+- [x] **Step 1: Write `apps/worker/package.json`**
 
 ```json
 {
@@ -491,14 +491,14 @@ git commit -m "feat(web): scaffold Vite+React+TS app consuming @garden-hq/core"
 }
 ```
 
-- [ ] **Step 2: Add dependencies**
+- [x] **Step 2: Add dependencies**
 
 ```bash
 pnpm add --filter @garden-hq/worker hono @garden-hq/core@workspace:*
 pnpm add -D --filter @garden-hq/worker wrangler typescript vitest @cloudflare/workers-types
 ```
 
-- [ ] **Step 3: Write `apps/worker/wrangler.toml`**
+- [x] **Step 3: Write `apps/worker/wrangler.toml`**
 
 ```toml
 name = "garden-hq-worker"
@@ -507,7 +507,7 @@ compatibility_date = "2026-09-30"
 compatibility_flags = ["nodejs_compat"]
 ```
 
-- [ ] **Step 4: Write `apps/worker/tsconfig.json`**
+- [x] **Step 4: Write `apps/worker/tsconfig.json`**
 
 ```json
 {
@@ -520,7 +520,7 @@ compatibility_flags = ["nodejs_compat"]
 }
 ```
 
-- [ ] **Step 5: Write the failing test — `apps/worker/src/index.test.ts`**
+- [x] **Step 5: Write the failing test — `apps/worker/src/index.test.ts`**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -540,7 +540,7 @@ describe("GET /health", () => {
 });
 ```
 
-- [ ] **Step 6: Run it and confirm it fails**
+- [x] **Step 6: Run it and confirm it fails**
 
 ```bash
 pnpm --filter @garden-hq/worker test
@@ -548,7 +548,7 @@ pnpm --filter @garden-hq/worker test
 
 Expected: FAIL — `./index` cannot be resolved.
 
-- [ ] **Step 7: Write `apps/worker/src/index.ts`**
+- [x] **Step 7: Write `apps/worker/src/index.ts`**
 
 ```ts
 import { Hono } from "hono";
@@ -566,7 +566,7 @@ app.get("/health", (c) =>
 export default app;
 ```
 
-- [ ] **Step 8: Run it and confirm it passes**
+- [x] **Step 8: Run it and confirm it passes**
 
 ```bash
 pnpm --filter @garden-hq/worker test
@@ -574,7 +574,7 @@ pnpm --filter @garden-hq/worker test
 
 Expected: PASS, 1 test.
 
-- [ ] **Step 9: Typecheck and lint**
+- [x] **Step 9: Typecheck and lint**
 
 ```bash
 pnpm --filter @garden-hq/worker typecheck
@@ -583,7 +583,7 @@ pnpm run lint
 
 Expected: both exit 0.
 
-- [ ] **Step 10: Best-effort bundle check (optional — skip if it prompts for Cloudflare auth in a non-interactive shell)**
+- [x] **Step 10: Best-effort bundle check (optional — skip if it prompts for Cloudflare auth in a non-interactive shell)**
 
 ```bash
 pnpm --filter @garden-hq/worker exec wrangler deploy --dry-run
@@ -591,7 +591,7 @@ pnpm --filter @garden-hq/worker exec wrangler deploy --dry-run
 
 Expected: bundles successfully without publishing. This does not require the manual Cloudflare setup — `--dry-run` skips the API call.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add apps/worker package.json pnpm-lock.yaml
@@ -608,7 +608,7 @@ git commit -m "feat(worker): scaffold Hono/Wrangler app consuming @garden-hq/cor
 **Interfaces:**
 - Consumes: root `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` scripts (Tasks 1–5), `apps/worker`'s `wrangler` devDependency (Task 5), `apps/web`'s build output at `apps/web/dist` (Task 4).
 
-- [ ] **Step 1: Write `.github/workflows/ci.yml`**
+- [x] **Step 1: Write `.github/workflows/ci.yml`**
 
 ```yaml
 name: CI
@@ -668,7 +668,7 @@ jobs:
 
 Note: the `deploy` job will fail until the three manual steps listed under "Manual / external setup" above are done — that's expected, not a bug in this task.
 
-- [ ] **Step 2: Validate YAML syntax**
+- [x] **Step 2: Validate YAML syntax**
 
 ```bash
 node -e "require('yaml').parse(require('fs').readFileSync('.github/workflows/ci.yml','utf8'))" 2>/dev/null || pnpm dlx yaml-lint .github/workflows/ci.yml
@@ -676,7 +676,7 @@ node -e "require('yaml').parse(require('fs').readFileSync('.github/workflows/ci.
 
 If neither is available, visually re-check indentation against the block above — GitHub Actions YAML is indentation-sensitive.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/workflows/ci.yml
@@ -689,7 +689,7 @@ git commit -m "ci: add typecheck/lint/test/build pipeline with a deploy job"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Clean install from scratch**
+- [x] **Step 1: Clean install from scratch**
 
 ```bash
 rm -rf node_modules apps/web/node_modules apps/worker/node_modules packages/core/node_modules
@@ -698,7 +698,7 @@ pnpm install
 
 Expected: exits 0.
 
-- [ ] **Step 2: Run every workspace script from the root**
+- [x] **Step 2: Run every workspace script from the root**
 
 ```bash
 pnpm typecheck
@@ -709,7 +709,7 @@ pnpm build
 
 Expected: all four exit 0. `pnpm test` shows passing suites for both `@garden-hq/core` and `@garden-hq/worker`. `pnpm build` produces `apps/web/dist`.
 
-- [ ] **Step 3: Confirm the repo layout matches CLAUDE.md §5**
+- [x] **Step 3: Confirm the repo layout matches CLAUDE.md §5**
 
 ```bash
 ls apps/web apps/worker packages/core .github/workflows
@@ -717,7 +717,7 @@ ls apps/web apps/worker packages/core .github/workflows
 
 Expected: `apps/web`, `apps/worker`, `packages/core` each have content; `.github/workflows/ci.yml` exists.
 
-- [ ] **Step 4: Commit anything left over (e.g. a refreshed lockfile)**
+- [x] **Step 4: Commit anything left over (e.g. a refreshed lockfile)**
 
 ```bash
 git status
