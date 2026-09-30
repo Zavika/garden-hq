@@ -1150,7 +1150,7 @@ export function normalizeGarden(raw: unknown): GardenState {
 pnpm --filter @garden-hq/core test
 ```
 
-Expected: PASS, 27 tests (22 from Task 5 + 5 here).
+Expected: PASS, 28 tests (actual count as executed; this plan's intermediate per-task counts drifted slightly from the arithmetic sketched in earlier tasks -- trust the real `vitest run` output at each step over these comments).
 
 - [ ] **Step 6: Typecheck and lint**
 
@@ -1184,7 +1184,7 @@ pnpm test
 pnpm build
 ```
 
-Expected: all exit 0. `pnpm test` shows 27 passing tests in `@garden-hq/core` (plus the existing `@garden-hq/worker` test from Phase 0).
+Expected: all exit 0. `pnpm test` shows 28 passing tests in `@garden-hq/core` (plus the existing `@garden-hq/worker` test from Phase 0).
 
 - [ ] **Step 2: Confirm the Phase 1 file set matches CLAUDE.md §5**
 
