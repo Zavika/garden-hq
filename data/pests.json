@@ -1,0 +1,16 @@
+[
+  { "id": "fly", "name": "Fly", "bait": "dung" },
+  { "id": "cricket", "name": "Cricket", "bait": "honey_jar" },
+  { "id": "locust", "name": "Locust", "bait": "plant_matter" },
+  { "id": "rat", "name": "Rat", "bait": "tasty_cheese" },
+  { "id": "mosquito", "name": "Mosquito", "bait": "compost" },
+  { "id": "earthworm", "name": "Earthworm", "bait": "compost" },
+  { "id": "mite", "name": "Mite", "bait": "tasty_cheese" },
+  { "id": "moth", "name": "Moth", "bait": "honey_jar" },
+  { "id": "slug", "name": "Slug", "bait": "plant_matter" },
+  { "id": "beetle", "name": "Beetle", "bait": "dung" },
+  { "id": "dragonfly", "name": "Dragonfly", "bait": "jelly" },
+  { "id": "firefly", "name": "Firefly", "bait": "jelly" },
+  { "id": "praying_mantis", "name": "Praying Mantis", "bait": "jelly" },
+  { "id": "lunar_moth", "name": "Lunar Moth", "bait": "moondew" }
+]

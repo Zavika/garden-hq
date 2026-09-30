@@ -1,0 +1,132 @@
+[
+  {
+    "id": "wheat",
+    "name": "Wheat",
+    "unlockLevel": 1,
+    "baseDrop": "wheat",
+    "pest": "fly",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "carrot",
+    "name": "Carrot",
+    "unlockLevel": 2,
+    "baseDrop": "carrot",
+    "pest": "cricket",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "potato",
+    "name": "Potato",
+    "unlockLevel": 3,
+    "baseDrop": "potato",
+    "pest": "locust",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "pumpkin",
+    "name": "Pumpkin",
+    "unlockLevel": 4,
+    "baseDrop": "pumpkin",
+    "pest": "rat",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "sugar_cane",
+    "name": "Sugar Cane",
+    "unlockLevel": 5,
+    "baseDrop": "sugar_cane",
+    "pest": "mosquito",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "melon",
+    "name": "Melon",
+    "unlockLevel": 6,
+    "baseDrop": "melon",
+    "pest": "earthworm",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "cactus",
+    "name": "Cactus",
+    "unlockLevel": 7,
+    "baseDrop": "cactus",
+    "pest": "mite",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "cocoa_beans",
+    "name": "Cocoa Beans",
+    "unlockLevel": 8,
+    "baseDrop": "cocoa_beans",
+    "pest": "moth",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "mushroom",
+    "name": "Mushroom",
+    "unlockLevel": 9,
+    "baseDrop": "mushroom",
+    "pest": "slug",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "nether_wart",
+    "name": "Nether Wart",
+    "unlockLevel": 10,
+    "baseDrop": "nether_wart",
+    "pest": "beetle",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": true
+  },
+  {
+    "id": "sunflower",
+    "name": "Sunflower",
+    "unlockLevel": 11,
+    "baseDrop": "sunflower",
+    "pest": "dragonfly",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": false
+  },
+  {
+    "id": "moonflower",
+    "name": "Moonflower",
+    "unlockLevel": 11,
+    "baseDrop": "moonflower",
+    "pest": "firefly",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": false
+  },
+  {
+    "id": "wild_rose",
+    "name": "Wild Rose",
+    "unlockLevel": 12,
+    "baseDrop": "wild_rose",
+    "pest": "praying_mantis",
+    "tool": null,
+    "apiId": null,
+    "contestCrop": false
+  }
+]
