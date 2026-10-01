@@ -32,3 +32,14 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 ## Calendar
 
 - The 12 SkyBlock month names (Early Spring, Spring, ... Late Winter) are from general knowledge, not independently fetched from the wiki this session. Low risk (widely documented, stable content) but flagged in `calendar.ts` with `// VERIFY:`.
+
+## Phase 2a Worker API (fixtures reconstructed, not captured)
+
+- `packages/core/fixtures/{profiles-response,election-response,contests-elitebot,contests-strassburger,mojang-profile}.sample.json` are reconstructed from public docs/memory, not captured responses — same caveat as the garden fixture. Swap for real captures once a Hypixel key + linked account exists, and re-run the core + worker suites.
+- `/v2/skyblock/garden` response nesting: live responses are believed to be `{ success, garden: {...} }`; the Phase 1 fixture is flat. `unwrapGardenResponse` accepts both.
+- Profiles fields (`profiles[].profile_id`, `cute_name`, `selected`) and election fields (`mayor.key|name|perks[]`, `mayor.minister.perk`) — unconfirmed field names.
+- EliteBot `/contests/at/now` and Strassburger `/api/jacobcontests`: response shapes (array vs map keyed by timestamp) and timestamp units (assumed epoch seconds) are unconfirmed; `normalizeContests` tolerates both shapes and both units. Contest _duration_ is not modelled.
+- Hypixel `RateLimit-Remaining` / `RateLimit-Reset` (seconds until reset) header semantics — per CLAUDE.md §3, unverified against live responses.
+- Cloudflare `[[ratelimits]]` binding availability on this account/plan; the KV fixed-window counter is the (approximate under concurrency) fallback.
+- Hypixel status codes for "player/profile not found" and "no garden" (assumed `404` or `success:false` / `garden:null`) are unconfirmed.
+- `Retry-After` is parsed only as numeric seconds (HTTP-date form unsupported).

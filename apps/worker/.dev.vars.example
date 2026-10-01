@@ -1,0 +1,3 @@
+# Copy to .dev.vars (gitignored) for `wrangler dev`.
+HYPIXEL_API_KEY=your-dev-key-from-developer.hypixel.net
+ENVIRONMENT=dev

@@ -2,3 +2,19 @@ name = "garden-hq-worker"
 main = "src/index.ts"
 compatibility_date = "2026-09-30"
 compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Origin of the deployed web app (Cloudflare Pages). Change if you add a custom domain.
+WEB_ORIGIN = "https://garden-hq-web.pages.dev"
+
+# KV cache for election/contests/per-player short caches and the fallback rate limiter.
+# No id: wrangler auto-provisions the namespace on first deploy.
+[[kv_namespaces]]
+binding = "CACHE"
+
+# Per-IP limiter (10 requests / 60 s). If the account/plan rejects this binding,
+# delete this block — the KV counter in src/ratelimit.ts is used automatically.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }

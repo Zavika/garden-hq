@@ -15,21 +15,21 @@ D1, cron, alerts, auth, push (Phase 3+); any web UI (2b); plot grid x/y (still n
 
 | Route | Behaviour | Caching |
 |---|---|---|
-| `GET /api/link?name=` | Validate name, Mojang name → UUID, Hypixel `/v2/skyblock/profiles?uuid=`, pick selected profile. Returns `{ uuid, name, profileId, profiles[] }` | browser `no-store`; server KV 60 s per uuid |
+| `GET /api/link?name=` | Validate name, Mojang name → UUID, Hypixel `/v2/skyblock/profiles?uuid=`, pick selected profile. Returns `{ uuid, name, profileId, profiles[] }` | browser `no-store`; server KV 60 s per lowercased name |
 | `GET /api/garden?profile=` | Validate UUID, Hypixel `/v2/skyblock/garden?profile=`, `normalizeGarden()`, returns `GardenState` + `fetchedAt` | browser/edge `no-store`; server KV 60 s per profile |
 | `GET /api/contests` | EliteBot `/contests/at/now`, fallback strassburger. Returns normalized list + `source` (for the required credit link) | KV, 15 min |
 | `GET /api/mayor` | Hypixel `/v2/resources/skyblock/election` → current mayor + perks | KV, 1 h |
 | `GET /health` | existing | none |
 
-Every success body includes `fetchedAt` (ISO) so the UI can show "last synced X min ago". On a KV cache hit, `fetchedAt` is the time of the original upstream fetch, not the request time.
+Every success body includes `fetchedAt` (ISO) so the UI can show "last synced X min ago". On a KV cache hit, `fetchedAt` is the time of the original upstream fetch, not the request time. `/api/garden` returns `{ garden, fetchedAt }`.
 
 ## Abuse protection
 
 `/api/link` and `/api/garden` spend our Hypixel key, so:
 
 - **Per-IP rate limit:** 10 req/min on `/api/link` and `/api/garden` (combined bucket), keyed on `CF-Connecting-IP`. Implemented with the Cloudflare rate-limit binding if available, else a KV counter (fixed window). Exceeded → `rate_limited` 429 with `Retry-After`. The limiter runs before any upstream call; cache hits still count, so refresh spam is throttled too.
-- **Per-uuid/profile cache (60 s):** KV, keyed by uuid (`/api/link`) or profile id (`/api/garden`). Repeated refreshes inside the window never reach Hypixel.
-- **Note on CLAUDE.md §3** ("never edge-cache per-player endpoints"): this is a short server-side KV cache of our own normalized output, chosen explicitly to protect the key. Responses to clients and the Cloudflare edge stay `Cache-Control: no-store`, so no per-player data is shared via the HTTP edge cache. Cache keys contain only public identifiers (uuid / profile id), never the API key.
+- **Per-name/profile cache (60 s):** KV, keyed by lowercased name (`/api/link`, since the uuid is unknown until Mojang responds) or profile id (`/api/garden`). Repeated refreshes inside the window never reach Hypixel.
+- **Note on CLAUDE.md §3** ("never edge-cache per-player endpoints"): this is a short server-side KV cache of our own normalized output, chosen explicitly to protect the key. Responses to clients and the Cloudflare edge stay `Cache-Control: no-store`, so no per-player data is shared via the HTTP edge cache. Cache keys contain only public identifiers (lowercased name / profile id), never the API key.
 
 ## Input validation
 
@@ -62,7 +62,7 @@ All upstream calls go through an injected `fetch`, so tests never touch the netw
 ## Errors
 
 Uniform body `{ error: { code, message } }`:
-`unknown_player` 404 · `no_garden` 404 · `bad_request` 400 · `rate_limited` 429 (with `retryAfter`; covers both our per-IP limit and upstream 429) · `upstream_down` 502 · `missing_api_key` 500 (misconfiguration). Missing optional upstream fields never throw; they normalize to defaults.
+`unknown_player` 404 · `no_garden` 404 · `bad_request` 400 · `rate_limited` 429 (with `retryAfter`; covers both our per-IP limit and upstream 429) · `upstream_down` 502 · `missing_api_key` 500 (misconfiguration) · `internal` 500 (unexpected error). Missing optional upstream fields never throw; they normalize to defaults.
 
 ## Data / fixtures
 
