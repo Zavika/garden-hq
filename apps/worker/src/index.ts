@@ -1,13 +1,3 @@
-import { Hono } from "hono";
-import { pingCore } from "@garden-hq/core";
+import { createApp } from "./app";
 
-const app = new Hono();
-
-app.get("/health", (c) =>
-  c.json({
-    status: "ok",
-    core: pingCore(),
-  }),
-);
-
-export default app;
+export default createApp();
