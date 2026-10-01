@@ -1,5 +1,6 @@
 import type { Env, RateLimiterBinding } from "./env";
 import { AppError } from "./errors";
+import { logError } from "./log";
 
 export interface Limiter {
   allow(key: string): Promise<{ ok: boolean; retryAfter: number }>;
@@ -36,9 +37,15 @@ export function createKvLimiter(
       }
 
       // expirationTtl must be >= 60 s; two windows is plenty for cleanup.
-      await kv.put(kvKey, String(count + 1), {
-        expirationTtl: Math.max(60, Math.ceil((windowMs * 2) / 1000)),
-      });
+      try {
+        await kv.put(kvKey, String(count + 1), {
+          expirationTtl: Math.max(60, Math.ceil((windowMs * 2) / 1000)),
+        });
+      } catch {
+        // A throttled write must not turn into a 500: the count was already
+        // read, so allow the request. Log the event only (no error content).
+        logError("ratelimit_write_failed");
+      }
       return { ok: true, retryAfter: 0 };
     },
   };

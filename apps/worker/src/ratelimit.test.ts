@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FakeKV, makeClock, makeEnv } from "../test/helpers";
 import { AppError } from "./errors";
 import {
@@ -7,6 +7,8 @@ import {
   enforceRateLimit,
   pickLimiter,
 } from "./ratelimit";
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("createKvLimiter", () => {
   it("allows 10 requests per window and denies the 11th with a retryAfter", async () => {
@@ -39,6 +41,47 @@ describe("createKvLimiter", () => {
 
     clock.advance(60_000);
     expect((await limiter.allow("a")).ok).toBe(true);
+  });
+});
+
+describe("createKvLimiter KV failures", () => {
+  it("allows the request and logs when kv.put is throttled", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const kv = {
+      get: async () => null,
+      put: async () => {
+        throw new Error("KV put() limit exceeded secret-xyz");
+      },
+    } as unknown as KVNamespace;
+    const limiter = createKvLimiter(kv, makeClock().now);
+
+    expect(await limiter.allow("1.1.1.1")).toEqual({ ok: true, retryAfter: 0 });
+
+    const logged = error.mock.calls.flat().join(" ");
+    expect(logged).toContain("ratelimit_write_failed");
+    expect(logged).not.toContain("secret-xyz");
+  });
+
+  it("fails closed when kv.get throws", async () => {
+    const kv = {
+      get: async () => {
+        throw new Error("kv down");
+      },
+      put: async () => {},
+    } as unknown as KVNamespace;
+    const limiter = createKvLimiter(kv, makeClock().now);
+
+    await expect(limiter.allow("1.1.1.1")).rejects.toThrow("kv down");
+  });
+
+  it("fails closed when the binding limiter throws", async () => {
+    const limiter = createBindingLimiter({
+      limit: async () => {
+        throw new Error("binding down");
+      },
+    });
+
+    await expect(limiter.allow("k")).rejects.toThrow("binding down");
   });
 });
 
