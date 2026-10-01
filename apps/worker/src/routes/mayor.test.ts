@@ -36,15 +36,65 @@ describe("GET /api/mayor", () => {
     expect((await get("/api/mayor")).status).toBe(200);
   });
 
-  it("returns mayor:null when the election payload has no mayor", async () => {
+  it("treats an election payload with no mayor as upstream_down", async () => {
     const { get } = harness(
       happyRoutes({ [ELECTION_ROUTE]: () => json({ success: true }) }),
     );
 
-    expect(await (await get("/api/mayor")).json()).toEqual({
-      mayor: null,
-      fetchedAt: START_ISO,
+    const res = await get("/api/mayor");
+
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({
+      error: {
+        code: "upstream_down",
+        message: "Election data is unavailable",
+      },
     });
+  });
+
+  it("treats success:false as upstream_down", async () => {
+    const { get } = harness(
+      happyRoutes({ [ELECTION_ROUTE]: () => json({ success: false }) }),
+    );
+
+    expect((await get("/api/mayor")).status).toBe(502);
+  });
+
+  it("returns 502 upstream_down when the election endpoint answers 404", async () => {
+    const { get } = harness(
+      happyRoutes({
+        [ELECTION_ROUTE]: () => new Response("nope", { status: 404 }),
+      }),
+    );
+
+    const res = await get("/api/mayor");
+
+    expect(res.status).toBe(502);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
+      "upstream_down",
+    );
+  });
+
+  it("does not cache a failure: the next call refetches and succeeds", async () => {
+    let n = 0;
+    const ok = happyRoutes()[ELECTION_ROUTE];
+    const { get, net } = harness(
+      happyRoutes({
+        [ELECTION_ROUTE]: (req) =>
+          n++ === 0
+            ? json({ success: true })
+            : (ok as (r: typeof req) => Response)(req),
+      }),
+    );
+
+    expect((await get("/api/mayor")).status).toBe(502);
+    const res = await get("/api/mayor");
+
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { mayor: { name: string } }).mayor.name).toBe(
+      "Finnegan",
+    );
+    expect(net.calls.filter((c) => c === ELECTION_ROUTE)).toHaveLength(2);
   });
 
   it("returns 502 upstream_down when Hypixel fails", async () => {
