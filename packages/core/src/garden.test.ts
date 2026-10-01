@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import sampleResponse from "../fixtures/garden-response.sample.json";
-import { levelForExperience, normalizeGarden } from "./garden";
+import {
+  levelForExperience,
+  normalizeGarden,
+  unwrapGardenResponse,
+} from "./garden";
 
 describe("levelForExperience", () => {
   it("is level 1 at 0 XP", () => {
@@ -65,5 +69,24 @@ describe("normalizeGarden", () => {
       },
       visitorsServedTotal: 0,
     });
+  });
+});
+
+describe("unwrapGardenResponse", () => {
+  it("unwraps a nested { garden } response", () => {
+    expect(unwrapGardenResponse({ success: true, garden: { a: 1 } })).toEqual({
+      a: 1,
+    });
+  });
+
+  it("returns a flat response (the fixture shape) unchanged", () => {
+    expect(unwrapGardenResponse(sampleResponse)).toBe(sampleResponse);
+  });
+
+  it("returns null for garden:null, success:false, null and non-objects", () => {
+    expect(unwrapGardenResponse({ success: true, garden: null })).toBeNull();
+    expect(unwrapGardenResponse({ success: false, cause: "x" })).toBeNull();
+    expect(unwrapGardenResponse(null)).toBeNull();
+    expect(unwrapGardenResponse("nope")).toBeNull();
   });
 });

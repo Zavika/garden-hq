@@ -70,3 +70,16 @@ export function normalizeGarden(raw: unknown): GardenState {
     visitorsServedTotal: countCompletedVisitors(data.commission_data),
   };
 }
+
+// VERIFY: the live /v2/skyblock/garden response nests the garden under `garden`;
+// the Phase 1 fixture is flat. Accept both until a real response is captured.
+export function unwrapGardenResponse(raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null) return null;
+
+  const data = raw as Record<string, unknown>;
+  if ("garden" in data) {
+    return typeof data.garden === "object" ? data.garden : null;
+  }
+
+  return data.success === false ? null : raw;
+}

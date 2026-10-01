@@ -21,3 +21,14 @@ export interface GardenState {
   composter: ComposterState;
   visitorsServedTotal: number;
 }
+
+export interface ProfileSummary {
+  profileId: string;
+  name: string;
+  selected: boolean;
+}
+
+export interface ProfilesResult {
+  profiles: ProfileSummary[];
+  selectedProfileId: string | null;
+}
