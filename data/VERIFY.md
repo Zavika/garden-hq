@@ -32,6 +32,7 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 ## Calendar
 
 - The 12 SkyBlock month names (Early Spring, Spring, ... Late Winter) are from general knowledge, not independently fetched from the wiki this session. Low risk (widely documented, stable content) but flagged in `calendar.ts` with `// VERIFY:`.
+- Day/night (`isDaytime` in `calendar.ts`) is assumed to be an even 50/50 split within the 20-minute SkyBlock day, aligned to the epoch. Vanilla Minecraft's exact dawn/dusk tick boundaries may differ slightly. Resolve by comparing against in-game day/night transitions (or the wiki's time-of-day page) and adjusting the split if timing drifts.
 
 ## Phase 2a Worker API (fixtures reconstructed, not captured)
 
