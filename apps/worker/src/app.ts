@@ -10,6 +10,8 @@ import {
   type ClientFactory,
 } from "./hypixel";
 import { logError, redact } from "./log";
+import { gardenRoute } from "./routes/garden";
+import { linkRoute } from "./routes/link";
 
 export interface AppDeps {
   fetch: typeof fetch;
@@ -56,8 +58,8 @@ export function createApp(
     }),
   );
 
-  // Routes are mounted here as they are added (Tasks 8-9):
-  void clientFor;
+  app.route("/api", linkRoute(deps, clientFor));
+  app.route("/api", gardenRoute(deps, clientFor));
 
   app.onError((err, c) => {
     if (err instanceof AppError) {
