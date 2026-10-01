@@ -190,6 +190,31 @@ describe("createHypixelClient", () => {
     expect(n).toBe(2);
   });
 
+  it("does not block keyless election calls with the key's exhausted quota", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const net = routedFetch({
+      [GARDEN]: () =>
+        json(
+          { ok: true },
+          { headers: { "RateLimit-Remaining": "0", "RateLimit-Reset": "30" } },
+        ),
+      "api.hypixel.net/v2/resources/skyblock/election": () =>
+        json({ success: true }),
+    });
+    const client = createHypixelClient({
+      fetch: net.fetch,
+      apiKey: TEST_KEY,
+      now: makeClock().now,
+      sleep: makeSleep().sleep,
+      state: createRateLimitState(),
+    });
+
+    await client.garden("p1");
+
+    expect((await failure(client.garden("p1"))).code).toBe("rate_limited");
+    expect(await client.election()).toEqual({ success: true });
+  });
+
   it("logs host + path template + status only", async () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     const net = routedFetch({ [GARDEN]: () => json({}) });

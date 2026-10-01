@@ -76,7 +76,8 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
       );
     }
 
-    if (state.remaining <= 0 && state.resetAt > deps.now()) {
+    // The quota belongs to the API key; keyless calls are not subject to it.
+    if (auth && state.remaining <= 0 && state.resetAt > deps.now()) {
       throw new AppError(
         "rate_limited",
         "Hypixel rate limit reached",
