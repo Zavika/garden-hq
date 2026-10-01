@@ -148,3 +148,20 @@ export function makeHarness(
       app.request(path, { headers }, env),
   };
 }
+
+/** A response whose unread body stream records whether it was cancelled. */
+export function trackedResponse(
+  status: number,
+  init: ResponseInit = {},
+): { response: Response; cancelled: () => boolean } {
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>({
+    cancel() {
+      cancelled = true;
+    },
+  });
+  return {
+    response: new Response(body, { ...init, status }),
+    cancelled: () => cancelled,
+  };
+}

@@ -5,6 +5,7 @@ import {
   makeClock,
   makeSleep,
   routedFetch,
+  trackedResponse,
   type FakeHandler,
 } from "../test/helpers";
 import { AppError } from "./errors";
@@ -213,6 +214,45 @@ describe("createHypixelClient", () => {
 
     expect((await failure(client.garden("p1"))).code).toBe("rate_limited");
     expect(await client.election()).toEqual({ success: true });
+  });
+
+  it("cancels the unread body of a failed attempt before retrying", async () => {
+    const first = trackedResponse(500);
+    let n = 0;
+    const { client } = setup(() => (n++ === 0 ? first.response : json({})));
+
+    await client.garden("p1");
+
+    expect(first.cancelled()).toBe(true);
+  });
+
+  it.each([429, 403, 404])(
+    "cancels the unread body of a %i response",
+    async (status) => {
+      const tracked = trackedResponse(status, {
+        headers: { "Retry-After": "60" },
+      });
+      const { client } = setup(() => tracked.response);
+
+      await client.garden("p1").catch(() => undefined);
+
+      expect(tracked.cancelled()).toBe(true);
+    },
+  );
+
+  it("is unaffected when cancelling the body fails", async () => {
+    const response = new Response("", { status: 500 });
+    Object.defineProperty(response, "body", {
+      value: {
+        cancel: () => {
+          throw new Error("cancel blew up");
+        },
+      },
+    });
+    let n = 0;
+    const { client } = setup(() => (n++ === 0 ? response : json({ ok: 1 })));
+
+    expect(await client.garden("p1")).toEqual({ ok: 1 });
   });
 
   it("logs host + path template + status only", async () => {

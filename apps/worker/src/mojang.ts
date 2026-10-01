@@ -1,4 +1,5 @@
 import { AppError } from "./errors";
+import { discardBody } from "./http";
 import { logUpstream } from "./log";
 import { toDashedUuid } from "./validate";
 
@@ -36,6 +37,8 @@ export async function lookupUuid(
     status: res.status,
     ms: Date.now() - started,
   });
+
+  if (!res.ok || res.status === 204) discardBody(res);
 
   if (res.status === 204 || res.status === 404) {
     throw new AppError("unknown_player", "No Minecraft account with that name");

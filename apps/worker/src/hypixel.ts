@@ -1,5 +1,6 @@
 import type { Env } from "./env";
 import { AppError } from "./errors";
+import { discardBody } from "./http";
 import { logUpstream } from "./log";
 
 const HOST = "api.hypixel.net";
@@ -121,6 +122,9 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
           throw upstreamDown();
         }
       }
+
+      // Every path below ignores the body: free the connection first.
+      discardBody(res);
 
       if (res.status === 404) return null;
 

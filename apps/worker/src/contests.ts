@@ -1,5 +1,6 @@
 import { normalizeContests, type Contest } from "@garden-hq/core";
 import { AppError } from "./errors";
+import { discardBody } from "./http";
 import { logUpstream } from "./log";
 
 export interface ContestsSource {
@@ -59,7 +60,10 @@ async function tryFetch(
     status: res.status,
     ms: Date.now() - started,
   });
-  if (!res.ok) return undefined;
+  if (!res.ok) {
+    discardBody(res);
+    return undefined;
+  }
 
   try {
     return await res.json();

@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fixtures, json, routedFetch, type FakeHandler } from "../test/helpers";
+import {
+  fixtures,
+  json,
+  routedFetch,
+  trackedResponse,
+  type FakeHandler,
+} from "../test/helpers";
 import { AppError } from "./errors";
 import { lookupUuid } from "./mojang";
 
@@ -27,6 +33,17 @@ describe("lookupUuid", () => {
       name: "TestFarmer",
     });
   });
+
+  it.each([404, 429, 500])(
+    "cancels the unread body of a %i",
+    async (status) => {
+      const tracked = trackedResponse(status);
+
+      await code(() => tracked.response);
+
+      expect(tracked.cancelled()).toBe(true);
+    },
+  );
 
   it("maps 404 and 204 to unknown_player", async () => {
     expect(await code(() => new Response("", { status: 404 }))).toBe(

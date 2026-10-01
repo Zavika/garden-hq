@@ -5,6 +5,7 @@ import {
   fixtures,
   json,
   routedFetch,
+  trackedResponse,
   type FakeHandler,
 } from "../test/helpers";
 import { fetchContests } from "./contests";
@@ -27,6 +28,18 @@ const down: FakeHandler = () => new Response("", { status: 500 });
 const empty: FakeHandler = () => json({ contests: [] });
 
 describe("fetchContests", () => {
+  it("cancels the unread body of a failed source before using the fallback", async () => {
+    const failed = trackedResponse(500);
+    const { result } = run({
+      [ELITEBOT_ROUTE]: () => failed.response,
+      [STRASSBURGER_ROUTE]: () => json(fixtures.contestsElitebot),
+    });
+
+    await result;
+
+    expect(failed.cancelled()).toBe(true);
+  });
+
   it("uses EliteBot when it works and does not call the fallback", async () => {
     const { net, result } = run({
       [ELITEBOT_ROUTE]: () => json(fixtures.contestsElitebot),
