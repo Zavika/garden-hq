@@ -62,7 +62,7 @@ All upstream calls go through an injected `fetch`, so tests never touch the netw
 ## Errors
 
 Uniform body `{ error: { code, message } }`:
-`unknown_player` 404 · `no_garden` 404 · `bad_request` 400 · `rate_limited` 429 (with `retryAfter`; covers both our per-IP limit and upstream 429) · `upstream_down` 502 · `missing_api_key` 500 (misconfiguration) · `internal` 500 (unexpected error). Missing optional upstream fields never throw; they normalize to defaults.
+`unknown_player` 404 · `no_garden` 404 · `not_found` 404 (unknown route, incl. trailing-slash variants) · `bad_request` 400 · `rate_limited` 429 (with `retryAfter`; covers both our per-IP limit and upstream 429) · `upstream_down` 502 · `missing_api_key` 500 (misconfiguration) · `internal` 500 (unexpected error). Missing optional upstream fields never throw; they normalize to defaults.
 
 ## Data / fixtures
 

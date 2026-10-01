@@ -83,6 +83,34 @@ describe("CORS", () => {
   });
 });
 
+describe("not found", () => {
+  const body = { error: { code: "not_found", message: "Unknown route" } };
+
+  it.each(["/api/nope", "/api/link/", "/nope", "/api/garden/x/y"])(
+    "returns the uniform JSON 404 for %s",
+    async (path) => {
+      const res = await createApp().request(path, {}, makeEnv());
+
+      expect(res.status).toBe(404);
+      expect(res.headers.get("Cache-Control")).toBe("no-store");
+      expect(await res.json()).toEqual(body);
+    },
+  );
+
+  it("keeps CORS headers for an allowed origin", async () => {
+    const res = await createApp().request(
+      "/api/nope",
+      { headers: { Origin: "https://app.example" } },
+      makeEnv(),
+    );
+
+    expect(res.status).toBe(404);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://app.example",
+    );
+  });
+});
+
 describe("error handling", () => {
   it("never logs or returns the API key when an unexpected error occurs", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});

@@ -1,6 +1,7 @@
 export type ErrorCode =
   | "unknown_player"
   | "no_garden"
+  | "not_found"
   | "bad_request"
   | "rate_limited"
   | "upstream_down"
@@ -13,6 +14,7 @@ const STATUS: Record<ErrorCode, ErrorStatus> = {
   bad_request: 400,
   unknown_player: 404,
   no_garden: 404,
+  not_found: 404,
   rate_limited: 429,
   missing_api_key: 500,
   internal: 500,

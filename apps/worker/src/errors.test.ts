@@ -6,6 +6,7 @@ describe("AppError", () => {
     ["bad_request", 400],
     ["unknown_player", 404],
     ["no_garden", 404],
+    ["not_found", 404],
     ["rate_limited", 429],
     ["missing_api_key", 500],
     ["internal", 500],

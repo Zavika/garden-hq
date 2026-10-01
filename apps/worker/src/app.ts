@@ -65,6 +65,11 @@ export function createApp(
   app.route("/api", contestsRoute(deps));
   app.route("/api", mayorRoute(deps, clientFor));
 
+  app.notFound((c) => {
+    c.header("Cache-Control", "no-store");
+    return c.json(errorBody(new AppError("not_found", "Unknown route")), 404);
+  });
+
   app.onError((err, c) => {
     if (err instanceof AppError) {
       if (err.retryAfter !== undefined)
