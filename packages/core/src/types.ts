@@ -32,3 +32,22 @@ export interface ProfilesResult {
   profiles: ProfileSummary[];
   selectedProfileId: string | null;
 }
+
+export interface MayorPerk {
+  name: string;
+  description: string;
+}
+
+export interface Mayor {
+  key: string;
+  name: string;
+  perks: MayorPerk[];
+  minister: { key: string; name: string; perk: MayorPerk | null } | null;
+}
+
+export interface Contest {
+  /** Contest start, epoch milliseconds. */
+  startsAt: number;
+  /** Crop ids from data/crops.json. */
+  crops: string[];
+}

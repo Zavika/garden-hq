@@ -1,0 +1,9 @@
+{
+  "contests": [
+    { "timestamp": 1790812800, "crops": ["Wheat", "Cactus", "Pumpkin"] },
+    {
+      "timestamp": 1790819300,
+      "crops": ["Cocoa Beans", "Sugar Cane", "Nether Wart"]
+    }
+  ]
+}

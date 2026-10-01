@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "mayor": {
+    "key": "finnegan",
+    "name": "Finnegan",
+    "perks": [
+      { "name": "Farming Simulator", "description": "Fixture text." },
+      { "name": "Pelt-pocalypse", "description": "Fixture text." }
+    ],
+    "minister": {
+      "key": "jerry",
+      "name": "Jerry",
+      "perk": { "name": "Fixture Perk", "description": "Fixture text." }
+    }
+  }
+}

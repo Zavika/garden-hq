@@ -8,3 +8,5 @@ export * from "./composter";
 export * from "./garden";
 export * from "./plots";
 export * from "./profiles";
+export * from "./mayor";
+export * from "./contests";
