@@ -47,7 +47,8 @@ export function createApp(
 
   app.use("/api/*", (c, next) =>
     cors({
-      origin: allowedOriginFor(c.env),
+      // c.env is undefined when the app is invoked without bindings.
+      origin: allowedOriginFor(c.env ?? {}),
       allowMethods: ["GET", "OPTIONS"],
       maxAge: 600,
     })(c, next),
@@ -80,7 +81,7 @@ export function createApp(
 
     logError("unhandled", {
       name: err.name,
-      message: redact(err.message, c.env.HYPIXEL_API_KEY),
+      message: redact(err.message, c.env?.HYPIXEL_API_KEY),
     });
     c.header("Cache-Control", "no-store");
     return c.json(errorBody(new AppError("internal", "Internal error")), 500);

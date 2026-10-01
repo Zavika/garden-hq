@@ -150,6 +150,25 @@ describe("error handling", () => {
   });
 });
 
+describe("error handling without bindings", () => {
+  it("still returns the 500 internal body when no env is bound", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const app = createApp();
+    app.get("/api/boom", () => {
+      throw new Error("kaboom");
+    });
+
+    const res = await app.request("/api/boom", {
+      headers: { Origin: "https://app.example" },
+    });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({
+      error: { code: "internal", message: "Internal error" },
+    });
+  });
+});
+
 describe("harness wiring", () => {
   it("makeHarness builds an app that serves /health", async () => {
     const { get } = makeHarness();
