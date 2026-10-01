@@ -10,8 +10,10 @@ import {
   type ClientFactory,
 } from "./hypixel";
 import { logError, redact } from "./log";
+import { contestsRoute } from "./routes/contests";
 import { gardenRoute } from "./routes/garden";
 import { linkRoute } from "./routes/link";
+import { mayorRoute } from "./routes/mayor";
 
 export interface AppDeps {
   fetch: typeof fetch;
@@ -60,6 +62,8 @@ export function createApp(
 
   app.route("/api", linkRoute(deps, clientFor));
   app.route("/api", gardenRoute(deps, clientFor));
+  app.route("/api", contestsRoute(deps));
+  app.route("/api", mayorRoute(deps, clientFor));
 
   app.onError((err, c) => {
     if (err instanceof AppError) {
