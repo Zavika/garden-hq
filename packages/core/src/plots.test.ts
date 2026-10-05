@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ALL_PLOTS, cheapestNextPlot, getPlot } from "./plots";
+import {
+  ALL_PLOTS,
+  BARN_CELL,
+  GRID_SIZE,
+  cheapestNextPlot,
+  getPlot,
+} from "./plots";
 
 describe("ALL_PLOTS", () => {
   it("has 24 plots", () => {
@@ -52,5 +58,53 @@ describe("cheapestNextPlot", () => {
 
   it("returns undefined when the garden level is too low for any tier", () => {
     expect(cheapestNextPlot([], 0)).toBeUndefined();
+  });
+});
+
+const SKYHANNI_GRID = [
+  [21, 13, 9, 14, 22],
+  [15, 5, 1, 6, 16],
+  [10, 2, 0, 3, 11],
+  [17, 7, 4, 8, 18],
+  [23, 19, 12, 20, 24],
+];
+
+function idForNumber(n: number): string {
+  if (n <= 4) return `beginner_${n}`;
+  if (n <= 8) return `intermediate_${n - 4}`;
+  if (n <= 12) return `advanced_${n - 8}`;
+  return `expert_${n - 12}`;
+}
+
+describe("plot layout", () => {
+  it("places every plot at its SkyHanni plotMap cell", () => {
+    SKYHANNI_GRID.forEach((row, y) =>
+      row.forEach((n, x) => {
+        if (n === 0) return;
+        const plot = getPlot(idForNumber(n));
+        expect({ id: plot?.id, x: plot?.x, y: plot?.y }).toEqual({
+          id: idForNumber(n),
+          x,
+          y,
+        });
+      }),
+    );
+  });
+
+  it("uses 24 unique in-range cells that exclude the Barn", () => {
+    const cells = ALL_PLOTS.map((p) => `${p.x},${p.y}`);
+    expect(new Set(cells).size).toBe(24);
+    for (const p of ALL_PLOTS) {
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x).toBeLessThan(GRID_SIZE);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeLessThan(GRID_SIZE);
+    }
+    expect(cells).not.toContain(`${BARN_CELL.x},${BARN_CELL.y}`);
+  });
+
+  it("puts the Barn in the centre of a 5x5 grid", () => {
+    expect(GRID_SIZE).toBe(5);
+    expect(BARN_CELL).toEqual({ x: 2, y: 2 });
   });
 });

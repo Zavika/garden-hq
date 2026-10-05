@@ -4,49 +4,176 @@
       "id": "beginner",
       "unlockLevel": 1,
       "plots": [
-        { "id": "beginner_1", "cost": 1, "x": null, "y": null },
-        { "id": "beginner_2", "cost": 2, "x": null, "y": null },
-        { "id": "beginner_3", "cost": 4, "x": null, "y": null },
-        { "id": "beginner_4", "cost": 8, "x": null, "y": null }
+        {
+          "id": "beginner_1",
+          "cost": 1,
+          "x": 2,
+          "y": 1
+        },
+        {
+          "id": "beginner_2",
+          "cost": 2,
+          "x": 1,
+          "y": 2
+        },
+        {
+          "id": "beginner_3",
+          "cost": 4,
+          "x": 3,
+          "y": 2
+        },
+        {
+          "id": "beginner_4",
+          "cost": 8,
+          "x": 2,
+          "y": 3
+        }
       ]
     },
     {
       "id": "intermediate",
       "unlockLevel": 3,
       "plots": [
-        { "id": "intermediate_1", "cost": 16, "x": null, "y": null },
-        { "id": "intermediate_2", "cost": 24, "x": null, "y": null },
-        { "id": "intermediate_3", "cost": 32, "x": null, "y": null },
-        { "id": "intermediate_4", "cost": 48, "x": null, "y": null }
+        {
+          "id": "intermediate_1",
+          "cost": 16,
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "intermediate_2",
+          "cost": 24,
+          "x": 3,
+          "y": 1
+        },
+        {
+          "id": "intermediate_3",
+          "cost": 32,
+          "x": 1,
+          "y": 3
+        },
+        {
+          "id": "intermediate_4",
+          "cost": 48,
+          "x": 3,
+          "y": 3
+        }
       ]
     },
     {
       "id": "advanced",
       "unlockLevel": 5,
       "plots": [
-        { "id": "advanced_1", "cost": 64, "x": null, "y": null },
-        { "id": "advanced_2", "cost": 96, "x": null, "y": null },
-        { "id": "advanced_3", "cost": 128, "x": null, "y": null },
-        { "id": "advanced_4", "cost": null, "x": null, "y": null }
+        {
+          "id": "advanced_1",
+          "cost": 64,
+          "x": 2,
+          "y": 0
+        },
+        {
+          "id": "advanced_2",
+          "cost": 96,
+          "x": 0,
+          "y": 2
+        },
+        {
+          "id": "advanced_3",
+          "cost": 128,
+          "x": 4,
+          "y": 2
+        },
+        {
+          "id": "advanced_4",
+          "cost": null,
+          "x": 2,
+          "y": 4
+        }
       ]
     },
     {
       "id": "expert",
       "unlockLevel": 7,
       "plots": [
-        { "id": "expert_1", "cost": null, "x": null, "y": null },
-        { "id": "expert_2", "cost": null, "x": null, "y": null },
-        { "id": "expert_3", "cost": null, "x": null, "y": null },
-        { "id": "expert_4", "cost": null, "x": null, "y": null },
-        { "id": "expert_5", "cost": null, "x": null, "y": null },
-        { "id": "expert_6", "cost": null, "x": null, "y": null },
-        { "id": "expert_7", "cost": null, "x": null, "y": null },
-        { "id": "expert_8", "cost": null, "x": null, "y": null },
-        { "id": "expert_9", "cost": null, "x": null, "y": null },
-        { "id": "expert_10", "cost": null, "x": null, "y": null },
-        { "id": "expert_11", "cost": null, "x": null, "y": null },
-        { "id": "expert_12", "cost": null, "x": null, "y": null }
+        {
+          "id": "expert_1",
+          "cost": null,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "expert_2",
+          "cost": null,
+          "x": 3,
+          "y": 0
+        },
+        {
+          "id": "expert_3",
+          "cost": null,
+          "x": 0,
+          "y": 1
+        },
+        {
+          "id": "expert_4",
+          "cost": null,
+          "x": 4,
+          "y": 1
+        },
+        {
+          "id": "expert_5",
+          "cost": null,
+          "x": 0,
+          "y": 3
+        },
+        {
+          "id": "expert_6",
+          "cost": null,
+          "x": 4,
+          "y": 3
+        },
+        {
+          "id": "expert_7",
+          "cost": null,
+          "x": 1,
+          "y": 4
+        },
+        {
+          "id": "expert_8",
+          "cost": null,
+          "x": 3,
+          "y": 4
+        },
+        {
+          "id": "expert_9",
+          "cost": null,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "expert_10",
+          "cost": null,
+          "x": 4,
+          "y": 0
+        },
+        {
+          "id": "expert_11",
+          "cost": null,
+          "x": 0,
+          "y": 4
+        },
+        {
+          "id": "expert_12",
+          "cost": null,
+          "x": 4,
+          "y": 4
+        }
       ]
     }
-  ]
+  ],
+  "grid": {
+    "size": 5,
+    "barn": {
+      "x": 2,
+      "y": 2
+    }
+  }
 }

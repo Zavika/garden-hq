@@ -5,15 +5,15 @@ export interface PlotDefinition {
   tierId: string;
   unlockLevel: number;
   cost: number | null;
-  x: number | null;
-  y: number | null;
+  x: number;
+  y: number;
 }
 
 interface PlotsJsonPlot {
   id: string;
   cost: number | null;
-  x: number | null;
-  y: number | null;
+  x: number;
+  y: number;
 }
 
 interface PlotsJsonTier {
@@ -23,6 +23,13 @@ interface PlotsJsonTier {
 }
 
 const TIERS = (plotsData as { tiers: PlotsJsonTier[] }).tiers;
+
+const GRID = (
+  plotsData as { grid: { size: number; barn: { x: number; y: number } } }
+).grid;
+
+export const GRID_SIZE: number = GRID.size;
+export const BARN_CELL: { x: number; y: number } = { ...GRID.barn };
 
 export const ALL_PLOTS: PlotDefinition[] = TIERS.flatMap((tier) =>
   tier.plots.map((plot) => ({
