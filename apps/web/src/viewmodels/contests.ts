@@ -1,4 +1,4 @@
-import type { Contest } from "@garden-hq/core";
+import { getCrop, type Contest } from "@garden-hq/core";
 import { DEFAULT_TIME_ZONE } from "../state/storage";
 
 const MAX_ROWS = 20;
@@ -14,6 +14,8 @@ export interface ContestsViewModel {
   rows: ContestRow[];
   /** true when the list was narrowed to the player's assigned crops. */
   filtered: boolean;
+  /** true when crops are assigned but none of them is a contest crop. */
+  assignedButNoContestCrops: boolean;
 }
 
 function formatter(timeZone: string): Intl.DateTimeFormat {
@@ -38,7 +40,10 @@ export function buildContestsViewModel(
   timeZone: string,
 ): ContestsViewModel {
   const fmt = formatter(timeZone);
-  const filtered = assignedCropIds.length > 0;
+  const filtered = assignedCropIds.some(
+    (id) => getCrop(id)?.contestCrop === true,
+  );
+  const assignedButNoContestCrops = !filtered && assignedCropIds.length > 0;
 
   const rows = contests
     .filter((c) => c.startsAt >= now)
@@ -52,5 +57,5 @@ export function buildContestsViewModel(
     .filter((row) => !filtered || row.matchesAssigned)
     .slice(0, MAX_ROWS);
 
-  return { rows, filtered };
+  return { rows, filtered, assignedButNoContestCrops };
 }

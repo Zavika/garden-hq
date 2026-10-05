@@ -15,6 +15,9 @@ export function useGarden(profileId: string | null) {
     queryFn: () => api.garden(profileId as string),
     enabled: profileId !== null,
     refetchInterval: MINUTE,
+    staleTime: MINUTE,
+    // Worker per-IP limit is shared with link; cache hits count.
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -23,6 +26,7 @@ export function useContests() {
     queryKey: ["contests"],
     queryFn: () => api.contests(),
     refetchInterval: 15 * MINUTE,
+    staleTime: 15 * MINUTE,
   });
 }
 
@@ -31,5 +35,6 @@ export function useMayor() {
     queryKey: ["mayor"],
     queryFn: () => api.mayor(),
     refetchInterval: 60 * MINUTE,
+    staleTime: 60 * MINUTE,
   });
 }

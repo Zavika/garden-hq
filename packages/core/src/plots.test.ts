@@ -5,6 +5,7 @@ import {
   GRID_SIZE,
   cheapestNextPlot,
   getPlot,
+  nextPlotCost,
 } from "./plots";
 
 describe("ALL_PLOTS", () => {
@@ -106,5 +107,39 @@ describe("plot layout", () => {
   it("puts the Barn in the centre of a 5x5 grid", () => {
     expect(GRID_SIZE).toBe(5);
     expect(BARN_CELL).toEqual({ x: 2, y: 2 });
+  });
+});
+
+describe("nextPlotCost", () => {
+  it("is the first ladder cost when nothing is owned", () => {
+    expect(nextPlotCost("beginner", [])).toBe(1);
+  });
+
+  it("follows owned count, not plot number (out of order)", () => {
+    expect(nextPlotCost("beginner", ["beginner_4"])).toBe(2);
+    expect(nextPlotCost("beginner", ["beginner_1", "beginner_2"])).toBe(4);
+  });
+
+  it("ignores owned plots from other tiers", () => {
+    expect(nextPlotCost("intermediate", ["beginner_1", "beginner_2"])).toBe(16);
+  });
+
+  it("is null when the ladder entry is unknown", () => {
+    expect(
+      nextPlotCost("advanced", ["advanced_1", "advanced_2", "advanced_3"]),
+    ).toBeNull();
+    expect(nextPlotCost("expert", [])).toBeNull();
+  });
+
+  it("is null when the tier is fully bought or unknown", () => {
+    expect(
+      nextPlotCost("beginner", [
+        "beginner_1",
+        "beginner_2",
+        "beginner_3",
+        "beginner_4",
+      ]),
+    ).toBeNull();
+    expect(nextPlotCost("nope", [])).toBeNull();
   });
 });

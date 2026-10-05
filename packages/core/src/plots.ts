@@ -67,3 +67,21 @@ export function cheapestNextPlot(
     (plot.cost as number) < (cheapest.cost as number) ? plot : cheapest,
   );
 }
+
+/**
+ * Cost of the next plot bought in a tier. The cost depends on how many plots
+ * of that tier are already owned (not on which plot), so the ladder is the
+ * tier's plot costs in order. Returns null when unknown or the tier is full.
+ */
+export function nextPlotCost(
+  tierId: string,
+  unlockedIds: string[],
+): number | null {
+  const tier = TIERS.find((t) => t.id === tierId);
+  if (tier === undefined) {
+    return null;
+  }
+  const tierPlotIds = new Set(tier.plots.map((p) => p.id));
+  const owned = new Set(unlockedIds.filter((id) => tierPlotIds.has(id))).size;
+  return tier.plots[owned]?.cost ?? null;
+}

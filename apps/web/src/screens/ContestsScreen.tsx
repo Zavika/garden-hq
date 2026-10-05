@@ -32,17 +32,30 @@ export function ContestsScreen() {
       <h1>Jacob&apos;s Contests</h1>
       {vm.filtered ? (
         <p>Showing contests that include your assigned crops.</p>
+      ) : vm.assignedButNoContestCrops ? (
+        <p>
+          Your assigned crops aren&apos;t Jacob&apos;s Contest crops — showing
+          all contests.
+        </p>
       ) : (
         <p>Assign crops to your plots on the map to filter this list.</p>
       )}
-      <ul>
-        {vm.rows.map((row) => (
-          <li key={row.startsAt}>
-            {row.label} ({timeZone}) —{" "}
-            {row.crops.map((id) => getCrop(id)?.name ?? id).join(", ")}
-          </li>
-        ))}
-      </ul>
+      {vm.rows.length === 0 ? (
+        <p>
+          {vm.filtered
+            ? "No upcoming contests for your crops."
+            : "No upcoming contests."}
+        </p>
+      ) : (
+        <ul>
+          {vm.rows.map((row) => (
+            <li key={row.startsAt}>
+              {row.label} ({timeZone}) —{" "}
+              {row.crops.map((id) => getCrop(id)?.name ?? id).join(", ")}
+            </li>
+          ))}
+        </ul>
+      )}
       <p>
         Source:{" "}
         <a href={source.url} target="_blank" rel="noreferrer">

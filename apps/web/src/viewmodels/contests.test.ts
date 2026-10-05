@@ -31,6 +31,13 @@ describe("buildContestsViewModel", () => {
     expect(vm.rows[0]?.crops).toContain("melon");
   });
 
+  it("is not filtered when assigned crops are not contest crops", () => {
+    const vm = buildContestsViewModel(contests, ["sunflower"], now, "UTC");
+    expect(vm.filtered).toBe(false);
+    expect(vm.assignedButNoContestCrops).toBe(true);
+    expect(vm.rows).toHaveLength(2);
+  });
+
   it("falls back to the default time zone for an invalid zone name", () => {
     const vm = buildContestsViewModel(contests, [], now, "Not/AZone");
     expect(vm.rows[0]?.label).toContain("14:30");

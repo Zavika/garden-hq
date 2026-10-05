@@ -120,7 +120,7 @@ export class MapScene {
     g.cursor = "pointer";
     g.on("pointertap", () => {
       this.handlers.onPlotTap(tile.plotId, tile.state);
-      if (tile.state === "locked") this.handlers.onPlotHover(tile.plotId);
+      this.handlers.onPlotHover(tile.state === "locked" ? tile.plotId : null);
     });
     g.on("pointerover", (e) => {
       if (tracksHover(e.pointerType)) this.handlers.onPlotHover(tile.plotId);

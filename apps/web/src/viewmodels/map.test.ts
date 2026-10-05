@@ -39,6 +39,16 @@ describe("buildMapViewModel", () => {
     });
   });
 
+  it("uses the tier ladder by owned count when bought out of order", () => {
+    const vm = buildMapViewModel(
+      garden({ unlocked_plots_ids: ["beginner_4"] }),
+      {},
+    );
+    const byId = new Map(plots(vm).map((t) => [t.plotId, t]));
+    expect(byId.get("beginner_1")?.lockedCost).toBe(2);
+    expect(byId.get("beginner_3")?.lockedCost).toBe(2);
+  });
+
   it("ignores an assignment on a still-locked plot", () => {
     const vm = buildMapViewModel(garden(), { beginner_4: "wheat" });
     expect(plots(vm).find((t) => t.plotId === "beginner_4")?.state).toBe(

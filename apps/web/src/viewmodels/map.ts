@@ -1,4 +1,9 @@
-import { ALL_PLOTS, BARN_CELL, type GardenState } from "@garden-hq/core";
+import {
+  ALL_PLOTS,
+  BARN_CELL,
+  nextPlotCost,
+  type GardenState,
+} from "@garden-hq/core";
 
 export const MAX_VISITOR_MARKERS = 5;
 
@@ -39,7 +44,11 @@ export function buildMapViewModel(
       y: plot.y,
     };
     if (!unlocked.has(plot.id)) {
-      return { ...base, state: "locked" as const, lockedCost: plot.cost };
+      return {
+        ...base,
+        state: "locked" as const,
+        lockedCost: nextPlotCost(plot.tierId, garden.unlockedPlotIds),
+      };
     }
     const cropId = assignments[plot.id];
     return cropId === undefined

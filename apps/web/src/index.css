@@ -120,14 +120,21 @@ label {
   height: 100%;
   background: var(--accent);
 }
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgb(0 0 0 / 0.4);
+}
 .sheet {
   position: fixed;
+  z-index: 11;
   inset: auto 0 0 0;
   max-height: 70dvh;
   overflow: auto;
   background: var(--card);
   border-radius: 12px 12px 0 0;
-  padding: 16px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
   box-shadow: 0 -4px 16px rgb(0 0 0 / 0.3);
 }
 .sr-only {

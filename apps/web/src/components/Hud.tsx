@@ -42,7 +42,11 @@ export function Hud({ assignedCropIds }: { assignedCropIds: string[] }) {
         )}
       </span>
       <span>
-        {vm.mayor === null ? "Mayor: unavailable" : `Mayor: ${vm.mayor.name}`}
+        {vm.mayor === null
+          ? "Mayor: unavailable"
+          : vm.mayor.perks.length === 0
+            ? `Mayor: ${vm.mayor.name}`
+            : `Mayor: ${vm.mayor.name} (${vm.mayor.perks.map((perk) => perk.name).join(", ")})`}
       </span>
     </section>
   );

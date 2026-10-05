@@ -12,7 +12,11 @@ function RateLimitNotice({ retryAfter }: { retryAfter: number | undefined }) {
   const [startedAt] = useState(now);
   const total = retryAfter ?? 60;
   const remaining = Math.max(0, Math.ceil(total - (now - startedAt) / 1000));
-  return <p role="alert">Too many requests. Try again in {remaining}s.</p>;
+  return (
+    <p role="alert">
+      Too many requests. Try again in <span aria-live="off">{remaining}</span>s.
+    </p>
+  );
 }
 
 function errorMessage(error: ApiError): string {
@@ -21,8 +25,9 @@ function errorMessage(error: ApiError): string {
       return "Enter a valid Minecraft username (3-16 letters, numbers or underscores).";
     case "unknown_player":
       return "We couldn't find that player.";
-    case "no_garden":
     case "not_found":
+      return "We couldn't find that player.";
+    case "no_garden":
       return "That player has no SkyBlock garden yet.";
     case "missing_api_key":
       return import.meta.env.DEV
@@ -30,8 +35,10 @@ function errorMessage(error: ApiError): string {
         : "Linking is temporarily unavailable. Please try again later.";
     case "network":
       return "We couldn't reach the server. Check your connection.";
-    default:
+    case "upstream_down":
       return "Hypixel is unavailable right now. Try again in a moment.";
+    default:
+      return "Something went wrong on our side. Try again in a moment.";
   }
 }
 

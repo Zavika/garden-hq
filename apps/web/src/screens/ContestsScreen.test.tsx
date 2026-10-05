@@ -39,6 +39,35 @@ describe("ContestsScreen", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 
+  it("shows all contests with a hint when assigned crops are not contest crops", () => {
+    contests.mockReturnValue({ data });
+    const storage = createGardenStorage(null);
+    storage.setAssignment("beginner_1", "sunflower");
+    renderWithProviders(<ContestsScreen />, { storage });
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(
+      screen.getByText(/aren.t Jacob.s Contest crops/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an empty state when there are no upcoming contests", () => {
+    contests.mockReturnValue({ data: { ...data, contests: [] } });
+    renderWithProviders(<ContestsScreen />);
+    expect(screen.getByText("No upcoming contests.")).toBeInTheDocument();
+  });
+
+  it("shows a filtered empty state", () => {
+    contests.mockReturnValue({
+      data: { ...data, contests: [data.contests[0]] },
+    });
+    const storage = createGardenStorage(null);
+    storage.setAssignment("beginner_1", "melon");
+    renderWithProviders(<ContestsScreen />, { storage });
+    expect(
+      screen.getByText("No upcoming contests for your crops."),
+    ).toBeInTheDocument();
+  });
+
   it("says so when the schedule is unavailable", () => {
     contests.mockReturnValue({ data: undefined, isError: true });
     renderWithProviders(<ContestsScreen />);

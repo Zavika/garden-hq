@@ -34,14 +34,21 @@ describe("Hud", () => {
     });
     mayor.mockReturnValue({
       data: {
-        mayor: { key: "finnegan", name: "Finnegan", perks: [], minister: null },
+        mayor: {
+          key: "finnegan",
+          name: "Finnegan",
+          perks: [{ name: "Farming Simulator", description: "x" }],
+          minister: null,
+        },
         fetchedAt: "",
       },
     });
     renderWithProviders(<Hud assignedCropIds={["carrot"]} />);
     expect(screen.getByText(/early spring/i)).toBeInTheDocument();
     expect(screen.getByText(/wheat/i)).toBeInTheDocument();
-    expect(screen.getByText(/finnegan/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/finnegan \(farming simulator\)/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/you have a plot for this/i)).toBeInTheDocument();
   });
 

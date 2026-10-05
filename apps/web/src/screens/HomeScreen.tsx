@@ -40,7 +40,11 @@ export function HomeScreen() {
             message={
               error instanceof ApiError ? error.message : "Unknown error"
             }
-            onRetry={() => void garden.refetch()}
+            onRetry={
+              rateLimitedUntil === null
+                ? () => void garden.refetch()
+                : undefined
+            }
           />
         ) : (
           <p>Loading your Garden…</p>

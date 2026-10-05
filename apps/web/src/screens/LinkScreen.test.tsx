@@ -76,6 +76,12 @@ describe("LinkScreen", () => {
     [new ApiError("bad_request", 400, "x"), /valid minecraft username/i],
     [new ApiError("unknown_player", 404, "x"), /couldn.t find that player/i],
     [new ApiError("no_garden", 404, "x"), /no skyblock garden/i],
+    [new ApiError("not_found", 404, "x"), /couldn.t find that player/i],
+    [new ApiError("internal", 500, "x"), /something went wrong on our side/i],
+    [
+      new ApiError("bad_response", 502, "x"),
+      /something went wrong on our side/i,
+    ],
     [new ApiError("upstream_down", 502, "x"), /hypixel is unavailable/i],
     [new ApiError("network", 0, "x"), /couldn.t reach the server/i],
     [new ApiError("rate_limited", 429, "x", 30), /too many requests.*30/i],
