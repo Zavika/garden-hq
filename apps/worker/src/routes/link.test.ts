@@ -108,14 +108,16 @@ describe("GET /api/link", () => {
     await get("/api/link?name=TestFarmer");
     clock.advance(59_000);
     const hit = await get("/api/link?name=TestFarmer");
-    expect(net.calls.filter((c) => c === MOJANG_ROUTE)).toHaveLength(1);
+    expect(net.calls.filter((c) => c === PROFILES_ROUTE)).toHaveLength(1);
     expect(((await hit.json()) as { fetchedAt: string }).fetchedAt).toBe(
       START_ISO,
     );
 
     clock.advance(2_000);
     await get("/api/link?name=TestFarmer");
-    expect(net.calls.filter((c) => c === MOJANG_ROUTE)).toHaveLength(2);
+    expect(net.calls.filter((c) => c === PROFILES_ROUTE)).toHaveLength(2);
+    // The name→uuid mapping outlives the 60 s link cache (24 h).
+    expect(net.calls.filter((c) => c === MOJANG_ROUTE)).toHaveLength(1);
   });
 
   it("rate-limits per IP: 10 requests ok, the 11th is 429 with Retry-After; other IPs unaffected", async () => {

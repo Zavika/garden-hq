@@ -22,7 +22,10 @@ export const fixtures = {
 
 // Keys are `${host}${pathname}` (no query string).
 export const MOJANG_ROUTE =
+  "api.minecraftservices.com/minecraft/profile/lookup/name/TestFarmer";
+export const MOJANG_LEGACY_ROUTE =
   "api.mojang.com/users/profiles/minecraft/TestFarmer";
+export const PLAYERDB_ROUTE = "playerdb.co/api/player/minecraft/TestFarmer";
 export const PROFILES_ROUTE = "api.hypixel.net/v2/skyblock/profiles";
 export const GARDEN_ROUTE = "api.hypixel.net/v2/skyblock/garden";
 export const ELECTION_ROUTE = "api.hypixel.net/v2/resources/skyblock/election";

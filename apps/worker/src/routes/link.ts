@@ -28,7 +28,10 @@ export function linkRoute(
       CACHE_TTL_SECONDS,
       deps.now,
       async () => {
-        const player = await lookupUuid(deps.fetch, name);
+        const player = await lookupUuid(deps.fetch, name, {
+          kv: c.env.CACHE,
+          now: deps.now,
+        });
         const { profiles, selectedProfileId } = normalizeProfiles(
           await clientFor(c.env).profiles(player.uuid),
         );
