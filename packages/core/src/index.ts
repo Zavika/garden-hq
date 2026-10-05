@@ -10,3 +10,5 @@ export * from "./plots";
 export * from "./profiles";
 export * from "./mayor";
 export * from "./contests";
+export * from "./crops";
+export * from "./api";

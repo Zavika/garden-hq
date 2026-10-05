@@ -28,6 +28,15 @@ function effectAtTier(curve: UpgradeCurve, tier: number): number {
   return Math.min(tier * curve.effectPerTier, curve.maxEffect);
 }
 
+// VERIFY: the per-player cap (base + tiers) is unconfirmed; the gauge uses
+// the fully-upgraded cap as its denominator (see data/VERIFY.md).
+export function composterCapacity(): { fuel: number; organicMatter: number } {
+  return {
+    fuel: DATA.upgrades.fuelCap.maxEffect,
+    organicMatter: DATA.upgrades.organicMatterCap.maxEffect,
+  };
+}
+
 export function compostPerHour(upgrades: ComposterUpgrades): number {
   const baseline = 60 / DATA.baseRate.minutesPerCompost;
   const speedMultiplier = 1 + effectAtTier(DATA.upgrades.speed, upgrades.speed);

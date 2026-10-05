@@ -1,12 +1,6 @@
-export type ErrorCode =
-  | "unknown_player"
-  | "no_garden"
-  | "not_found"
-  | "bad_request"
-  | "rate_limited"
-  | "upstream_down"
-  | "missing_api_key"
-  | "internal";
+import type { ApiErrorCode } from "@garden-hq/core";
+
+export type ErrorCode = ApiErrorCode;
 
 type ErrorStatus = 400 | 404 | 429 | 500 | 502;
 

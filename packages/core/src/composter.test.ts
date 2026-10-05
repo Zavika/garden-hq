@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { compostPerHour, forecastComposter } from "./composter";
+import composterData from "../../../data/composter.json";
+import {
+  composterCapacity,
+  compostPerHour,
+  forecastComposter,
+} from "./composter";
 import type { ComposterState } from "./types";
 
 const NO_UPGRADES = {
@@ -54,5 +59,15 @@ describe("forecastComposter", () => {
 
     const oneHourMs = 60 * 60 * 1000;
     expect(forecastComposter(state, oneHourMs).fuel).toBe(0);
+  });
+});
+
+describe("composterCapacity", () => {
+  it("returns the fully-upgraded caps from data/composter.json", () => {
+    expect(composterCapacity()).toEqual({
+      fuel: composterData.upgrades.fuelCap.maxEffect,
+      organicMatter: composterData.upgrades.organicMatterCap.maxEffect,
+    });
+    expect(composterCapacity().fuel).toBeGreaterThan(0);
   });
 });
