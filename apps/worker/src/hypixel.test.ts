@@ -145,11 +145,29 @@ describe("createHypixelClient", () => {
     expect(net.calls).toHaveLength(3);
   });
 
-  it("maps 403 to upstream_down with no retry", async () => {
-    const { client, net } = setup(() => new Response("", { status: 403 }));
+  it("maps 403 to bad_api_key with no retry and logs Hypixel's cause", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client, net } = setup(() =>
+      json({ success: false, cause: "Invalid API key" }, { status: 403 }),
+    );
 
-    expect((await failure(client.garden("p1"))).code).toBe("upstream_down");
+    expect((await failure(client.garden("p1"))).code).toBe("bad_api_key");
     expect(net.calls).toHaveLength(1);
+    expect(error).toHaveBeenCalledWith(
+      JSON.stringify({ event: "hypixel_forbidden", cause: "Invalid API key" }),
+    );
+  });
+
+  it("still returns bad_api_key for an unreadable 403 body, and never logs the key", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client } = setup(
+      () => new Response(`denied ${TEST_KEY}`, { status: 403 }),
+    );
+
+    expect((await failure(client.garden("p1"))).code).toBe("bad_api_key");
+    const logged = String(error.mock.calls[0]?.[0]);
+    expect(logged).toContain("unreadable");
+    expect(logged).not.toContain(TEST_KEY);
   });
 
   it("maps invalid JSON to upstream_down", async () => {
@@ -226,7 +244,7 @@ describe("createHypixelClient", () => {
     expect(first.cancelled()).toBe(true);
   });
 
-  it.each([429, 403, 404])(
+  it.each([429, 404])(
     "cancels the unread body of a %i response",
     async (status) => {
       const tracked = trackedResponse(status, {

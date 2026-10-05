@@ -1,7 +1,7 @@
 import type { Env } from "./env";
 import { AppError } from "./errors";
 import { discardBody } from "./http";
-import { logUpstream } from "./log";
+import { logError, logUpstream, redact } from "./log";
 
 const HOST = "api.hypixel.net";
 const BASE = `https://${HOST}`;
@@ -41,6 +41,17 @@ const upstreamDown = () =>
 
 function backoffMs(attempt: number): number {
   return BACKOFF_BASE_MS * 2 ** attempt;
+}
+
+/** Best-effort `cause` from a 403 body, capped so a hostile body can't flood logs. */
+async function forbiddenCause(res: Response): Promise<string> {
+  try {
+    const body: unknown = JSON.parse((await res.text()).slice(0, 2000));
+    const cause = (body as { cause?: unknown } | null)?.cause;
+    return typeof cause === "string" ? cause.slice(0, 200) : "unknown";
+  } catch {
+    return "unreadable";
+  }
 }
 
 function headerNumber(res: Response, name: string): number | null {
@@ -121,6 +132,17 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
         } catch {
           throw upstreamDown();
         }
+      }
+
+      if (res.status === 403) {
+        // Hypixel says why in `cause` (e.g. "Invalid API key"); log that, never the key.
+        logError("hypixel_forbidden", {
+          cause: redact(await forbiddenCause(res), apiKey),
+        });
+        throw new AppError(
+          "bad_api_key",
+          "Server's Hypixel API key was rejected",
+        );
       }
 
       // Every path below ignores the body: free the connection first.

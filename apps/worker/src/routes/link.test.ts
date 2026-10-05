@@ -4,6 +4,7 @@ import {
   PROFILES_ROUTE,
   START_ISO,
   happyRoutes,
+  fixtures,
   json,
   makeHarness,
 } from "../../test/helpers";
@@ -73,6 +74,36 @@ describe("GET /api/link", () => {
     expect(res.status).toBe(404);
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
       "unknown_player",
+    );
+  });
+
+  it("links a player whose profiles response has real-world member blobs", async () => {
+    const { get } = harness(
+      happyRoutes({ [PROFILES_ROUTE]: () => json(fixtures.profilesRealShape) }),
+    );
+
+    const res = await get("/api/link?name=TestFarmer");
+
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { profileId: string }).profileId).toBe(
+      "44444444-4444-4444-4444-444444444444",
+    );
+  });
+
+  it("returns 500 bad_api_key when Hypixel rejects the key", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { get } = harness(
+      happyRoutes({
+        [PROFILES_ROUTE]: () =>
+          json({ success: false, cause: "Invalid API key" }, { status: 403 }),
+      }),
+    );
+
+    const res = await get("/api/link?name=TestFarmer");
+
+    expect(res.status).toBe(500);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
+      "bad_api_key",
     );
   });
 

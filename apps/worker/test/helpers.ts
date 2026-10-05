@@ -5,6 +5,7 @@ import contestsStrassburger from "../../../packages/core/fixtures/contests-stras
 import electionResponse from "../../../packages/core/fixtures/election-response.sample.json";
 import gardenResponse from "../../../packages/core/fixtures/garden-response.sample.json";
 import mojangProfile from "../../../packages/core/fixtures/mojang-profile.sample.json";
+import profilesRealShape from "../../../packages/core/fixtures/profiles-response.real-shape.sample.json";
 import profilesResponse from "../../../packages/core/fixtures/profiles-response.sample.json";
 
 export const TEST_KEY = "test-hypixel-key-123";
@@ -18,6 +19,7 @@ export const fixtures = {
   gardenResponse,
   mojangProfile,
   profilesResponse,
+  profilesRealShape,
 };
 
 // Keys are `${host}${pathname}` (no query string).

@@ -39,6 +39,7 @@ const KNOWN_CODES: readonly ApiErrorCode[] = [
   "rate_limited",
   "upstream_down",
   "missing_api_key",
+  "bad_api_key",
   "internal",
 ];
 

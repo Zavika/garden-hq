@@ -56,6 +56,7 @@ describe("api client", () => {
     ["no_garden", 404],
     ["not_found", 404],
     ["missing_api_key", 500],
+    ["bad_api_key", 500],
     ["internal", 500],
     ["upstream_down", 502],
   ] as const)("maps a %s error body (HTTP %i)", async (code, status) => {

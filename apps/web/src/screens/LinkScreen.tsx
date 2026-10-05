@@ -29,6 +29,7 @@ function errorMessage(error: ApiError): string {
       return "We couldn't find that player.";
     case "no_garden":
       return "That player has no SkyBlock garden yet.";
+    case "bad_api_key":
     case "missing_api_key":
       return import.meta.env.DEV
         ? "Linking is temporarily unavailable. Dev hint: set HYPIXEL_API_KEY in apps/worker/.dev.vars."

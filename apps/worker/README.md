@@ -18,7 +18,7 @@ Production API: `https://garden-hq-worker.zavika.workers.dev` (workers.dev). Set
 ## Local dev
 
 `cp .dev.vars.example .dev.vars`, fill in a key, then `pnpm --filter @garden-hq/worker dev`.
-Without a key `/api/contests` and `/api/mayor` still work; `/api/link` and `/api/garden` return `missing_api_key`.
+Without a key `/api/contests` and `/api/mayor` still work; `/api/link` and `/api/garden` return `missing_api_key`. If Hypixel rejects the key (403) they return `bad_api_key` and the Worker logs Hypixel's `cause` as a `hypixel_forbidden` event.
 
 ## Limits
 

@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "profiles": [
+    {
+      "profile_id": "44444444-4444-4444-4444-444444444444",
+      "community_upgrades": {
+        "upgrade_states": []
+      },
+      "members": {
+        "11111111-1111-1111-1111-111111111111": {}
+      },
+      "banking": {
+        "balance": 1000,
+        "transactions": []
+      },
+      "cute_name": "Apple",
+      "selected": true
+    },
+    {
+      "profile_id": "55555555-5555-5555-5555-555555555555",
+      "community_upgrades": {
+        "upgrade_states": []
+      },
+      "members": {
+        "11111111-1111-1111-1111-111111111111": {}
+      },
+      "game_mode": "ironman",
+      "cute_name": "Raspberry",
+      "selected": false
+    }
+  ]
+}

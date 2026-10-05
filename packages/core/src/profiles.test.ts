@@ -1,8 +1,29 @@
 import { describe, expect, it } from "vitest";
 import profilesResponse from "../fixtures/profiles-response.sample.json";
+import realShape from "../fixtures/profiles-response.real-shape.sample.json";
 import { normalizeProfiles } from "./profiles";
 
 describe("normalizeProfiles", () => {
+  // Trimmed + anonymized from a real response: member blobs, banking,
+  // community_upgrades and game_mode present; selected profile listed first.
+  it("handles the shape of a real /v2/skyblock/profiles response", () => {
+    expect(normalizeProfiles(realShape)).toEqual({
+      profiles: [
+        {
+          profileId: "44444444-4444-4444-4444-444444444444",
+          name: "Apple",
+          selected: true,
+        },
+        {
+          profileId: "55555555-5555-5555-5555-555555555555",
+          name: "Raspberry",
+          selected: false,
+        },
+      ],
+      selectedProfileId: "44444444-4444-4444-4444-444444444444",
+    });
+  });
+
   it("lists profiles and picks the selected one", () => {
     expect(normalizeProfiles(profilesResponse)).toEqual({
       profiles: [

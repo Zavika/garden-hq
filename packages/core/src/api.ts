@@ -8,6 +8,7 @@ export type ApiErrorCode =
   | "rate_limited"
   | "upstream_down"
   | "missing_api_key"
+  | "bad_api_key"
   | "internal";
 
 export interface ContestsSource {
