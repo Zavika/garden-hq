@@ -137,3 +137,10 @@ label {
   overflow: hidden;
   clip-path: inset(50%);
 }
+
+.crop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
