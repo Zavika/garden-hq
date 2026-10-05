@@ -1,3 +1,57 @@
+import { Navigate } from "react-router-dom";
+import { ApiError } from "../api/client";
+import { ComposterPanel } from "../components/ComposterPanel";
+import { ErrorCard } from "../components/ErrorCard";
+import { Hud } from "../components/Hud";
+import { SyncBar } from "../components/SyncBar";
+import { VisitorsPanel } from "../components/VisitorsPanel";
+import { MapSection } from "../map/MapSection";
+import { useGarden } from "../state/queries";
+import { useStoredData } from "../state/StorageProvider";
+
 export function HomeScreen() {
-  return <p>Home</p>;
+  const { link, assignments } = useStoredData();
+  const garden = useGarden(link?.profileId ?? null);
+
+  if (link === null) return <Navigate to="/link" replace />;
+
+  const error = garden.error;
+  const rateLimitedUntil =
+    error instanceof ApiError && error.code === "rate_limited"
+      ? garden.errorUpdatedAt + (error.retryAfter ?? 60) * 1000
+      : null;
+  const state = garden.data?.garden;
+  const assignedCropIds = Object.values(assignments);
+
+  return (
+    <>
+      <Hud assignedCropIds={assignedCropIds} />
+      <SyncBar
+        fetchedAt={garden.data?.fetchedAt}
+        isFetching={garden.isFetching}
+        isStale={garden.isError && state !== undefined}
+        refreshDisabledUntil={rateLimitedUntil}
+        onRefresh={() => void garden.refetch()}
+      />
+      {state === undefined ? (
+        garden.isError ? (
+          <ErrorCard
+            title="Couldn't load your Garden"
+            message={
+              error instanceof ApiError ? error.message : "Unknown error"
+            }
+            onRetry={() => void garden.refetch()}
+          />
+        ) : (
+          <p>Loading your Garden…</p>
+        )
+      ) : (
+        <>
+          <MapSection garden={state} assignments={assignments} />
+          <ComposterPanel composter={state.composter} />
+          <VisitorsPanel visitors={state.visitors} />
+        </>
+      )}
+    </>
+  );
 }
