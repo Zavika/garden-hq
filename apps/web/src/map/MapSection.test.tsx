@@ -1,7 +1,7 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { normalizeGarden } from "@garden-hq/core";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { useUi } from "../state/ui";
 import { MapSection } from "./MapSection";
@@ -26,6 +26,20 @@ const garden = normalizeGarden({
 });
 
 describe("MapSection", () => {
+  beforeEach(() => {
+    useUi.setState({ selectedPlotId: null, hoveredPlotId: null });
+  });
+
+  it("falls back to an open plot list when the scene cannot mount", async () => {
+    const { container } = renderWithProviders(
+      <MapSection garden={garden} assignments={{}} />,
+    );
+    await waitFor(() => expect(container.querySelector("canvas")).toBeNull());
+    expect(screen.getByText("Plot list").closest("details")).toHaveAttribute(
+      "open",
+    );
+  });
+
   it("assigns a crop through the DOM plot list and persists it", async () => {
     useUi.setState({ selectedPlotId: null, hoveredPlotId: null });
     const { storage } = renderWithProviders(

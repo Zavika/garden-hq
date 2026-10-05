@@ -2,6 +2,7 @@ import { Application, Container, Graphics } from "pixi.js";
 import { GRID_SIZE } from "@garden-hq/core";
 import type { BarnTile, MapViewModel, PlotTile } from "../viewmodels/map";
 import { COLORS, cropColor } from "./palette";
+import { tracksHover } from "./pointer";
 
 /** Logical pixels per tile; the whole scene is scaled by an integer factor. */
 const TILE = 16;
@@ -121,8 +122,12 @@ export class MapScene {
       this.handlers.onPlotTap(tile.plotId, tile.state);
       if (tile.state === "locked") this.handlers.onPlotHover(tile.plotId);
     });
-    g.on("pointerover", () => this.handlers.onPlotHover(tile.plotId));
-    g.on("pointerout", () => this.handlers.onPlotHover(null));
+    g.on("pointerover", (e) => {
+      if (tracksHover(e.pointerType)) this.handlers.onPlotHover(tile.plotId);
+    });
+    g.on("pointerout", (e) => {
+      if (tracksHover(e.pointerType)) this.handlers.onPlotHover(null);
+    });
     return g;
   }
 
