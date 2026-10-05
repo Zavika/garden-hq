@@ -3,58 +3,70 @@
     {
       "id": "beginner",
       "unlockLevel": 1,
+      "costLadder": [
+        1,
+        2,
+        4,
+        8
+      ],
       "plots": [
         {
           "id": "beginner_1",
-          "cost": 1,
-          "x": 2,
-          "y": 1
-        },
-        {
-          "id": "beginner_2",
-          "cost": 2,
+          "plot": 2,
           "x": 1,
           "y": 2
         },
         {
+          "id": "beginner_2",
+          "plot": 1,
+          "x": 2,
+          "y": 1
+        },
+        {
           "id": "beginner_3",
-          "cost": 4,
-          "x": 3,
-          "y": 2
+          "plot": 4,
+          "x": 2,
+          "y": 3
         },
         {
           "id": "beginner_4",
-          "cost": 8,
-          "x": 2,
-          "y": 3
+          "plot": 3,
+          "x": 3,
+          "y": 2
         }
       ]
     },
     {
       "id": "intermediate",
       "unlockLevel": 3,
+      "costLadder": [
+        16,
+        24,
+        32,
+        48
+      ],
       "plots": [
         {
           "id": "intermediate_1",
-          "cost": 16,
+          "plot": 5,
           "x": 1,
           "y": 1
         },
         {
           "id": "intermediate_2",
-          "cost": 24,
-          "x": 3,
-          "y": 1
-        },
-        {
-          "id": "intermediate_3",
-          "cost": 32,
+          "plot": 7,
           "x": 1,
           "y": 3
         },
         {
+          "id": "intermediate_3",
+          "plot": 6,
+          "x": 3,
+          "y": 1
+        },
+        {
           "id": "intermediate_4",
-          "cost": 48,
+          "plot": 8,
           "x": 3,
           "y": 3
         }
@@ -63,106 +75,126 @@
     {
       "id": "advanced",
       "unlockLevel": 5,
+      "costLadder": [
+        64,
+        96,
+        128,
+        160,
+        160,
+        320,
+        320,
+        480,
+        480,
+        640,
+        800,
+        1120
+      ],
       "plots": [
         {
           "id": "advanced_1",
-          "cost": 64,
-          "x": 2,
-          "y": 0
+          "plot": 15,
+          "x": 0,
+          "y": 1
         },
         {
           "id": "advanced_2",
-          "cost": 96,
+          "plot": 10,
           "x": 0,
           "y": 2
         },
         {
           "id": "advanced_3",
-          "cost": 128,
+          "plot": 17,
+          "x": 0,
+          "y": 3
+        },
+        {
+          "id": "advanced_4",
+          "plot": 13,
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "advanced_5",
+          "plot": 19,
+          "x": 1,
+          "y": 4
+        },
+        {
+          "id": "advanced_6",
+          "plot": 9,
+          "x": 2,
+          "y": 0
+        },
+        {
+          "id": "advanced_7",
+          "plot": 12,
+          "x": 2,
+          "y": 4
+        },
+        {
+          "id": "advanced_8",
+          "plot": 14,
+          "x": 3,
+          "y": 0
+        },
+        {
+          "id": "advanced_9",
+          "plot": 20,
+          "x": 3,
+          "y": 4
+        },
+        {
+          "id": "advanced_10",
+          "plot": 16,
+          "x": 4,
+          "y": 1
+        },
+        {
+          "id": "advanced_11",
+          "plot": 11,
           "x": 4,
           "y": 2
         },
         {
-          "id": "advanced_4",
-          "cost": null,
-          "x": 2,
-          "y": 4
+          "id": "advanced_12",
+          "plot": 18,
+          "x": 4,
+          "y": 3
         }
       ]
     },
     {
       "id": "expert",
       "unlockLevel": 7,
+      "costLadder": [
+        1280,
+        1600,
+        1920,
+        2400
+      ],
       "plots": [
         {
           "id": "expert_1",
-          "cost": null,
-          "x": 1,
+          "plot": 21,
+          "x": 0,
           "y": 0
         },
         {
           "id": "expert_2",
-          "cost": null,
-          "x": 3,
-          "y": 0
+          "plot": 23,
+          "x": 0,
+          "y": 4
         },
         {
           "id": "expert_3",
-          "cost": null,
-          "x": 0,
-          "y": 1
+          "plot": 22,
+          "x": 4,
+          "y": 0
         },
         {
           "id": "expert_4",
-          "cost": null,
-          "x": 4,
-          "y": 1
-        },
-        {
-          "id": "expert_5",
-          "cost": null,
-          "x": 0,
-          "y": 3
-        },
-        {
-          "id": "expert_6",
-          "cost": null,
-          "x": 4,
-          "y": 3
-        },
-        {
-          "id": "expert_7",
-          "cost": null,
-          "x": 1,
-          "y": 4
-        },
-        {
-          "id": "expert_8",
-          "cost": null,
-          "x": 3,
-          "y": 4
-        },
-        {
-          "id": "expert_9",
-          "cost": null,
-          "x": 0,
-          "y": 0
-        },
-        {
-          "id": "expert_10",
-          "cost": null,
-          "x": 4,
-          "y": 0
-        },
-        {
-          "id": "expert_11",
-          "cost": null,
-          "x": 0,
-          "y": 4
-        },
-        {
-          "id": "expert_12",
-          "cost": null,
+          "plot": 24,
           "x": 4,
           "y": 4
         }

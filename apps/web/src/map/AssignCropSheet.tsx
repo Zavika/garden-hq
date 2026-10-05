@@ -3,17 +3,22 @@ import { ALL_CROPS } from "@garden-hq/core";
 
 export function AssignCropSheet({
   plotId,
+  plotNumber,
   currentCropId,
   gardenLevel,
   onPick,
   onClose,
 }: {
   plotId: string;
+  plotNumber?: number;
   currentCropId?: string;
   gardenLevel: number;
   onPick: (cropId: string | null) => void;
   onClose: () => void;
 }) {
+  const label =
+    plotNumber === undefined ? plotId : `Plot ${plotNumber} (${plotId})`;
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -28,10 +33,10 @@ export function AssignCropSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Assign crop to ${plotId}`}
+        aria-label={`Assign crop to ${label}`}
         className="sheet"
       >
-        <h2>Assign crop — {plotId}</h2>
+        <h2>Assign crop — {label}</h2>
         <div className="crop-grid">
           {ALL_CROPS.filter((crop) => crop.unlockLevel <= gardenLevel).map(
             (crop) => (

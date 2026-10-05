@@ -4,9 +4,7 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 
 ## Plots
 
-- **Plot number → API id suffix mapping is inferred** — x/y come from SkyHanni's `GardenPlotApi.kt` `plotMap` (plot numbers 1-24); mapping numbers to API ids (1-4 `beginner_*`, 5-8 `intermediate_*`, 9-12 `advanced_*`, 13-24 `expert_1-12`) is inferred from the tier counts. Confirm with a real account.
-- **Plot ID string format** (`unlocked_plots_ids` from the API) — CLAUDE.md gives `beginner_1`, `intermediate_3` as examples; tier 3/4 names (`advanced`, `expert` in `data/plots.json`) are this plan's guess, not confirmed by any source.
-- **Tier C plot 4 cost, and all of tier D's Compost Bundle costs** (plots 13-24) — the wiki confirms tier D exists and is priced in "Compost Bundles" (a different item from raw Compost), reaching roughly 12,103 Compost-equivalent cumulative by plot 24, but no per-plot breakdown was found. `data/plots.json` has `cost: null` for these.
+- **Tier unlock levels** (garden level 1 / 3 / 5 / 7 for beginner / intermediate / advanced / expert) — from CLAUDE.md, not checked against a live account. Plot ids, plot numbers, grid cells and cost ladders come from EliteFarmers/Website `plots.ts` (user-supplied); only the id format (`advanced_5`) and the first 8 plots were seen on a real account, so the advanced/expert plot numbers and ladder rungs beyond that are not independently checked.
 
 ## Crops
 

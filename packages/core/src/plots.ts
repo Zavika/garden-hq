@@ -4,14 +4,20 @@ export interface PlotDefinition {
   id: string;
   tierId: string;
   unlockLevel: number;
-  cost: number | null;
+  /** In-game plot number (1-24), the label players see on the Garden menu. */
+  plotNumber: number;
   x: number;
   y: number;
 }
 
+/** A plot the player could buy next, with its Compost price. */
+export interface PlotOption extends PlotDefinition {
+  cost: number;
+}
+
 interface PlotsJsonPlot {
   id: string;
-  cost: number | null;
+  plot: number;
   x: number;
   y: number;
 }
@@ -19,6 +25,8 @@ interface PlotsJsonPlot {
 interface PlotsJsonTier {
   id: string;
   unlockLevel: number;
+  /** Compost cost of the nth plot bought in this tier (not per plot id). */
+  costLadder: number[];
   plots: PlotsJsonPlot[];
 }
 
@@ -36,7 +44,7 @@ export const ALL_PLOTS: PlotDefinition[] = TIERS.flatMap((tier) =>
     id: plot.id,
     tierId: tier.id,
     unlockLevel: tier.unlockLevel,
-    cost: plot.cost,
+    plotNumber: plot.plot,
     x: plot.x,
     y: plot.y,
   })),
@@ -46,26 +54,30 @@ export function getPlot(id: string): PlotDefinition | undefined {
   return ALL_PLOTS.find((plot) => plot.id === id);
 }
 
+/**
+ * Cheapest purchasable plot. Price depends on how many plots of the tier are
+ * owned, so every locked plot in a tier costs the same; the one returned is
+ * the lowest-numbered. Ties between tiers go to the earlier tier.
+ */
 export function cheapestNextPlot(
   unlockedIds: string[],
   gardenLevel: number,
-): PlotDefinition | undefined {
+): PlotOption | undefined {
   const unlocked = new Set(unlockedIds);
+  let best: PlotOption | undefined;
 
-  const candidates = ALL_PLOTS.filter(
-    (plot) =>
-      !unlocked.has(plot.id) &&
-      plot.unlockLevel <= gardenLevel &&
-      plot.cost !== null,
-  );
+  for (const tier of TIERS) {
+    if (tier.unlockLevel > gardenLevel) continue;
+    const cost = nextPlotCost(tier.id, unlockedIds);
+    if (cost === null || (best !== undefined && cost >= best.cost)) continue;
 
-  if (candidates.length === 0) {
-    return undefined;
+    const locked = ALL_PLOTS.filter(
+      (plot) => plot.tierId === tier.id && !unlocked.has(plot.id),
+    ).sort((a, b) => a.plotNumber - b.plotNumber)[0];
+    if (locked !== undefined) best = { ...locked, cost };
   }
 
-  return candidates.reduce((cheapest, plot) =>
-    (plot.cost as number) < (cheapest.cost as number) ? plot : cheapest,
-  );
+  return best;
 }
 
 /**
@@ -83,5 +95,5 @@ export function nextPlotCost(
   }
   const tierPlotIds = new Set(tier.plots.map((p) => p.id));
   const owned = new Set(unlockedIds.filter((id) => tierPlotIds.has(id))).size;
-  return tier.plots[owned]?.cost ?? null;
+  return tier.costLadder[owned] ?? null;
 }

@@ -56,8 +56,10 @@ describe("MapSection", () => {
   it("shows the compost cost of a locked plot in the list", async () => {
     renderWithProviders(<MapSection garden={garden} assignments={{}} />);
     expect(
-      await screen.findByText(/beginner_2.*2 compost/i),
+      await screen.findByText(/^Plot 1 \(beginner_2\).*2 compost/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/^expert_1 .*cost unknown/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/^Plot 21 \(expert_1\).*1280 compost/i),
+    ).toBeInTheDocument();
   });
 });

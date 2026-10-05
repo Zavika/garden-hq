@@ -43,6 +43,16 @@ describe("data/plots.json", () => {
     const total = plots.tiers.reduce((sum, tier) => sum + tier.plots.length, 0);
     expect(total).toBe(24);
   });
+
+  it("has a cost ladder entry per plot and plot numbers 1-24 once each", () => {
+    for (const tier of plots.tiers) {
+      expect(tier.costLadder).toHaveLength(tier.plots.length);
+    }
+    const numbers = plots.tiers.flatMap((t) => t.plots.map((p) => p.plot));
+    expect(numbers.sort((a, b) => a - b)).toEqual(
+      Array.from({ length: 24 }, (_, i) => i + 1),
+    );
+  });
 });
 
 describe("data/composter.json", () => {

@@ -2,6 +2,7 @@ import { Application, Container, Graphics } from "pixi.js";
 import { GRID_SIZE } from "@garden-hq/core";
 import type { BarnTile, MapViewModel, PlotTile } from "../viewmodels/map";
 import { COLORS, cropColor } from "./palette";
+import { drawNumber } from "./digits";
 import { tracksHover } from "./pointer";
 
 /** Logical pixels per tile; the whole scene is scaled by an integer factor. */
@@ -115,6 +116,15 @@ export class MapScene {
         }
       }
     }
+
+    drawNumber(
+      g,
+      tile.plotNumber,
+      x + 1,
+      y + 1,
+      COLORS.label,
+      COLORS.labelShadow,
+    );
 
     g.eventMode = "static";
     g.cursor = "pointer";

@@ -1,4 +1,4 @@
-import type { MapViewModel, PlotTile } from "../viewmodels/map";
+import { plotLabel, type MapViewModel, type PlotTile } from "../viewmodels/map";
 
 function describe(tile: PlotTile): string {
   if (tile.state === "locked") {
@@ -25,11 +25,11 @@ export function PlotList({
         <li key={tile.plotId}>
           {tile.state === "locked" ? (
             <span>
-              {tile.plotId} — {describe(tile)}
+              {plotLabel(tile)} — {describe(tile)}
             </span>
           ) : (
             <button type="button" onClick={() => onSelect(tile.plotId)}>
-              {tile.plotId} — {describe(tile)}
+              {plotLabel(tile)} — {describe(tile)}
             </button>
           )}
         </li>

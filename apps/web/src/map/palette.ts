@@ -8,6 +8,8 @@ export const COLORS = {
   barnRoof: 0x5e2a22,
   visitor: 0xf2d21b,
   selected: 0xffffff,
+  label: 0xffffff,
+  labelShadow: 0x2a2a2a,
 } as const;
 
 const CROP_COLORS: Record<string, number> = {

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { GardenState } from "@garden-hq/core";
 import { useStorage } from "../state/StorageProvider";
 import { useUi } from "../state/ui";
-import { buildMapViewModel, type PlotTile } from "../viewmodels/map";
+import { buildMapViewModel, plotLabel, type PlotTile } from "../viewmodels/map";
 import { AssignCropSheet } from "./AssignCropSheet";
 import { MapCanvas } from "./MapCanvas";
 import { PlotList } from "./PlotList";
@@ -52,7 +52,7 @@ export function MapSection({ garden, assignments }: MapSectionProps) {
       )}
       {hovered !== undefined && hovered.state === "locked" ? (
         <p>
-          {hovered.plotId}:{" "}
+          {plotLabel(hovered)}:{" "}
           {hovered.lockedCost === null
             ? "cost unknown"
             : `${hovered.lockedCost} Compost`}
@@ -65,6 +65,7 @@ export function MapSection({ garden, assignments }: MapSectionProps) {
       {selected !== undefined ? (
         <AssignCropSheet
           plotId={selected.plotId}
+          plotNumber={selected.plotNumber}
           currentCropId={selected.cropId}
           gardenLevel={garden.level}
           onPick={(cropId) => {

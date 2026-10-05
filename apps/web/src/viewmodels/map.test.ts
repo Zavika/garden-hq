@@ -56,11 +56,15 @@ describe("buildMapViewModel", () => {
     );
   });
 
-  it("reports a null cost for plots whose cost is unknown", () => {
+  it("carries the in-game plot number and the expert ladder cost", () => {
     const vm = buildMapViewModel(garden(), {});
-    expect(
-      plots(vm).find((t) => t.plotId === "expert_1")?.lockedCost,
-    ).toBeNull();
+    expect(plots(vm).find((t) => t.plotId === "expert_1")).toMatchObject({
+      plotNumber: 21,
+      lockedCost: 1280,
+    });
+    expect(plots(vm).find((t) => t.plotId === "advanced_5")?.plotNumber).toBe(
+      19,
+    );
   });
 
   it("puts visitors on the barn and counts overflow past 5", () => {

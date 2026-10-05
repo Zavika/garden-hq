@@ -10,6 +10,8 @@ export const MAX_VISITOR_MARKERS = 5;
 export interface PlotTile {
   kind: "plot";
   plotId: string;
+  /** In-game plot number (1-24). */
+  plotNumber: number;
   x: number;
   y: number;
   state: "locked" | "unlocked" | "assigned";
@@ -26,6 +28,13 @@ export interface BarnTile {
   overflow: number;
 }
 
+export function plotLabel(tile: {
+  plotNumber: number;
+  plotId: string;
+}): string {
+  return `Plot ${tile.plotNumber} (${tile.plotId})`;
+}
+
 export interface MapViewModel {
   tiles: (PlotTile | BarnTile)[];
 }
@@ -40,6 +49,7 @@ export function buildMapViewModel(
     const base = {
       kind: "plot" as const,
       plotId: plot.id,
+      plotNumber: plot.plotNumber,
       x: plot.x,
       y: plot.y,
     };
