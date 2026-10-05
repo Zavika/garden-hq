@@ -1,4 +1,5 @@
 import gardenLevels from "../../../data/garden-levels.json";
+import { asRecord } from "./coerce";
 import type { ComposterState, ComposterUpgrades, GardenState } from "./types";
 
 interface GardenLevelEntry {
@@ -58,6 +59,24 @@ function countCompletedVisitors(raw: unknown): number {
   return asNumber(data.total_completed, 0);
 }
 
+function prettifyVisitorId(id: string): string {
+  return id
+    .split(/[_\s-]+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+// VERIFY: active_commissions keys are internal visitor ids (e.g. "liam");
+// other key formats are unconfirmed (see data/VERIFY.md). Display names come
+// from prettifying the id until data/visitors.json (id -> name) exists.
+function normalizeVisitors(raw: unknown): { id: string; name: string }[] {
+  return Object.keys(asRecord(raw)).map((id) => ({
+    id,
+    name: prettifyVisitorId(id),
+  }));
+}
+
 export function normalizeGarden(raw: unknown): GardenState {
   const data = (raw ?? {}) as Record<string, unknown>;
   const experience = asNumber(data.garden_experience, 0);
@@ -68,6 +87,7 @@ export function normalizeGarden(raw: unknown): GardenState {
     unlockedPlotIds: asStringArray(data.unlocked_plots_ids),
     composter: normalizeComposter(data.composter_data),
     visitorsServedTotal: countCompletedVisitors(data.commission_data),
+    visitors: normalizeVisitors(data.active_commissions),
   };
 }
 

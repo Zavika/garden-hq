@@ -22,7 +22,10 @@
       "cost_reduction": 0
     }
   },
-  "active_commissions": {},
+  "active_commissions": {
+    "liam": {},
+    "farmer_jon": {}
+  },
   "commission_data": {
     "total_completed": 42,
     "unique_npcs_served": 7

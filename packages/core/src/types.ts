@@ -20,6 +20,7 @@ export interface GardenState {
   unlockedPlotIds: string[];
   composter: ComposterState;
   visitorsServedTotal: number;
+  visitors: { id: string; name: string }[];
 }
 
 export interface ProfileSummary {

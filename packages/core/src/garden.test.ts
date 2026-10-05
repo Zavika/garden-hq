@@ -46,6 +46,10 @@ describe("normalizeGarden", () => {
         },
       },
       visitorsServedTotal: 42,
+      visitors: [
+        { id: "liam", name: "Liam" },
+        { id: "farmer_jon", name: "Farmer Jon" },
+      ],
     });
   });
 
@@ -68,6 +72,7 @@ describe("normalizeGarden", () => {
         },
       },
       visitorsServedTotal: 0,
+      visitors: [],
     });
   });
 });
@@ -88,5 +93,20 @@ describe("unwrapGardenResponse", () => {
     expect(unwrapGardenResponse({ success: false, cause: "x" })).toBeNull();
     expect(unwrapGardenResponse(null)).toBeNull();
     expect(unwrapGardenResponse("nope")).toBeNull();
+  });
+});
+
+describe("visitors", () => {
+  it("lists active_commissions keys with prettified names", () => {
+    expect(normalizeGarden(sampleResponse).visitors).toEqual([
+      { id: "liam", name: "Liam" },
+      { id: "farmer_jon", name: "Farmer Jon" },
+    ]);
+  });
+
+  it("is empty when active_commissions is missing or malformed", () => {
+    expect(normalizeGarden({}).visitors).toEqual([]);
+    expect(normalizeGarden({ active_commissions: 5 }).visitors).toEqual([]);
+    expect(normalizeGarden(null).visitors).toEqual([]);
   });
 });
