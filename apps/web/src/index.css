@@ -1,111 +1,139 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  --bg: #f6f3ea;
+  --fg: #1d2a1a;
+  --card: #ffffff;
+  --accent: #3f7d2a;
+  --muted: #667260;
+  --danger: #a3341f;
   color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
-
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    --bg: #141a12;
+    --fg: #e9efe2;
+    --card: #1f281c;
+    --accent: #7ccf5c;
+    --muted: #9aa893;
+    --danger: #ff8a73;
   }
 }
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
-
 body {
   margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    16px/1.4 system-ui,
+    sans-serif;
 }
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
 }
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+.main {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding-top: 12px;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
+.card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 12px;
+}
+.card h1,
+.card h2 {
   margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+  font-size: 1.1rem;
 }
-p {
-  margin: 0;
+.error-card,
+[role="alert"] {
+  color: var(--danger);
 }
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+input,
+select,
+button {
+  font: inherit;
+  min-height: 44px;
+  padding: 0 12px;
 }
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+label {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 16px 0;
+}
+.tab-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--muted);
+}
+.tab-bar a {
+  flex: 1;
+  text-align: center;
+  padding: 14px 0;
+  color: var(--fg);
+  text-decoration: none;
+}
+.tab-bar a.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.map-wrap {
+  display: grid;
+  justify-items: center;
+}
+.map-wrap canvas {
+  image-rendering: pixelated;
+}
+.gauge {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.gauge > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  max-height: 70dvh;
+  overflow: auto;
+  background: var(--card);
+  border-radius: 12px 12px 0 0;
+  padding: 16px;
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.3);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
