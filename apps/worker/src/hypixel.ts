@@ -80,7 +80,8 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
     query: string,
     auth: boolean,
   ): Promise<unknown> {
-    const apiKey = deps.apiKey;
+    // Pasted secrets often carry a trailing newline, which makes the header invalid.
+    const apiKey = deps.apiKey?.trim();
     if (auth && (apiKey === undefined || apiKey === "")) {
       throw new AppError(
         "missing_api_key",

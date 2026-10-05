@@ -145,6 +145,30 @@ describe("createHypixelClient", () => {
     expect(net.calls).toHaveLength(3);
   });
 
+  it("trims whitespace and newlines from the API key before sending it", async () => {
+    let sent: string | null = null;
+    const { client } = setup(
+      (req) => {
+        sent = req.headers.get("API-Key");
+        return json({ success: true });
+      },
+      { apiKey: `${TEST_KEY}\r\n` },
+    );
+
+    await client.garden("p1");
+
+    expect(sent).toBe(TEST_KEY);
+  });
+
+  it("treats a whitespace-only API key as missing", async () => {
+    const { client, net } = setup(() => json({}), {
+      apiKey: " \r\n",
+    });
+
+    expect((await failure(client.garden("p1"))).code).toBe("missing_api_key");
+    expect(net.calls).toHaveLength(0);
+  });
+
   it("maps 403 to bad_api_key with no retry and logs Hypixel's cause", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const { client, net } = setup(() =>
