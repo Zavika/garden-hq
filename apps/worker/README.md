@@ -2,6 +2,10 @@
 
 Hono API on Cloudflare Workers. Routes: `GET /api/link?name=`, `/api/garden?profile=`, `/api/contests`, `/api/mayor`, `/health`.
 
+## Deployed URL
+
+Production API: `https://garden-hq-worker.zavika.workers.dev` (workers.dev). Set as the GitHub repo variable `VITE_API_URL` (see below).
+
 ## Secrets & vars
 
 - `HYPIXEL_API_KEY` — **secret**, never in `wrangler.toml` or the browser:

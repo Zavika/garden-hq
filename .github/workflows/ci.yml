@@ -25,6 +25,8 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
 
   deploy:
     needs: build
@@ -41,6 +43,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build web
         run: pnpm --filter @garden-hq/web build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
       - name: Deploy worker
         run: pnpm --filter @garden-hq/worker exec wrangler deploy
         env:
