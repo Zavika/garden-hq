@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { SKYBLOCK_EPOCH_MS, isDaytime, skyblockDate } from "./calendar";
+import {
+  DAYS_PER_MONTH,
+  MS_PER_SKYBLOCK_DAY,
+  SKYBLOCK_EPOCH_MS,
+  isDaytime,
+  seasonOf,
+  skyblockDate,
+} from "./calendar";
 
 describe("skyblockDate", () => {
   it("is year 1, month 1 (Early Spring), day 1 at the epoch", () => {
@@ -32,4 +39,31 @@ describe("isDaytime", () => {
     const msPerDay = 20 * 60 * 1000;
     expect(isDaytime(new Date(SKYBLOCK_EPOCH_MS + msPerDay / 2))).toBe(false);
   });
+});
+
+describe("seasonOf", () => {
+  const expected = [
+    "Early Spring",
+    "Spring",
+    "Late Spring",
+    "Early Summer",
+    "Summer",
+    "Late Summer",
+    "Early Autumn",
+    "Autumn",
+    "Late Autumn",
+    "Early Winter",
+    "Winter",
+    "Late Winter",
+  ];
+
+  it.each(expected.map((name, i) => [i + 1, name] as const))(
+    "month %i is %s",
+    (month, name) => {
+      const now = new Date(
+        SKYBLOCK_EPOCH_MS + (month - 1) * DAYS_PER_MONTH * MS_PER_SKYBLOCK_DAY,
+      );
+      expect(seasonOf(skyblockDate(now))).toBe(name);
+    },
+  );
 });

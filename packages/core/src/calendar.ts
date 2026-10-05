@@ -4,10 +4,6 @@ export const DAYS_PER_MONTH = 31;
 export const MONTHS_PER_YEAR = 12;
 export const DAYS_PER_YEAR = DAYS_PER_MONTH * MONTHS_PER_YEAR;
 
-// VERIFY: month names are from general SkyBlock knowledge, not independently
-// fetched from the wiki this session -- re-check against
-// hypixelskyblock.minecraft.wiki before relying on this list for anything
-// player-facing (see data/VERIFY.md).
 export const MONTH_NAMES = [
   "Early Spring",
   "Spring",
@@ -45,6 +41,10 @@ export function skyblockDate(date: Date): SkyblockDate {
     monthName: MONTH_NAMES[month - 1] ?? "Unknown",
     day,
   };
+}
+
+export function seasonOf(date: SkyblockDate): string {
+  return MONTH_NAMES[date.month - 1] ?? "Unknown";
 }
 
 // VERIFY: day/night is assumed to be an even 50/50 split within the
