@@ -1,0 +1,28 @@
+{
+  "gridSize": 10,
+  "unlockGardenLevel": 7,
+  "bonusPercentPerUniqueCrop": 3,
+  "maxUniqueCrops": 12,
+  "crops": [
+    { "id": "wheat", "name": "Wheat", "countsForBonus": true },
+    { "id": "carrot", "name": "Carrot", "countsForBonus": true },
+    { "id": "potato", "name": "Potato", "countsForBonus": true },
+    { "id": "pumpkin", "name": "Pumpkin", "countsForBonus": true },
+    { "id": "melon", "name": "Melon", "countsForBonus": true },
+    { "id": "cactus", "name": "Cactus", "countsForBonus": true },
+    { "id": "sugar_cane", "name": "Sugar Cane", "countsForBonus": true },
+    { "id": "cocoa_beans", "name": "Cocoa Beans", "countsForBonus": true },
+    { "id": "red_mushroom", "name": "Red Mushroom", "countsForBonus": true },
+    {
+      "id": "brown_mushroom",
+      "name": "Brown Mushroom",
+      "countsForBonus": true
+    },
+    { "id": "nether_wart", "name": "Nether Wart", "countsForBonus": true },
+    { "id": "sunflower", "name": "Sunflower", "countsForBonus": true },
+    { "id": "moonflower", "name": "Moonflower", "countsForBonus": true },
+    { "id": "wild_rose", "name": "Wild Rose", "countsForBonus": true },
+    { "id": "fermento", "name": "Fermento", "countsForBonus": true },
+    { "id": "dead_plant", "name": "Dead Plant", "countsForBonus": false }
+  ]
+}

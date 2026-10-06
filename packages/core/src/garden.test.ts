@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sampleResponse from "../fixtures/garden-response.sample.json";
+import realGarden from "../fixtures/garden-response.real.sample.json";
 import {
   levelForExperience,
   normalizeGarden,
@@ -50,6 +51,7 @@ describe("normalizeGarden", () => {
         { id: "liam", name: "Liam" },
         { id: "farmer_jon", name: "Farmer Jon" },
       ],
+      greenhouse: { lockedCells: [] },
     });
   });
 
@@ -73,6 +75,7 @@ describe("normalizeGarden", () => {
       },
       visitorsServedTotal: 0,
       visitors: [],
+      greenhouse: { lockedCells: [] },
     });
   });
 });
@@ -108,5 +111,34 @@ describe("visitors", () => {
     expect(normalizeGarden({}).visitors).toEqual([]);
     expect(normalizeGarden({ active_commissions: 5 }).visitors).toEqual([]);
     expect(normalizeGarden(null).visitors).toEqual([]);
+  });
+});
+
+describe("normalizeGarden greenhouse", () => {
+  it("reads the locked cells from the real capture", () => {
+    const state = normalizeGarden(unwrapGardenResponse(realGarden));
+    expect(state.greenhouse.lockedCells).toHaveLength(88);
+    expect(state.greenhouse.lockedCells).toContainEqual({ x: 0, z: 0 });
+    expect(state.greenhouse.lockedCells).not.toContainEqual({ x: 4, z: 4 });
+  });
+
+  it("defaults to no locked cells and drops malformed entries", () => {
+    expect(normalizeGarden({}).greenhouse.lockedCells).toEqual([]);
+    const state = normalizeGarden({
+      greenhouse_slots: [
+        { x: 1, z: 2 },
+        { x: 1, z: 2 },
+        { x: "1", z: 2 },
+        { x: 10, z: 0 },
+        { x: -1, z: 0 },
+        { x: 1.5, z: 0 },
+        null,
+        { x: 9, z: 9 },
+      ],
+    });
+    expect(state.greenhouse.lockedCells).toEqual([
+      { x: 1, z: 2 },
+      { x: 9, z: 9 },
+    ]);
   });
 });

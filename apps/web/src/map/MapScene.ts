@@ -227,7 +227,9 @@ export class MapScene {
       }
     } else {
       this.tilledSoil(g, tile.x, tile.y);
-      if (tile.state === "assigned" && tile.cropId !== undefined) {
+      if (tile.greenhouse) {
+        this.glassHouse(g, x, y);
+      } else if (tile.state === "assigned" && tile.cropId !== undefined) {
         const colour = cropColor(tile.cropId);
         // 3x3 plants in the lower-right, clear of the plot-number badge
         // (which lives in the top-left ~6px of the tile).
@@ -255,6 +257,20 @@ export class MapScene {
       if (tracksHover(e.pointerType)) this.handlers.onPlotHover(null);
     });
     return root;
+  }
+
+  /** Original pixel-art glasshouse: roof ridge, framed 2x2 panes with a shine pixel row. */
+  private glassHouse(g: Graphics, x: number, y: number): void {
+    g.rect(x + 2, y + 2, TILE - 4, 2).fill(COLORS.glassFrame);
+    g.rect(x + 1, y + 4, TILE - 2, TILE - 6).fill(COLORS.glassFrame);
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 2; col++) {
+        const px = x + 2 + col * 6;
+        const py = y + 5 + row * 4;
+        g.rect(px, py, 5, 3).fill({ color: COLORS.glassPane, alpha: 0.9 });
+        g.rect(px, py, 2, 1).fill({ color: COLORS.glassShine, alpha: 0.8 });
+      }
+    }
   }
 
   private barnGraphic(tile: BarnTile): Graphics {

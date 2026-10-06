@@ -1,6 +1,6 @@
 # Greenhouse — Design
 
-**Date:** 2026-10-06 · **Status:** revised after owner review (2026-10-06); approved to plan
+**Date:** 2026-10-06 · **Status:** implemented on branch `feat/greenhouse` (unmerged); visual check at 380px done with fixture data, not against the live account
 **Parent:** CLAUDE.md §2 "Greenhouse", §7 "Greenhouse planner", §8 Phase 4. Pulled forward as its own feature on top of the Phase 2b dashboard.
 **Plan:** `docs/superpowers/plans/2026-10-06-greenhouse.md`
 

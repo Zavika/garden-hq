@@ -4,6 +4,7 @@ import type {
   GardenResponse,
   LinkResponse,
   MayorResponse,
+  MemberResponse,
 } from "@garden-hq/core";
 
 export type ClientErrorCode = ApiErrorCode | "network" | "bad_response";
@@ -133,6 +134,8 @@ export function createApiClient(
     link: (name: string) => get<LinkResponse>("/api/link", { name }),
     garden: (profileId: string) =>
       get<GardenResponse>("/api/garden", { profile: profileId }),
+    member: (profileId: string, uuid: string) =>
+      get<MemberResponse>("/api/member", { profile: profileId, uuid }),
     contests: () => get<ContestsResponse>("/api/contests"),
     mayor: () => get<MayorResponse>("/api/mayor"),
   };

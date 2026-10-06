@@ -41,9 +41,9 @@ Wheat 1, Carrot 2, Potato 3, Pumpkin 4, Sugar Cane 5, Melon 6, Cactus 7, Cocoa B
 - Honey Jar → Moth, Cricket
 - Tasty Cheese → Rat, Mite
 
-**Greenhouse (0.24, Dec 2025):** unlocked at garden level 7 via the Carpenter visitor. Up to 3 Greenhouse plots. Crops grow over real hours/days, online or offline. 40 Mutations are made by arranging crops around empty soil; many need watering, and placed mutations decay over time. Yield bonus: +3% per unique non-mutated crop (max 12). Mutation recipes were rebalanced several times in 2026, so keep `data/mutations.json` versioned with a `lastVerified` date.
+**Greenhouse (0.24, Dec 2025):** unlocked at garden level 7 via the Carpenter visitor. Up to 3 Greenhouses, each a placeable plot on the 24-plot map; the API does not say which plots are Greenhouses (the app has the player mark them), and `garden.greenhouse_slots` lists the LOCKED cells of the 10x10 grid (unlocked = 10x10 minus that list). Crops grow over real hours/days, online or offline. 40 Mutations are made by arranging crops around empty soil; many need watering, and placed mutations decay over time. Yield bonus: +3% per unique non-mutated crop (max 12). Mutation recipes were rebalanced several times in 2026, so keep `data/mutations.json` versioned with a `lastVerified` date.
 
-**Chips:** consumable perk items upgraded with Sowdust. Chip state is not reliably exposed by the API; track it manually.
+**Chips:** consumable perk items upgraded with Sowdust. Chip levels are exposed by the API (`player_data.garden_chips` in the profile member data, e.g. `{ "cropshot": 5 }`); the app reads them read-only.
 
 **Jacob's Contests:** Hypixel has no official schedule endpoint. Use community sources:
 - `https://api.elitebot.dev/contests/at/now` (crowdsourced from SkyHanni users)

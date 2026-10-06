@@ -1,0 +1,26 @@
+{
+  "garden_player_data": {
+    "copper": 2208,
+    "analyzed_greenhouse_crops": ["ashwreath", "shadevine", "dustgrain"],
+    "discovered_greenhouse_crops": [
+      "ashwreath",
+      "shadevine",
+      "dead_plant",
+      "dustgrain",
+      "lonelily"
+    ]
+  },
+  "player_data": {
+    "garden_chips": {
+      "cropshot": 5,
+      "quickdraw": 2
+    }
+  },
+  "objectives": {
+    "place_a_greenhouse": {
+      "status": "COMPLETE",
+      "progress": 0,
+      "completed_at": 1766502567903
+    }
+  }
+}

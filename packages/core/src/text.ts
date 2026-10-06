@@ -6,3 +6,12 @@ const FORMAT_CODE = /§[0-9a-fk-or]|§$/gi;
 export function stripFormatting(text: string): string {
   return text.replace(FORMAT_CODE, "");
 }
+
+/** "sugar_cane" -> "Sugar Cane". */
+export function prettifyId(id: string): string {
+  return id
+    .split(/[_\s-]+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}

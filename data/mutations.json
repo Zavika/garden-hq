@@ -1,0 +1,533 @@
+{
+  "lastVerified": "2026-10-06",
+  "source": "https://hypixelskyblock.minecraft.wiki/w/Mutation",
+  "mutations": [
+    {
+      "id": "ashwreath",
+      "name": "Ashwreath",
+      "rarity": "common",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "nether_wart": 2, "fire": 2 }
+      },
+      "effects": ["Improved Harvest Boost", "XP Loss"],
+      "growth": { "stages": null, "medium": "Soul Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "choconut",
+      "name": "Choconut",
+      "rarity": "common",
+      "recipe": { "kind": "neighbours", "ingredients": { "cocoa_beans": 2 } },
+      "effects": ["Immunity"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "dustgrain",
+      "name": "Dustgrain",
+      "rarity": "common",
+      "recipe": { "kind": "neighbours", "ingredients": { "wheat": 2 } },
+      "effects": ["Harvest Boost"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "gloomgourd",
+      "name": "Gloomgourd",
+      "rarity": "common",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "pumpkin": 1, "melon": 1 }
+      },
+      "effects": ["Water Retain", "Bonus Drops"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "lonelily",
+      "name": "Lonelily",
+      "rarity": "common",
+      "recipe": {
+        "kind": "special",
+        "text": "Grows only with no adjacent crops."
+      },
+      "effects": ["Bonus Drops"],
+      "growth": { "stages": null, "medium": "Farmland, Dirt", "footprint": 1 },
+      "needsWater": null,
+      "notes": "A delicate flower that only blooms when left alone."
+    },
+    {
+      "id": "scourroot",
+      "name": "Scourroot",
+      "rarity": "common",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "potato": 1, "carrot": 1 }
+      },
+      "effects": ["Immunity", "XP Boost"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "shadevine",
+      "name": "Shadevine",
+      "rarity": "common",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "cactus": 1, "sugar_cane": 1 }
+      },
+      "effects": ["Improved Water Retain", "Improved XP Boost", "Harvest Loss"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "veilshroom",
+      "name": "Veilshroom",
+      "rarity": "common",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "red_mushroom": 1, "brown_mushroom": 1 }
+      },
+      "effects": ["Improved Harvest Boost", "Water Drain"],
+      "growth": { "stages": null, "medium": "Mycelium", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "witherbloom",
+      "name": "Witherbloom",
+      "rarity": "common",
+      "recipe": { "kind": "neighbours", "ingredients": { "dead_plant": 4 } },
+      "effects": ["Effect Spread"],
+      "growth": { "stages": null, "medium": "Soul Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "chocoberry",
+      "name": "Chocoberry",
+      "rarity": "uncommon",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "choconut": 6, "gloomgourd": 2 }
+      },
+      "effects": ["Water Retain"],
+      "growth": { "stages": 6, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "cindershade",
+      "name": "Cindershade",
+      "rarity": "uncommon",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "ashwreath": 4, "witherbloom": 4 }
+      },
+      "effects": ["Effect Spread", "Improved Harvest Boost", "XP Loss"],
+      "growth": { "stages": 8, "medium": "Soul Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "coalroot",
+      "name": "Coalroot",
+      "rarity": "uncommon",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "ashwreath": 5, "scourroot": 3 }
+      },
+      "effects": ["XP Boost"],
+      "growth": { "stages": 8, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "creambloom",
+      "name": "Creambloom",
+      "rarity": "uncommon",
+      "recipe": { "kind": "neighbours", "ingredients": { "choconut": 8 } },
+      "effects": ["Immunity"],
+      "growth": { "stages": 6, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "duskbloom",
+      "name": "Duskbloom",
+      "rarity": "uncommon",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": {
+          "moonflower": 2,
+          "shadevine": 2,
+          "sunflower": 2,
+          "dustgrain": 2
+        }
+      },
+      "effects": ["Bonus Drops"],
+      "growth": { "stages": 8, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "thornshade",
+      "name": "Thornshade",
+      "rarity": "uncommon",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "wild_rose": 4, "veilshroom": 4 }
+      },
+      "effects": ["Effect Spread"],
+      "growth": { "stages": 8, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "blastberry",
+      "name": "Blastberry",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "chocoberry": 5, "ashwreath": 3 }
+      },
+      "effects": ["Immunity", "Improved Harvest Boost", "XP Loss"],
+      "growth": { "stages": 6, "medium": "Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "cheesebite",
+      "name": "Cheesebite",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "creambloom": 4, "fermento": 4 }
+      },
+      "effects": ["Improved Water Retain"],
+      "growth": { "stages": 10, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "chloronite",
+      "name": "Chloronite",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "coalroot": 6, "thornshade": 2 }
+      },
+      "effects": ["Immunity"],
+      "growth": { "stages": 10, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "do_not_eat_shroom",
+      "name": "Do-not-eat-shroom",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "veilshroom": 4, "scourroot": 4 }
+      },
+      "effects": ["Improved Harvest Boost", "Water Drain"],
+      "growth": { "stages": 8, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "fleshtrap",
+      "name": "Fleshtrap",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "cindershade": 4, "lonelily": 4 }
+      },
+      "effects": ["Bonus Drops"],
+      "growth": { "stages": 14, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": "Requires regular offerings to stay alive."
+    },
+    {
+      "id": "magic_jellybean",
+      "name": "Magic Jellybean",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "sugar_cane": 5, "duskbloom": 3 }
+      },
+      "effects": ["Improved XP Boost", "Harvest Loss"],
+      "growth": { "stages": 120, "medium": "Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "noctilume",
+      "name": "Noctilume",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "duskbloom": 6, "lonelily": 6 }
+      },
+      "effects": ["Effect Spread", "Improved Water Retain", "Harvest Loss"],
+      "growth": { "stages": 4, "medium": "Farmland", "footprint": 2 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "snoozling",
+      "name": "Snoozling",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": {
+          "creambloom": 4,
+          "dustgrain": 3,
+          "witherbloom": 3,
+          "duskbloom": 3,
+          "thornshade": 3
+        }
+      },
+      "effects": ["Bonus Drops"],
+      "growth": { "stages": 20, "medium": "Farmland", "footprint": 3 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "soggybud",
+      "name": "Soggybud",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "melon": 2, "gloomgourd": 2 }
+      },
+      "effects": ["Water Retain"],
+      "growth": { "stages": 10, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "turtlellini",
+      "name": "Turtlellini",
+      "rarity": "rare",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "soggybud": 4, "choconut": 4 }
+      },
+      "effects": ["Water Retain", "Immunity"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": "No growth stages."
+    },
+    {
+      "id": "chorus_fruit",
+      "name": "Chorus Fruit",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "chloronite": 5, "magic_jellybean": 3 }
+      },
+      "effects": ["Improved XP Boost", "Harvest Loss"],
+      "growth": { "stages": 12, "medium": "End Stone", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "plantboy_advance",
+      "name": "PlantBoy Advance",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "snoozling": 6, "thunderling": 6 }
+      },
+      "effects": ["Harvest Boost"],
+      "growth": { "stages": 12, "medium": "Farmland", "footprint": 2 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "puffercloud",
+      "name": "Puffercloud",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "snoozling": 2, "do_not_eat_shroom": 6 }
+      },
+      "effects": ["Improved Harvest Boost", "Water Drain"],
+      "growth": { "stages": 14, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "shellfruit",
+      "name": "Shellfruit",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "special",
+        "text": "Explode a Turtlellini with 2 Blastberries."
+      },
+      "effects": ["Water Retain", "Immunity"],
+      "growth": { "stages": null, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": "No growth stages listed."
+    },
+    {
+      "id": "startlevine",
+      "name": "Startlevine",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "blastberry": 4, "cheesebite": 4 }
+      },
+      "effects": ["Improved Water Retain", "Improved XP Boost", "Harvest Loss"],
+      "growth": { "stages": 12, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "stoplight_petal",
+      "name": "Stoplight Petal",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "snoozling": 4, "noctilume": 4 }
+      },
+      "effects": ["Effect Spread", "Improved Water Retain", "Harvest Loss"],
+      "growth": { "stages": 12, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "thunderling",
+      "name": "Thunderling",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "soggybud": 5, "noctilume": 3 }
+      },
+      "effects": ["Effect Spread"],
+      "growth": { "stages": 16, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "zombud",
+      "name": "Zombud",
+      "rarity": "epic",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "dead_plant": 4, "cindershade": 2, "fleshtrap": 2 }
+      },
+      "effects": ["Effect Spread", "Bonus Drops"],
+      "growth": { "stages": 16, "medium": "Soul Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "all_in_aloe",
+      "name": "All-in Aloe",
+      "rarity": "legendary",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "magic_jellybean": 6, "plantboy_advance": 2 }
+      },
+      "effects": ["Harvest Boost"],
+      "growth": { "stages": 27, "medium": "Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "devourer",
+      "name": "Devourer",
+      "rarity": "legendary",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "puffercloud": 4, "zombud": 4 }
+      },
+      "effects": ["Bonus Drops", "Improved Harvest Boost", "Water Drain"],
+      "growth": { "stages": 16, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "glasscorn",
+      "name": "Glasscorn",
+      "rarity": "legendary",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "startlevine": 6, "chloronite": 6 }
+      },
+      "effects": ["Immunity", "Improved Water Retain", "Harvest Loss"],
+      "growth": { "stages": 9, "medium": "Sand", "footprint": 2 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "godseed",
+      "name": "Godseed",
+      "rarity": "legendary",
+      "recipe": {
+        "kind": "special",
+        "text": "Needs all positive crop effects."
+      },
+      "effects": [
+        "Improved Harvest Boost",
+        "Improved Water Retain",
+        "Improved XP Boost",
+        "Immunity",
+        "Bonus Drops",
+        "Effect Spread"
+      ],
+      "growth": { "stages": 40, "medium": "Farmland", "footprint": 3 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "jerryflower",
+      "name": "Jerryflower",
+      "rarity": "legendary",
+      "recipe": { "kind": "special", "text": "Grow a Jerryseed." },
+      "effects": [],
+      "growth": { "stages": 10, "medium": "Farmland", "footprint": 1 },
+      "needsWater": null,
+      "notes": "Jerryflower never sleeps, Jerryflower never stops."
+    },
+    {
+      "id": "phantomleaf",
+      "name": "Phantomleaf",
+      "rarity": "legendary",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": { "chorus_fruit": 4, "shellfruit": 4 }
+      },
+      "effects": ["XP Boost", "Immunity"],
+      "growth": { "stages": 15, "medium": "Soul Sand", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    },
+    {
+      "id": "timestalk",
+      "name": "Timestalk",
+      "rarity": "legendary",
+      "recipe": {
+        "kind": "neighbours",
+        "ingredients": {
+          "stoplight_petal": 4,
+          "chorus_fruit": 2,
+          "shellfruit": 2
+        }
+      },
+      "effects": ["Improved Water Retain", "Improved XP Boost", "Harvest Loss"],
+      "growth": { "stages": 14, "medium": "End Stone", "footprint": 1 },
+      "needsWater": null,
+      "notes": ""
+    }
+  ]
+}

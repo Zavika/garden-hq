@@ -21,6 +21,7 @@ export interface PlotTile {
   cropId?: string;
   /** null = cost unknown (see data/VERIFY.md). */
   lockedCost: number | null;
+  greenhouse: boolean;
 }
 
 export interface BarnTile {
@@ -45,6 +46,7 @@ export interface MapViewModel {
 export function buildMapViewModel(
   garden: GardenState,
   assignments: Record<string, string>,
+  greenhouseIds: ReadonlySet<string> = new Set(),
 ): MapViewModel {
   const unlocked = new Set(garden.unlockedPlotIds);
   const availability = plotAvailability(garden.unlockedPlotIds, garden.level);
@@ -56,6 +58,7 @@ export function buildMapViewModel(
       plotNumber: plot.plotNumber,
       x: plot.x,
       y: plot.y,
+      greenhouse: unlocked.has(plot.id) && greenhouseIds.has(plot.id),
     };
     if (!unlocked.has(plot.id)) {
       return {

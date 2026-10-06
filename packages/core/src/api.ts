@@ -1,4 +1,10 @@
-import type { Contest, GardenState, Mayor, ProfileSummary } from "./types";
+import type {
+  Contest,
+  GardenMemberState,
+  GardenState,
+  Mayor,
+  ProfileSummary,
+} from "./types";
 
 export type ApiErrorCode =
   | "unknown_player"
@@ -37,5 +43,10 @@ export interface ContestsResponse {
 
 export interface MayorResponse {
   mayor: Mayor;
+  fetchedAt: string;
+}
+
+export interface MemberResponse {
+  member: GardenMemberState;
   fetchedAt: string;
 }

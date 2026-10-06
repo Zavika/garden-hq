@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { ComposterPanel } from "../components/ComposterPanel";
@@ -10,8 +11,13 @@ import { useGarden } from "../state/queries";
 import { useStoredData } from "../state/StorageProvider";
 
 export function HomeScreen() {
-  const { link, assignments } = useStoredData();
+  const { link, assignments, greenhouses } = useStoredData();
   const garden = useGarden(link?.profileId ?? null);
+
+  const greenhousePlotIds = useMemo(
+    () => Object.keys(greenhouses),
+    [greenhouses],
+  );
 
   if (link === null) return <Navigate to="/link" replace />;
 
@@ -51,7 +57,11 @@ export function HomeScreen() {
         )
       ) : (
         <>
-          <MapSection garden={state} assignments={assignments} />
+          <MapSection
+            garden={state}
+            assignments={assignments}
+            greenhousePlotIds={greenhousePlotIds}
+          />
           <ComposterPanel composter={state.composter} />
           <VisitorsPanel visitors={state.visitors} />
         </>

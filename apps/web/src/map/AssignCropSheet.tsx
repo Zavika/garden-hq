@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ALL_CROPS } from "@garden-hq/core";
 
 export function AssignCropSheet({
@@ -8,6 +8,7 @@ export function AssignCropSheet({
   gardenLevel,
   onPick,
   onClose,
+  greenhouse,
 }: {
   plotId: string;
   plotNumber?: number;
@@ -15,7 +16,15 @@ export function AssignCropSheet({
   gardenLevel: number;
   onPick: (cropId: string | null) => void;
   onClose: () => void;
+  greenhouse?: {
+    marked: boolean;
+    canMark: boolean;
+    onMark: () => void;
+    onRemove: () => void;
+    onOpen: () => void;
+  };
 }) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const label =
     plotNumber === undefined ? plotId : `Plot ${plotNumber} (${plotId})`;
 
@@ -56,6 +65,35 @@ export function AssignCropSheet({
             Clear
           </button>
         ) : null}
+        {greenhouse === undefined ? null : greenhouse.marked ? (
+          <>
+            <button type="button" onClick={greenhouse.onOpen}>
+              Open Greenhouse
+            </button>
+            {confirmRemove ? (
+              <button type="button" onClick={greenhouse.onRemove}>
+                Confirm &mdash; clears its grid
+              </button>
+            ) : (
+              <button type="button" onClick={() => setConfirmRemove(true)}>
+                Remove Greenhouse
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={!greenhouse.canMark}
+              onClick={greenhouse.onMark}
+            >
+              Mark as Greenhouse
+            </button>
+            {greenhouse.canMark ? null : (
+              <p>You can have at most 3 Greenhouses.</p>
+            )}
+          </>
+        )}
         <button type="button" onClick={onClose}>
           Cancel
         </button>

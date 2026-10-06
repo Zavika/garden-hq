@@ -27,6 +27,9 @@ export const COLORS = {
   barnShadow: 0x3f2a18,
   hay: 0xe8c44a,
   visitor: 0xf2d21b,
+  glassFrame: 0x5b7f86,
+  glassPane: 0xbfeaf0,
+  glassShine: 0xffffff,
   selected: 0xffffff,
 } as const;
 

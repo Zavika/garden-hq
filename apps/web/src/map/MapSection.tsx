@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import type { GardenState } from "@garden-hq/core";
+import { useNavigate } from "react-router-dom";
 import { useStorage } from "../state/StorageProvider";
+import { MAX_GREENHOUSES } from "../state/storage";
 import { useUi } from "../state/ui";
 import { buildMapViewModel, plotLabel, type PlotTile } from "../viewmodels/map";
 import { AssignCropSheet } from "./AssignCropSheet";
@@ -11,10 +13,18 @@ import type { SceneHandlers } from "./MapScene";
 export interface MapSectionProps {
   garden: GardenState;
   assignments: Record<string, string>;
+  greenhousePlotIds?: readonly string[];
 }
 
-export function MapSection({ garden, assignments }: MapSectionProps) {
+const NO_GREENHOUSES: readonly string[] = [];
+
+export function MapSection({
+  garden,
+  assignments,
+  greenhousePlotIds = NO_GREENHOUSES,
+}: MapSectionProps) {
   const storage = useStorage();
+  const navigate = useNavigate();
   const selectedPlotId = useUi((s) => s.selectedPlotId);
   const hoveredPlotId = useUi((s) => s.hoveredPlotId);
   const selectPlot = useUi((s) => s.selectPlot);
@@ -22,8 +32,8 @@ export function MapSection({ garden, assignments }: MapSectionProps) {
   const [webglFailed, setWebglFailed] = useState(false);
 
   const viewModel = useMemo(
-    () => buildMapViewModel(garden, assignments),
-    [garden, assignments],
+    () => buildMapViewModel(garden, assignments, new Set(greenhousePlotIds)),
+    [garden, assignments, greenhousePlotIds],
   );
 
   const handlers = useMemo<SceneHandlers>(
@@ -64,6 +74,7 @@ export function MapSection({ garden, assignments }: MapSectionProps) {
       </details>
       {selected !== undefined ? (
         <AssignCropSheet
+          key={selected.plotId}
           plotId={selected.plotId}
           plotNumber={selected.plotNumber}
           currentCropId={selected.cropId}
@@ -73,6 +84,22 @@ export function MapSection({ garden, assignments }: MapSectionProps) {
             selectPlot(null);
           }}
           onClose={() => selectPlot(null)}
+          greenhouse={{
+            marked: selected.greenhouse,
+            canMark: greenhousePlotIds.length < MAX_GREENHOUSES,
+            onMark: () => {
+              storage.markGreenhouse(selected.plotId);
+              selectPlot(null);
+            },
+            onRemove: () => {
+              storage.unmarkGreenhouse(selected.plotId);
+              selectPlot(null);
+            },
+            onOpen: () => {
+              selectPlot(null);
+              navigate("/greenhouse");
+            },
+          }}
         />
       ) : null}
     </section>

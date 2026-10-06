@@ -1,6 +1,13 @@
 import gardenLevels from "../../../data/garden-levels.json";
-import { asRecord } from "./coerce";
-import type { ComposterState, ComposterUpgrades, GardenState } from "./types";
+import { asArray, asRecord } from "./coerce";
+import { GREENHOUSE_GRID_SIZE } from "./greenhouse-data";
+import type {
+  ComposterState,
+  ComposterUpgrades,
+  GardenState,
+  GreenhouseCellRef,
+  GreenhouseState,
+} from "./types";
 
 interface GardenLevelEntry {
   level: number;
@@ -77,6 +84,36 @@ function normalizeVisitors(raw: unknown): { id: string; name: string }[] {
   }));
 }
 
+// VERIFY: `greenhouse_slots` lists LOCKED cells (owner-confirmed 2026-10-06);
+// whether it applies to every Greenhouse a player owns is unconfirmed.
+function normalizeGreenhouse(raw: unknown): GreenhouseState {
+  const lockedCells: GreenhouseCellRef[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of asArray(raw)) {
+    const cell = asRecord(entry);
+    const { x, z } = cell;
+    if (
+      typeof x !== "number" ||
+      typeof z !== "number" ||
+      !Number.isInteger(x) ||
+      !Number.isInteger(z) ||
+      x < 0 ||
+      z < 0 ||
+      x >= GREENHOUSE_GRID_SIZE ||
+      z >= GREENHOUSE_GRID_SIZE
+    ) {
+      continue;
+    }
+    const key = `${x},${z}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    lockedCells.push({ x, z });
+  }
+
+  return { lockedCells };
+}
+
 export function normalizeGarden(raw: unknown): GardenState {
   const data = (raw ?? {}) as Record<string, unknown>;
   const experience = asNumber(data.garden_experience, 0);
@@ -88,6 +125,7 @@ export function normalizeGarden(raw: unknown): GardenState {
     composter: normalizeComposter(data.composter_data),
     visitorsServedTotal: countCompletedVisitors(data.commission_data),
     visitors: normalizeVisitors(data.active_commissions),
+    greenhouse: normalizeGreenhouse(data.greenhouse_slots),
   };
 }
 

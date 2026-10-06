@@ -9,6 +9,18 @@ export function useLink() {
   });
 }
 
+export function useMember(profileId: string | null, uuid: string | null) {
+  return useQuery({
+    queryKey: ["member", profileId, uuid],
+    queryFn: () => api.member(profileId as string, uuid as string),
+    enabled: profileId !== null && uuid !== null,
+    refetchInterval: 5 * MINUTE,
+    staleTime: 5 * MINUTE,
+    // Shares the Worker's per-IP limit with link + garden.
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useGarden(profileId: string | null) {
   return useQuery({
     queryKey: ["garden", profileId],

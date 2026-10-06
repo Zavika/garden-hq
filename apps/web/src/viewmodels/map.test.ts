@@ -118,4 +118,16 @@ describe("buildMapViewModel", () => {
     expect(barn?.visitors).toHaveLength(5);
     expect(barn?.overflow).toBe(2);
   });
+
+  it("flags unlocked marked plots as greenhouses and ignores locked ones", () => {
+    const g = normalizeGarden({
+      garden_experience: 0,
+      unlocked_plots_ids: ["beginner_1", "beginner_3"],
+    });
+    const vm = buildMapViewModel(g, {}, new Set(["beginner_3", "beginner_2"]));
+    const byId = new Map(plots(vm).map((t) => [t.plotId, t]));
+    expect(byId.get("beginner_3")?.greenhouse).toBe(true);
+    expect(byId.get("beginner_2")?.greenhouse).toBe(false); // locked
+    expect(byId.get("beginner_1")?.greenhouse).toBe(false);
+  });
 });

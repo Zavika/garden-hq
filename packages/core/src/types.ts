@@ -14,6 +14,24 @@ export interface ComposterState {
   upgrades: ComposterUpgrades;
 }
 
+export interface GreenhouseCellRef {
+  x: number;
+  z: number;
+}
+
+export interface GreenhouseState {
+  /** Locked cells of the 10x10 Greenhouse grid (`garden.greenhouse_slots`). */
+  lockedCells: GreenhouseCellRef[];
+}
+
+export interface GardenMemberState {
+  discoveredMutations: string[];
+  analyzedMutations: string[];
+  /** Chip id -> chip level. */
+  chips: Record<string, number>;
+  hasGreenhouse: boolean;
+}
+
 export interface GardenState {
   level: number;
   experience: number;
@@ -21,6 +39,7 @@ export interface GardenState {
   composter: ComposterState;
   visitorsServedTotal: number;
   visitors: { id: string; name: string }[];
+  greenhouse: GreenhouseState;
 }
 
 export interface ProfileSummary {

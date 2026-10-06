@@ -450,9 +450,9 @@ const m=prof.members[Object.keys(prof.members)[0]];
 const out={garden_player_data:{copper:m.garden_player_data.copper,analyzed_greenhouse_crops:m.garden_player_data.analyzed_greenhouse_crops,discovered_greenhouse_crops:m.garden_player_data.discovered_greenhouse_crops},player_data:{garden_chips:m.player_data.garden_chips},objectives:{place_a_greenhouse:m.objectives.place_a_greenhouse}};
 fs.writeFileSync("packages/core/fixtures/member-greenhouse.real.sample.json",JSON.stringify(out,null,2)+"\n");
 '
-grep -c "<profile-id-fragment>" packages/core/fixtures/garden-response.real.sample.json packages/core/fixtures/member-greenhouse.real.sample.json
+grep -oE "[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]+" packages/core/fixtures/garden-response.real.sample.json packages/core/fixtures/member-greenhouse.real.sample.json | grep -vE "^[^:]*:0{32}$" || echo clean
 ```
-Expected: both counts `0`. If either is non-zero, remove the uuid before continuing.
+Expected: only `clean` (no 32-hex or dashed id other than the 32 zeros). Otherwise remove the identifier before continuing.
 
 - [ ] **Step 2: Write the failing tests**
 
@@ -2426,15 +2426,17 @@ Append to `apps/web/src/index.css`:
 .muted {
   color: var(--muted);
 }
+/* 10 x 32px cells + 2 x 2px border = 324px, which fits the 328px inside a
+   card at a 380px viewport (380 - 24 app padding - 4 card border - 24 card
+   padding). Separators are inset shadows, not a grid gap. */
 .gh-grid {
   display: grid;
   grid-template-columns: repeat(10, 32px);
-  width: 322px;
+  width: max-content;
   max-width: 100%;
   margin: 8px auto;
-  gap: 1px;
+  gap: 0;
   border: 2px solid var(--ink);
-  background: var(--ink);
   image-rendering: pixelated;
 }
 .gh-cell {
@@ -2445,7 +2447,7 @@ Append to `apps/web/src/index.css`:
   padding: 0;
   border: 0;
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
   font-size: 11px;
   line-height: 1;
   color: var(--ink);

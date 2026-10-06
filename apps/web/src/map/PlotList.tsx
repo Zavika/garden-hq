@@ -6,9 +6,12 @@ function describe(tile: PlotTile): string {
       ? "locked — cost unknown"
       : `locked — ${tile.lockedCost} Compost`;
   }
-  return tile.state === "assigned"
-    ? `crop: ${tile.cropId}`
-    : "unlocked — no crop";
+  const suffix = tile.greenhouse ? " · Greenhouse" : "";
+  return (
+    (tile.state === "assigned"
+      ? `crop: ${tile.cropId}`
+      : "unlocked — no crop") + suffix
+  );
 }
 
 export function PlotList({

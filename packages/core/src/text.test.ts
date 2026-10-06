@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { stripFormatting } from "./text";
+import { prettifyId, stripFormatting } from "./text";
 
 describe("stripFormatting", () => {
   it("removes colour and format codes", () => {
@@ -16,5 +16,13 @@ describe("stripFormatting", () => {
     expect(stripFormatting("Plain text")).toBe("Plain text");
     expect(stripFormatting("a\nb")).toBe("a\nb");
     expect(stripFormatting("")).toBe("");
+  });
+});
+
+describe("prettifyId", () => {
+  it("title-cases snake_case ids", () => {
+    expect(prettifyId("cropshot")).toBe("Cropshot");
+    expect(prettifyId("sugar_cane")).toBe("Sugar Cane");
+    expect(prettifyId("")).toBe("");
   });
 });

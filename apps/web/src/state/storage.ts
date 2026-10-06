@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@garden-hq/core";
+import { getPlot, isPlaceableId, type ProfileSummary } from "@garden-hq/core";
 
 export interface StoredLink {
   name: string;
@@ -7,9 +7,19 @@ export interface StoredLink {
   profiles: ProfileSummary[];
 }
 
+export const MAX_GREENHOUSES = 3;
+
+export interface GreenhouseSave {
+  /** Cell key "x,z" -> placed crop or mutation id. */
+  cells: Record<string, string>;
+  /** Epoch ms of the player's last "I watered it" press, or null. */
+  lastWateredAt: number | null;
+}
+
 export interface StoredData {
   link: StoredLink | null;
   assignments: Record<string, string>;
+  greenhouses: Record<string, GreenhouseSave>;
   timeZone: string;
 }
 
@@ -24,6 +34,15 @@ export interface GardenStorage {
   setLink(link: StoredLink): void;
   clearLink(): void;
   setAssignment(plotId: string, cropId: string | null): void;
+  /** Marks a plot as a Greenhouse. False if at the maximum or the plot is unknown. */
+  markGreenhouse(plotId: string): boolean;
+  unmarkGreenhouse(plotId: string): void;
+  setGreenhouseCell(
+    plotId: string,
+    cellKey: string,
+    contentId: string | null,
+  ): void;
+  markGreenhouseWatered(plotId: string, at: number): void;
   setTimeZone(timeZone: string): void;
   clearAll(): void;
 }
@@ -31,6 +50,7 @@ export interface GardenStorage {
 const EMPTY: StoredData = {
   link: null,
   assignments: {},
+  greenhouses: {},
   timeZone: DEFAULT_TIME_ZONE,
 };
 
@@ -72,6 +92,43 @@ function parseAssignments(v: unknown): Record<string, string> {
   return out;
 }
 
+const CELL_KEY_RE = /^\d,\d$/;
+
+function parseGreenhouses(v: unknown): Record<string, GreenhouseSave> {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return {};
+  const out: Record<string, GreenhouseSave> = {};
+  for (const [plotId, raw] of Object.entries(v)) {
+    if (Object.keys(out).length >= MAX_GREENHOUSES) break;
+    if (getPlot(plotId) === undefined) continue;
+    if (typeof raw !== "object" || raw === null) continue;
+    const r = raw as Record<string, unknown>;
+    const cells: Record<string, string> = {};
+    if (
+      typeof r.cells === "object" &&
+      r.cells !== null &&
+      !Array.isArray(r.cells)
+    ) {
+      for (const [key, id] of Object.entries(r.cells)) {
+        if (
+          CELL_KEY_RE.test(key) &&
+          typeof id === "string" &&
+          isPlaceableId(id)
+        ) {
+          cells[key] = id;
+        }
+      }
+    }
+    out[plotId] = {
+      cells,
+      lastWateredAt:
+        typeof r.lastWateredAt === "number" && Number.isFinite(r.lastWateredAt)
+          ? r.lastWateredAt
+          : null,
+    };
+  }
+  return out;
+}
+
 function load(backing: Backing | null): StoredData {
   if (backing === null) return EMPTY;
   try {
@@ -83,6 +140,7 @@ function load(backing: Backing | null): StoredData {
     return {
       link: parseLink(d.link),
       assignments: parseAssignments(d.assignments),
+      greenhouses: parseGreenhouses(d.greenhouses),
       timeZone: typeof d.timeZone === "string" ? d.timeZone : DEFAULT_TIME_ZONE,
     };
   } catch {
@@ -121,6 +179,52 @@ export function createGardenStorage(backing: Backing | null): GardenStorage {
       if (cropId === null) delete assignments[plotId];
       else assignments[plotId] = cropId;
       commit({ ...data, assignments });
+    },
+    markGreenhouse(plotId) {
+      if (plotId in data.greenhouses) return true;
+      if (
+        getPlot(plotId) === undefined ||
+        Object.keys(data.greenhouses).length >= MAX_GREENHOUSES
+      ) {
+        return false;
+      }
+      commit({
+        ...data,
+        greenhouses: {
+          ...data.greenhouses,
+          [plotId]: { cells: {}, lastWateredAt: null },
+        },
+      });
+      return true;
+    },
+    unmarkGreenhouse(plotId) {
+      if (!(plotId in data.greenhouses)) return;
+      const greenhouses = { ...data.greenhouses };
+      delete greenhouses[plotId];
+      commit({ ...data, greenhouses });
+    },
+    setGreenhouseCell(plotId, cellKey, contentId) {
+      const save = data.greenhouses[plotId];
+      if (save === undefined || !CELL_KEY_RE.test(cellKey)) return;
+      if (contentId !== null && !isPlaceableId(contentId)) return;
+      const cells = { ...save.cells };
+      if (contentId === null) delete cells[cellKey];
+      else cells[cellKey] = contentId;
+      commit({
+        ...data,
+        greenhouses: { ...data.greenhouses, [plotId]: { ...save, cells } },
+      });
+    },
+    markGreenhouseWatered(plotId, at) {
+      const save = data.greenhouses[plotId];
+      if (save === undefined) return;
+      commit({
+        ...data,
+        greenhouses: {
+          ...data.greenhouses,
+          [plotId]: { ...save, lastWateredAt: at },
+        },
+      });
     },
     setTimeZone: (timeZone) => commit({ ...data, timeZone }),
     clearAll: () => commit({ ...EMPTY }),

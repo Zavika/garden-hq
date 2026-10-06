@@ -116,4 +116,21 @@ describe("api client", () => {
       code: "bad_response",
     });
   });
+
+  it("GETs /api/member with profile and uuid", async () => {
+    const body = {
+      member: {
+        discoveredMutations: ["dustgrain"],
+        analyzedMutations: [],
+        chips: { cropshot: 5 },
+        hasGreenhouse: true,
+      },
+      fetchedAt: "2026-10-06T10:00:00.000Z",
+    };
+    const { client, fetchFn } = clientWith(jsonResponse(body));
+    await expect(client.member("p1", "u1")).resolves.toEqual(body);
+    expect(fetchFn).toHaveBeenCalledWith(
+      "http://api.test/api/member?profile=p1&uuid=u1",
+    );
+  });
 });

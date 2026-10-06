@@ -1,6 +1,6 @@
 # @garden-hq/worker
 
-Hono API on Cloudflare Workers. Routes: `GET /api/link?name=`, `/api/garden?profile=`, `/api/contests`, `/api/mayor`, `/health`.
+Hono API on Cloudflare Workers. Routes: `GET /api/link?name=`, `/api/garden?profile=`, `/api/member?profile=&uuid=`, `/api/contests`, `/api/mayor`, `/health`.
 
 ## Deployed URL
 
@@ -22,4 +22,4 @@ Without a key `/api/contests` and `/api/mayor` still work; `/api/link` and `/api
 
 ## Limits
 
-Per-IP 10 req/min (shared by link + garden); 60 s per-player cache; contests 15 min; mayor 1 h.
+Per-IP 10 req/min (shared by link + garden + member); 60 s per-player cache; contests 15 min; mayor 1 h.

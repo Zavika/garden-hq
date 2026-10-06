@@ -4,6 +4,7 @@ import { normalizeGarden } from "@garden-hq/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { useUi } from "../state/ui";
+import { createGardenStorage } from "../state/storage";
 import { MapSection } from "./MapSection";
 
 // jsdom has no WebGL. Stub the lazily-imported scene so mounting fails fast and
@@ -61,5 +62,48 @@ describe("MapSection", () => {
     expect(
       screen.getByText(/^Plot 21 \(expert_1\).*1280 compost/i),
     ).toBeInTheDocument();
+  });
+
+  it("marks the selected plot as a Greenhouse from the sheet", async () => {
+    const storage = createGardenStorage(null);
+    const g = normalizeGarden({
+      garden_experience: 0,
+      unlocked_plots_ids: ["beginner_1", "beginner_3"],
+    });
+    renderWithProviders(
+      <MapSection garden={g} assignments={{}} greenhousePlotIds={[]} />,
+      { storage },
+    );
+    useUi.setState({ selectedPlotId: "beginner_3" });
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Mark as Greenhouse" }),
+    );
+    expect(Object.keys(storage.getSnapshot().greenhouses)).toEqual([
+      "beginner_3",
+    ]);
+  });
+
+  it("does not carry an armed Remove confirmation over to another plot", async () => {
+    const storage = createGardenStorage(null);
+    storage.markGreenhouse("beginner_1");
+    storage.markGreenhouse("beginner_3");
+    const g = normalizeGarden({
+      garden_experience: 0,
+      unlocked_plots_ids: ["beginner_1", "beginner_3"],
+    });
+    renderWithProviders(
+      <MapSection
+        garden={g}
+        assignments={{}}
+        greenhousePlotIds={["beginner_1", "beginner_3"]}
+      />,
+      { storage },
+    );
+    useUi.setState({ selectedPlotId: "beginner_1" });
+    await userEvent.click(await screen.findByText("Remove Greenhouse"));
+    expect(screen.getByText(/Confirm/)).toBeInTheDocument();
+    useUi.setState({ selectedPlotId: "beginner_3" });
+    expect(await screen.findByText("Remove Greenhouse")).toBeInTheDocument();
+    expect(screen.queryByText(/Confirm/)).toBeNull();
   });
 });

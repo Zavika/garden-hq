@@ -505,3 +505,74 @@ label {
     transform: none;
   }
 }
+
+/* Greenhouse */
+/* 10 x 32px cells + 2 x 2px border = 324px, which fits the 328px inside a
+   card at a 380px viewport (380 - 24 app padding - 4 card border - 24 card
+   padding). Separators are inset shadows, not a grid gap. */
+.gh-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 32px);
+  width: max-content;
+  max-width: 100%;
+  margin: 8px auto;
+  gap: 0;
+  border: 2px solid var(--ink);
+  image-rendering: pixelated;
+}
+.gh-cell {
+  width: 32px;
+  height: 32px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--meadow-dark);
+}
+.gh-cell[data-state="locked"] {
+  background: repeating-linear-gradient(
+    45deg,
+    #8d8a80,
+    #8d8a80 4px,
+    #a29f94 4px,
+    #a29f94 8px
+  );
+  cursor: not-allowed;
+}
+.gh-cell[data-hl="ok"] {
+  outline: 3px solid var(--good);
+  outline-offset: -3px;
+}
+.gh-cell[data-hl="near"] {
+  outline: 3px dashed var(--gold);
+  outline-offset: -3px;
+}
+.gh-palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.gh-bonus progress {
+  width: 100%;
+}
+.gh-guide label {
+  display: grid;
+  gap: 4px;
+}
+.gh-warn {
+  color: var(--danger);
+}
+.gh-chips {
+  margin: 0;
+  padding-left: 18px;
+}
+.gh-grid .gh-cell:active:not(:disabled) {
+  transform: none;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+}
