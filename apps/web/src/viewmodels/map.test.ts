@@ -56,6 +56,34 @@ describe("buildMapViewModel", () => {
     );
   });
 
+  it("glows only plots that touch the Barn or an owned plot (real account)", () => {
+    const state = garden({
+      garden_experience: 100_000,
+      unlocked_plots_ids: [
+        "beginner_1",
+        "beginner_2",
+        "beginner_3",
+        "beginner_4",
+        "intermediate_1",
+        "intermediate_2",
+        "intermediate_3",
+        "intermediate_4",
+        "advanced_5",
+      ],
+    });
+    expect(state.level).toBeGreaterThanOrEqual(7);
+    const numbers = (availability: PlotTile["availability"]) =>
+      plots(buildMapViewModel(state, {}))
+        .filter((t) => t.availability === availability)
+        .map((t) => t.plotNumber)
+        .sort((a, b) => a - b);
+    expect(numbers("buyable")).toEqual([
+      9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 23,
+    ]);
+    expect(numbers("unreachable")).toEqual([21, 22, 24]);
+    expect(numbers("owned")).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 19]);
+  });
+
   it("marks locked plots buyable only once the garden level reaches their tier", () => {
     const state = garden({ garden_experience: 300 });
     expect(state.level).toBe(4);

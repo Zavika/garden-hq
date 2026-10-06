@@ -5,9 +5,10 @@ export const COLORS = {
   bladeLight: 0x86c25a,
   flowerPink: 0xf08bb4,
   flowerWhite: 0xfff3d0,
-  soil: 0x7a5230,
-  soilEdge: 0x4a2f19,
-  soilFurrow: 0x65421f,
+  soilEdge: 0x3a2412,
+  soilFurrow: 0x4e311a,
+  soilRidge: 0x8a5d34,
+  soilRidgeLight: 0xa5764a,
   weed: 0x3a6b27,
   weedLight: 0x6aa347,
   fenceRail: 0xb98a55,
@@ -27,8 +28,6 @@ export const COLORS = {
   hay: 0xe8c44a,
   visitor: 0xf2d21b,
   selected: 0xffffff,
-  label: 0xffffff,
-  labelShadow: 0x2a1a0e,
 } as const;
 
 const CROP_COLORS: Record<string, number> = {

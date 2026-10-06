@@ -54,27 +54,70 @@ export function getPlot(id: string): PlotDefinition | undefined {
   return ALL_PLOTS.find((plot) => plot.id === id);
 }
 
+export type PlotAvailability = "owned" | "buyable" | "unreachable";
+
+const NEIGHBOURS = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+] as const;
+
+// VERIFY: adjacency (a plot can only be bought next to the Barn or an owned
+// plot, edge-sharing only) is taken from one real account, not a wiki page.
+/**
+ * Which plots can be bought right now. A locked plot is buyable when its tier
+ * is unlocked by `gardenLevel` AND it shares an edge with the Barn or an owned
+ * plot; otherwise it is unreachable.
+ */
+export function plotAvailability(
+  unlockedIds: string[],
+  gardenLevel: number,
+): Map<string, PlotAvailability> {
+  const owned = new Set(unlockedIds);
+  const anchors = new Set<string>([`${BARN_CELL.x},${BARN_CELL.y}`]);
+  for (const plot of ALL_PLOTS) {
+    if (owned.has(plot.id)) anchors.add(`${plot.x},${plot.y}`);
+  }
+
+  const result = new Map<string, PlotAvailability>();
+  for (const plot of ALL_PLOTS) {
+    if (owned.has(plot.id)) {
+      result.set(plot.id, "owned");
+      continue;
+    }
+    const touching = NEIGHBOURS.some(([dx, dy]) =>
+      anchors.has(`${plot.x + dx},${plot.y + dy}`),
+    );
+    result.set(
+      plot.id,
+      plot.unlockLevel <= gardenLevel && touching ? "buyable" : "unreachable",
+    );
+  }
+  return result;
+}
+
 /**
  * Cheapest purchasable plot. Price depends on how many plots of the tier are
- * owned, so every locked plot in a tier costs the same; the one returned is
+ * owned, so every buyable plot in a tier costs the same; the one returned is
  * the lowest-numbered. Ties between tiers go to the earlier tier.
  */
 export function cheapestNextPlot(
   unlockedIds: string[],
   gardenLevel: number,
 ): PlotOption | undefined {
-  const unlocked = new Set(unlockedIds);
+  const availability = plotAvailability(unlockedIds, gardenLevel);
   let best: PlotOption | undefined;
 
   for (const tier of TIERS) {
-    if (tier.unlockLevel > gardenLevel) continue;
     const cost = nextPlotCost(tier.id, unlockedIds);
     if (cost === null || (best !== undefined && cost >= best.cost)) continue;
 
-    const locked = ALL_PLOTS.filter(
-      (plot) => plot.tierId === tier.id && !unlocked.has(plot.id),
+    const buyable = ALL_PLOTS.filter(
+      (plot) =>
+        plot.tierId === tier.id && availability.get(plot.id) === "buyable",
     ).sort((a, b) => a.plotNumber - b.plotNumber)[0];
-    if (locked !== undefined) best = { ...locked, cost };
+    if (buyable !== undefined) best = { ...buyable, cost };
   }
 
   return best;

@@ -11,7 +11,7 @@ export function Layout() {
   if (link === null && !onLinkRoute) return <Navigate to="/link" replace />;
 
   return (
-    <div className="app">
+    <div className={link !== null && !onLinkRoute ? "app with-tabs" : "app"}>
       <main className="main">
         <Outlet />
       </main>

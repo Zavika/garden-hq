@@ -6,6 +6,8 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 
 - **Tier unlock levels** (garden level 1 / 3 / 5 / 7 for beginner / intermediate / advanced / expert) — from CLAUDE.md, not checked against a live account. Plot ids, plot numbers, grid cells and cost ladders come from EliteFarmers/Website `plots.ts` (user-supplied); only the id format (`advanced_5`) and the first 8 plots were seen on a real account, so the advanced/expert plot numbers and ladder rungs beyond that are not independently checked.
 
+- **Plot adjacency rule** — a locked plot is shown as buyable only if its tier is unlocked by garden level AND it shares an edge (not a corner) with the Barn or an owned plot (`plotAvailability` in `plots.ts`). Derived from one real account (owned beginner/intermediate + `advanced_5` -> buyable 9-18, 20, 23; unreachable 21, 22, 24), not a wiki page; confirm the in-game purchase rule.
+
 ## Crops
 
 - **`apiId`** (Hypixel collection/skill enum name per crop) — no source confirmed these; set to `null` in `data/crops.json` rather than guessed.

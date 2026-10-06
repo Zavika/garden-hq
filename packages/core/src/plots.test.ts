@@ -6,6 +6,7 @@ import {
   cheapestNextPlot,
   getPlot,
   nextPlotCost,
+  plotAvailability,
 } from "./plots";
 
 describe("ALL_PLOTS", () => {
@@ -190,5 +191,66 @@ describe("nextPlotCost", () => {
       ]),
     ).toBeNull();
     expect(nextPlotCost("nope", [])).toBeNull();
+  });
+});
+
+describe("plotAvailability", () => {
+  // A real account: all beginner + intermediate, plus advanced_5 (plot 19).
+  const REAL_OWNED = [
+    "beginner_1",
+    "beginner_2",
+    "beginner_3",
+    "beginner_4",
+    "intermediate_1",
+    "intermediate_2",
+    "intermediate_3",
+    "intermediate_4",
+    "advanced_5",
+  ];
+
+  function numbersWhere(
+    availability: "owned" | "buyable" | "unreachable",
+    owned = REAL_OWNED,
+    level = 10,
+  ): number[] {
+    const map = plotAvailability(owned, level);
+    return ALL_PLOTS.filter((p) => map.get(p.id) === availability)
+      .map((p) => p.plotNumber)
+      .sort((a, b) => a - b);
+  }
+
+  it("only plots touching the Barn or an owned plot are buyable (real account)", () => {
+    expect(numbersWhere("buyable")).toEqual([
+      9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 23,
+    ]);
+    expect(numbersWhere("unreachable")).toEqual([21, 22, 24]);
+    expect(numbersWhere("owned")).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 19]);
+  });
+
+  it("does not count diagonal neighbours", () => {
+    // Plot 21 (0,0) is diagonal to owned plot 5 (1,1) but shares no edge.
+    expect(plotAvailability(["intermediate_1"], 10).get("expert_1")).toBe(
+      "unreachable",
+    );
+  });
+
+  it("starts from the Barn when nothing is owned", () => {
+    expect(numbersWhere("buyable", [], 1)).toEqual([1, 2, 3, 4]);
+  });
+
+  it("keeps an adjacent plot unreachable until the garden level opens its tier", () => {
+    const owned = ["beginner_1", "beginner_2", "beginner_3", "beginner_4"];
+    expect(numbersWhere("buyable", owned, 1)).toEqual([]);
+    expect(numbersWhere("buyable", owned, 3)).toEqual([5, 6, 7, 8]);
+  });
+
+  it("makes cheapestNextPlot recommend only buyable plots", () => {
+    const next = cheapestNextPlot(REAL_OWNED, 10);
+    expect(next?.plotNumber).toBe(9);
+    // Own everything around the corners except 21/22/24's neighbours: never offered.
+    const all = ALL_PLOTS.map((p) => p.id).filter(
+      (id) => !["expert_1", "expert_3", "expert_4"].includes(id),
+    );
+    expect(cheapestNextPlot(all, 10)?.plotNumber).toBe(21);
   });
 });

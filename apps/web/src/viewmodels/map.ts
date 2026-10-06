@@ -2,6 +2,7 @@ import {
   ALL_PLOTS,
   BARN_CELL,
   nextPlotCost,
+  plotAvailability,
   type GardenState,
 } from "@garden-hq/core";
 
@@ -46,6 +47,7 @@ export function buildMapViewModel(
   assignments: Record<string, string>,
 ): MapViewModel {
   const unlocked = new Set(garden.unlockedPlotIds);
+  const availability = plotAvailability(garden.unlockedPlotIds, garden.level);
 
   const plots: PlotTile[] = ALL_PLOTS.map((plot) => {
     const base = {
@@ -60,7 +62,7 @@ export function buildMapViewModel(
         ...base,
         state: "locked" as const,
         availability:
-          plot.unlockLevel <= garden.level
+          availability.get(plot.id) === "buyable"
             ? ("buyable" as const)
             : ("unreachable" as const),
         lockedCost: nextPlotCost(plot.tierId, garden.unlockedPlotIds),

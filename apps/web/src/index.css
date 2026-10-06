@@ -1,3 +1,22 @@
+/* Pixelify Sans for words only: digits are excluded by unicode-range so numbers
+   (which this pixel face renders ambiguously, e.g. 5 vs S) use the body font. */
+@font-face {
+  font-family: "Pixel Words";
+  font-weight: 400;
+  font-display: swap;
+  src: url("../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-400-normal.woff2")
+    format("woff2");
+  unicode-range: U+0020-002F, U+003A-007E, U+00A0-00FF, U+2010-2027;
+}
+@font-face {
+  font-family: "Pixel Words";
+  font-weight: 600;
+  font-display: swap;
+  src: url("../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-600-normal.woff2")
+    format("woff2");
+  unicode-range: U+0020-002F, U+003A-007E, U+00A0-00FF, U+2010-2027;
+}
+
 /* Cozy pixel-farm theme: parchment panels, wood trim, hard pixel shadows. */
 :root {
   --ink: #3a2313;
@@ -17,7 +36,9 @@
   --gold: #f2c230;
   --seg-off: rgb(58 35 19 / 0.18);
   --shadow: 3px 3px 0 var(--ink);
-  --pixel-font: "Pixelify Sans", ui-monospace, "Cascadia Mono", monospace;
+  --pixel-font: "Pixel Words", system-ui, sans-serif;
+  --tabbar-h: 52px;
+  --column: 720px;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -58,7 +79,6 @@ body {
 }
 h1,
 h2,
-.num,
 .pill,
 .tab-bar a,
 button {
@@ -69,9 +89,9 @@ button {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  max-width: 720px;
+  max-width: var(--column);
   margin: 0 auto;
-  padding: 0 12px 76px;
+  padding: 0 12px 12px;
 }
 .main {
   flex: 1;
@@ -105,6 +125,7 @@ button {
   color: var(--muted);
 }
 .num {
+  font-family: system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 .error-card,
@@ -166,6 +187,9 @@ label {
   gap: 8px;
 }
 
+.app.with-tabs {
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px);
+}
 .footer {
   color: var(--on-wood);
   font-size: 0.8rem;
@@ -179,17 +203,22 @@ label {
 /* Bottom tab bar: a wooden sign board. */
 .tab-bar {
   position: fixed;
-  inset: auto 0 0 0;
+  inset: auto 0 0 50%;
+  transform: translateX(-50%);
+  width: min(100%, var(--column));
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   display: flex;
   background: var(--wood);
-  border-top: 2px solid var(--ink);
+  border: 2px solid var(--ink);
+  border-bottom: 0;
   box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.18);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .tab-bar a {
   flex: 1;
-  text-align: center;
-  padding: 14px 0;
+  display: grid;
+  place-items: center;
+  height: var(--tabbar-h);
   color: var(--on-wood);
   text-decoration: none;
   border-right: 2px solid var(--ink);
@@ -243,16 +272,61 @@ label {
   padding: 10px;
 }
 .map-wrap {
-  max-width: 480px;
+  /* 480px of canvas + the 2px frame border on each side */
+  max-width: 484px;
   margin: 0 auto;
   display: grid;
   justify-items: center;
 }
+.map-frame {
+  position: relative;
+  line-height: 0;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+}
 .map-wrap canvas {
   display: block;
   image-rendering: pixelated;
-  border: 2px solid var(--ink);
-  box-shadow: var(--shadow);
+}
+/* Plot-number badges: ~1/4 tile tall, top-left, dark stepped-corner chip. */
+.plot-badges {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template: repeat(5, var(--tile)) / repeat(5, var(--tile));
+  pointer-events: none;
+}
+.plot-badges li {
+  align-self: start;
+  justify-self: start;
+  margin: calc(var(--tile) / 16);
+}
+.plot-badges span {
+  display: block;
+  padding: 0.18em 0.4em;
+  font:
+    700 calc(var(--tile) / 4.2) / 1 system-ui,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgb(26 16 8 / 0.88);
+  clip-path: polygon(
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
+  );
 }
 
 /* Composter: chunky segmented bars. */
@@ -285,7 +359,6 @@ label {
   box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.3);
 }
 .bar-numbers {
-  font-family: var(--pixel-font);
   font-size: 0.9rem;
   margin-top: 3px;
   font-variant-numeric: tabular-nums;

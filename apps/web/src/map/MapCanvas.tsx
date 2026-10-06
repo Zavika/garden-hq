@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { MapScene, SceneHandlers } from "./MapScene";
-import type { MapViewModel } from "../viewmodels/map";
+import type { CSSProperties } from "react";
+import type { MapViewModel, PlotTile } from "../viewmodels/map";
 
 export function MapCanvas({
   viewModel,
@@ -14,6 +15,7 @@ export function MapCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scene, setScene] = useState<MapScene | null>(null);
+  const [tilePx, setTilePx] = useState(16);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,8 +37,10 @@ export function MapCanvas({
           next.destroy();
           return;
         }
-        next.resize(wrap.clientWidth);
-        observer = new ResizeObserver(() => next.resize(wrap.clientWidth));
+        setTilePx(next.resize(wrap.clientWidth - 4));
+        observer = new ResizeObserver(() =>
+          setTilePx(next.resize(wrap.clientWidth - 4)),
+        );
         observer.observe(wrap);
         setScene(next);
       } catch {
@@ -60,7 +64,25 @@ export function MapCanvas({
 
   return (
     <div ref={wrapRef} className="map-wrap">
-      <canvas ref={canvasRef} aria-hidden="true" />
+      <div
+        className="map-frame"
+        style={{ "--tile": `${tilePx}px` } as CSSProperties}
+      >
+        <canvas ref={canvasRef} aria-hidden="true" />
+        {/* Plot numbers are DOM so they use the body font and stay crisp at any zoom. */}
+        <ol className="plot-badges" aria-hidden="true">
+          {viewModel.tiles
+            .filter((t): t is PlotTile => t.kind === "plot")
+            .map((tile) => (
+              <li
+                key={tile.plotId}
+                style={{ gridColumn: tile.x + 1, gridRow: tile.y + 1 }}
+              >
+                <span>{tile.plotNumber}</span>
+              </li>
+            ))}
+        </ol>
+      </div>
     </div>
   );
 }

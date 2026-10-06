@@ -1,7 +1,6 @@
 import { Application, Container, Graphics, type Ticker } from "pixi.js";
 import { GRID_SIZE } from "@garden-hq/core";
 import type { BarnTile, MapViewModel, PlotTile } from "../viewmodels/map";
-import { drawNumber } from "./digits";
 import { COLORS, cropColor } from "./palette";
 import { tracksHover } from "./pointer";
 
@@ -88,10 +87,11 @@ export class MapScene {
     if (this.app !== null) this.draw(vm);
   }
 
-  /** Picks the largest integer scale that fits `cssWidth`; never below 1. */
-  resize(cssWidth: number): void {
+  /** Picks the largest integer scale that fits `cssWidth`; returns CSS px per tile. */
+  resize(cssWidth: number): number {
     this.scale = Math.max(1, Math.floor(cssWidth / (GRID_SIZE * TILE)));
     if (this.app !== null) this.applyScale();
+    return TILE * this.scale;
   }
 
   destroy(): void {
@@ -173,6 +173,25 @@ export class MapScene {
     }
   }
 
+  /** Tilled earth: alternating ridges and furrows, roughened with clods. */
+  private tilledSoil(g: Graphics, tx: number, ty: number): void {
+    const x = tx * TILE;
+    const y = ty * TILE;
+    g.rect(x + 1, y + 1, TILE - 2, TILE - 2).fill(COLORS.soilEdge);
+    g.rect(x + 2, y + 2, TILE - 4, TILE - 4).fill(COLORS.soilFurrow);
+    for (let row = 0; row < 4; row++) {
+      const ry = y + 3 + row * 3;
+      g.rect(x + 2, ry, TILE - 4, 2).fill(COLORS.soilRidge);
+      g.rect(x + 2, ry, TILE - 4, 1).fill(COLORS.soilRidgeLight);
+    }
+    for (let i = 0; i < 6; i++) {
+      const n = noise(tx, ty, 300 + i);
+      g.rect(x + 2 + (n % 11), y + 3 + ((n >>> 8) % 10), 1, 1).fill(
+        i % 2 === 0 ? COLORS.soilFurrow : COLORS.soilRidgeLight,
+      );
+    }
+  }
+
   private plotGraphic(tile: PlotTile): Container {
     const root = new Container();
     const g = new Graphics();
@@ -208,33 +227,21 @@ export class MapScene {
         root.addChild(glow);
       }
     } else {
-      g.rect(x + 1, y + 1, TILE - 2, TILE - 2).fill(COLORS.soilEdge);
-      g.rect(x + 2, y + 2, TILE - 4, TILE - 4).fill(COLORS.soil);
-      for (let row = 0; row < 3; row++) {
-        g.rect(x + 2, y + 5 + row * 4, TILE - 4, 1).fill(COLORS.soilFurrow);
-      }
+      this.tilledSoil(g, tile.x, tile.y);
       if (tile.state === "assigned" && tile.cropId !== undefined) {
         const colour = cropColor(tile.cropId);
-        // A 3x3 pattern of 3px "plants" - original, flat-colour glyph.
+        // 3x3 plants in the lower-right, clear of the plot-number badge
+        // (which lives in the top-left ~6px of the tile).
         for (let row = 0; row < 3; row++) {
           for (let col = 0; col < 3; col++) {
-            const px = x + 2 + col * 4;
-            const py = y + 2 + row * 4;
-            g.rect(px, py, 3, 3).fill(colour);
-            g.rect(px, py, 3, 1).fill({ color: 0xffffff, alpha: 0.28 });
+            const px = x + 6 + col * 3;
+            const py = y + 6 + row * 3;
+            g.rect(px, py, 2, 2).fill(colour);
+            g.rect(px, py, 2, 1).fill({ color: 0xffffff, alpha: 0.3 });
           }
         }
       }
     }
-
-    drawNumber(
-      g,
-      tile.plotNumber,
-      x + 1,
-      y + 1,
-      COLORS.label,
-      COLORS.labelShadow,
-    );
 
     root.eventMode = "static";
     root.cursor = "pointer";
