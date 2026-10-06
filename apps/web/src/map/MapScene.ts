@@ -3,9 +3,7 @@ import { GRID_SIZE } from "@garden-hq/core";
 import type { BarnTile, MapViewModel, PlotTile } from "../viewmodels/map";
 import { COLORS, cropColor } from "./palette";
 import { tracksHover } from "./pointer";
-
-/** Logical pixels per tile; the whole scene is scaled by an integer factor. */
-const TILE = 16;
+import { TILE, tilePxFor } from "./layout";
 
 export interface SceneHandlers {
   onPlotTap(plotId: string, state: PlotTile["state"]): void;
@@ -89,9 +87,10 @@ export class MapScene {
 
   /** Picks the largest integer scale that fits `cssWidth`; returns CSS px per tile. */
   resize(cssWidth: number): number {
-    this.scale = Math.max(1, Math.floor(cssWidth / (GRID_SIZE * TILE)));
+    const tilePx = tilePxFor(cssWidth);
+    this.scale = tilePx / TILE;
     if (this.app !== null) this.applyScale();
-    return TILE * this.scale;
+    return tilePx;
   }
 
   destroy(): void {

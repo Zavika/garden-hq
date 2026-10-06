@@ -288,6 +288,44 @@ label {
   display: block;
   image-rendering: pixelated;
 }
+/* Until the scene's first draw: a meadow-coloured placeholder at the final
+   size; the (still blank) canvas is hidden so it can't size the frame. */
+.map-frame.is-loading {
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(var(--tile) - 2px),
+      rgb(0 0 0 / 0.06) calc(var(--tile) - 2px) var(--tile)
+    ),
+    var(--meadow);
+}
+.map-frame.is-loading canvas {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+.map-loading {
+  margin: 0;
+  padding: 6px 10px;
+  line-height: 1.2;
+  font-family: var(--pixel-font);
+  color: var(--on-wood);
+  background: var(--wood-dark);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .map-loading {
+    animation: map-loading-pulse 1.2s steps(2, jump-none) infinite;
+  }
+}
+@keyframes map-loading-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
 /* Plot-number badges: ~1/4 tile tall, top-left, dark stepped-corner chip. */
 .plot-badges {
   position: absolute;
