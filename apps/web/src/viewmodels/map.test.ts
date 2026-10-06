@@ -56,6 +56,18 @@ describe("buildMapViewModel", () => {
     );
   });
 
+  it("marks locked plots buyable only once the garden level reaches their tier", () => {
+    const state = garden({ garden_experience: 300 });
+    expect(state.level).toBe(4);
+    const low = buildMapViewModel(state, {});
+    const byId = new Map(plots(low).map((t) => [t.plotId, t]));
+    expect(byId.get("beginner_1")?.availability).toBe("owned");
+    expect(byId.get("beginner_3")?.availability).toBe("buyable");
+    expect(byId.get("intermediate_1")?.availability).toBe("buyable");
+    expect(byId.get("advanced_1")?.availability).toBe("unreachable");
+    expect(byId.get("expert_1")?.availability).toBe("unreachable");
+  });
+
   it("carries the in-game plot number and the expert ladder cost", () => {
     const vm = buildMapViewModel(garden(), {});
     expect(plots(vm).find((t) => t.plotId === "expert_1")).toMatchObject({

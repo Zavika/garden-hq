@@ -4,6 +4,7 @@
     "organicMatterPerCompost": 4000,
     "fuelPerCompost": 2000
   },
+  "baseCap": { "fuel": 40000, "organicMatter": 40000 },
   "upgrades": {
     "speed": { "effectPerTier": 0.2, "maxEffect": 5.0, "maxTier": 25 },
     "multiDrop": { "effectPerTier": 0.03, "maxEffect": 0.75, "maxTier": 25 },

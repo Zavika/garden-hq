@@ -11,6 +11,9 @@ vi.mock("../state/queries", () => ({
   useMayor: () => mayor(),
 }));
 
+const PENDING = { data: undefined, isError: false };
+const FAILED = { data: undefined, isError: true };
+
 describe("Hud", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
@@ -21,6 +24,7 @@ describe("Hud", () => {
 
   it("shows date, season, next contest crops and the mayor", () => {
     contests.mockReturnValue({
+      isError: false,
       data: {
         contests: [
           {
@@ -33,6 +37,7 @@ describe("Hud", () => {
       },
     });
     mayor.mockReturnValue({
+      isError: false,
       data: {
         mayor: {
           key: "finnegan",
@@ -45,18 +50,48 @@ describe("Hud", () => {
     });
     renderWithProviders(<Hud assignedCropIds={["carrot"]} />);
     expect(screen.getByText(/early spring/i)).toBeInTheDocument();
-    expect(screen.getByText(/wheat/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/finnegan \(farming simulator\)/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/you have a plot for this/i)).toBeInTheDocument();
+    expect(screen.getByText(/wheat, carrot, potato/i)).toBeInTheDocument();
+    expect(screen.getByText("Finnegan")).toBeInTheDocument();
+    expect(screen.getByText(/your crop/i)).toBeInTheDocument();
   });
 
-  it("degrades per slot when contests or mayor are unavailable", () => {
-    contests.mockReturnValue({ data: undefined });
-    mayor.mockReturnValue({ data: undefined });
+  it("strips Minecraft colour codes from the mayor name", () => {
+    contests.mockReturnValue(PENDING);
+    mayor.mockReturnValue({
+      isError: false,
+      data: {
+        mayor: { key: "marina", name: "§bMarina", perks: [], minister: null },
+        fetchedAt: "",
+      },
+    });
+    renderWithProviders(<Hud assignedCropIds={[]} />);
+    expect(screen.getByText("Marina")).toBeInTheDocument();
+    expect(screen.queryByText(/§/)).not.toBeInTheDocument();
+  });
+
+  it("says loading while contests and mayor are still being fetched", () => {
+    contests.mockReturnValue(PENDING);
+    mayor.mockReturnValue(PENDING);
+    renderWithProviders(<Hud assignedCropIds={[]} />);
+    expect(screen.getByText(/contest: loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/mayor: loading/i)).toBeInTheDocument();
+    expect(screen.queryByText(/unavailable/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/early spring/i)).toBeInTheDocument();
+  });
+
+  it("says unavailable only after a fetch fails", () => {
+    contests.mockReturnValue(FAILED);
+    mayor.mockReturnValue(FAILED);
     renderWithProviders(<Hud assignedCropIds={[]} />);
     expect(screen.getAllByText(/unavailable/i)).toHaveLength(2);
-    expect(screen.getByText(/early spring/i)).toBeInTheDocument();
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  });
+
+  it("degrades per slot", () => {
+    contests.mockReturnValue(FAILED);
+    mayor.mockReturnValue(PENDING);
+    renderWithProviders(<Hud assignedCropIds={[]} />);
+    expect(screen.getByText(/contest: unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(/mayor: loading/i)).toBeInTheDocument();
   });
 });

@@ -42,7 +42,7 @@ export function MapSection({ garden, assignments }: MapSectionProps) {
   const selected = plots.find((t) => t.plotId === selectedPlotId);
 
   return (
-    <section className="card" aria-label="Garden map">
+    <section className="card map-card" aria-label="Garden map">
       {webglFailed ? null : (
         <MapCanvas
           viewModel={viewModel}

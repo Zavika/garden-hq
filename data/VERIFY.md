@@ -20,7 +20,8 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 
 - Exact tier count for the `fuelCap` and `organicMatterCap` upgrades (`data/composter.json` has `maxTier: null` for both) — the wiki confirms the per-tier effect (+30,000 each) and the final cap (850,000 / 790,000) but not how many tiers it takes to reach it, and the arithmetic doesn't divide evenly, implying a nonzero base cap that isn't documented.
 - Per-tier purchase costs beyond tier 1-2 (Copper + rare crop amounts) — the wiki describes an "alternating pattern" through tier 25 for `speed`/`multi_drop` but doesn't spell out the full table. Not encoded in `data/composter.json` at all — only the decay/effect formulas `composter.ts` needs.
-- `composterCapacity()` uses the fully-upgraded caps (`maxEffect`) as the gauge denominator; the real per-player cap (base + purchased tiers) is unconfirmed.
+- **Composter base cap 40,000** (fuel and organic matter, `baseCap` in `data/composter.json`) is inferred, not stated by any source: the wiki's final caps (850,000 / 790,000) minus 27 / 25 tiers of +30,000 leave exactly 40,000. `composterCapacity(upgrades)` = base + tiers x 30,000, clamped to the wiki maximum. Confirm against a real account's `fuel_cap` / `organic_matter_cap` tiers and the in-game gauge.
+- Composter consumption is modelled as continuous (while both fuel and organic matter remain); the game consumes per compost batch, so the forecast can be off by up to one batch.
 - Compost bin storage cap (needed to predict "full at…" per CLAUDE.md §2) — not found anywhere. `composter.ts` (Task 5) only predicts fuel/organic-matter depletion for Phase 1, not compost-bin-full.
 
 ## Garden API fixture

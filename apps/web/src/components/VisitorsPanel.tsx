@@ -1,3 +1,5 @@
+import { VisitorAvatar } from "./PixelArt";
+
 export function VisitorsPanel({
   visitors,
 }: {
@@ -5,13 +7,18 @@ export function VisitorsPanel({
 }) {
   return (
     <section className="card" aria-label="Visitors">
-      <h2>Visitors ({visitors.length}/5)</h2>
+      <h2>
+        Visitors <span className="num">({visitors.length}/5)</span>
+      </h2>
       {visitors.length === 0 ? (
         <p>Nobody is waiting at the Barn.</p>
       ) : (
-        <ul>
+        <ul className="chips">
           {visitors.map((v) => (
-            <li key={v.id}>{v.name}</li>
+            <li key={v.id} className="chip">
+              <VisitorAvatar name={v.name} />
+              <span>{v.name}</span>
+            </li>
           ))}
         </ul>
       )}

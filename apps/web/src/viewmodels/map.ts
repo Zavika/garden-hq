@@ -15,6 +15,8 @@ export interface PlotTile {
   x: number;
   y: number;
   state: "locked" | "unlocked" | "assigned";
+  /** Locked plots are buyable once the garden level reaches their tier. */
+  availability: "owned" | "buyable" | "unreachable";
   cropId?: string;
   /** null = cost unknown (see data/VERIFY.md). */
   lockedCost: number | null;
@@ -57,13 +59,28 @@ export function buildMapViewModel(
       return {
         ...base,
         state: "locked" as const,
+        availability:
+          plot.unlockLevel <= garden.level
+            ? ("buyable" as const)
+            : ("unreachable" as const),
         lockedCost: nextPlotCost(plot.tierId, garden.unlockedPlotIds),
       };
     }
     const cropId = assignments[plot.id];
     return cropId === undefined
-      ? { ...base, state: "unlocked" as const, lockedCost: null }
-      : { ...base, state: "assigned" as const, cropId, lockedCost: null };
+      ? {
+          ...base,
+          state: "unlocked" as const,
+          availability: "owned" as const,
+          lockedCost: null,
+        }
+      : {
+          ...base,
+          state: "assigned" as const,
+          availability: "owned" as const,
+          cropId,
+          lockedCost: null,
+        };
   });
 
   const barn: BarnTile = {

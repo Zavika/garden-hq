@@ -8,6 +8,7 @@ interface UpgradeCurve {
 }
 
 interface ComposterData {
+  baseCap: { fuel: number; organicMatter: number };
   baseRate: {
     minutesPerCompost: number;
     organicMatterPerCompost: number;
@@ -28,12 +29,31 @@ function effectAtTier(curve: UpgradeCurve, tier: number): number {
   return Math.min(tier * curve.effectPerTier, curve.maxEffect);
 }
 
-// VERIFY: the per-player cap (base + tiers) is unconfirmed; the gauge uses
-// the fully-upgraded cap as its denominator (see data/VERIFY.md).
-export function composterCapacity(): { fuel: number; organicMatter: number } {
+// VERIFY: base cap 40,000 is inferred -- the wiki's final caps (850,000 /
+// 790,000) minus 27 / 25 tiers of +30,000 leave exactly 40,000, but no source
+// states it (see data/VERIFY.md).
+/** Fuel / organic-matter capacity; without `upgrades`, the fully-upgraded cap. */
+export function composterCapacity(upgrades?: ComposterUpgrades): {
+  fuel: number;
+  organicMatter: number;
+} {
+  const { fuelCap, organicMatterCap } = DATA.upgrades;
+  if (upgrades === undefined) {
+    return {
+      fuel: fuelCap.maxEffect,
+      organicMatter: organicMatterCap.maxEffect,
+    };
+  }
   return {
-    fuel: DATA.upgrades.fuelCap.maxEffect,
-    organicMatter: DATA.upgrades.organicMatterCap.maxEffect,
+    fuel: Math.min(
+      DATA.baseCap.fuel + effectAtTier(fuelCap, upgrades.fuelCap),
+      fuelCap.maxEffect,
+    ),
+    organicMatter: Math.min(
+      DATA.baseCap.organicMatter +
+        effectAtTier(organicMatterCap, upgrades.organicMatterCap),
+      organicMatterCap.maxEffect,
+    ),
   };
 }
 
@@ -54,40 +74,73 @@ export function fuelPerHour(upgrades: ComposterUpgrades): number {
   return compostPerHour(upgrades) * DATA.baseRate.fuelPerCompost;
 }
 
+export type ComposterStatus = "running" | "no_fuel" | "no_organic_matter";
+
 export interface ComposterForecast {
   organicMatter: number;
   fuel: number;
-  fuelDepletesAt: number | null;
-  organicMatterDepletesAt: number | null;
+  status: ComposterStatus;
+  /** When it will stop; always >= `nowMs`. Null unless `status` is running. */
+  stopsAt: number | null;
+  /** Which resource runs out first. Null unless `status` is running. */
+  stopsBecause: "fuel" | "organic_matter" | null;
 }
+
+const HOUR_MS = 60 * 60 * 1000;
 
 // VERIFY: this only forecasts fuel/organic-matter depletion, not the
 // compost bin filling up -- the storage cap needed for a "full at" style
 // prediction isn't confirmed anywhere (see data/VERIFY.md).
+/**
+ * The composter only consumes while it has BOTH fuel and organic matter, so
+ * elapsed time is capped at the point the first of them ran out. With no fuel
+ * nothing is consumed and the saved organic matter is still there.
+ */
 export function forecastComposter(
   state: ComposterState,
   nowMs: number,
 ): ComposterForecast {
-  const elapsedHours = Math.max(0, nowMs - state.lastSave) / (60 * 60 * 1000);
-  const fuelUsedPerHour = fuelPerHour(state.upgrades);
-  const organicMatterUsedPerHour = organicMatterPerHour(state.upgrades);
+  const elapsedHours = Math.max(0, nowMs - state.lastSave) / HOUR_MS;
+  const fuelRate = fuelPerHour(state.upgrades);
+  const organicRate = organicMatterPerHour(state.upgrades);
 
-  const fuel = Math.max(0, state.fuel - fuelUsedPerHour * elapsedHours);
+  const fuelHours = state.fuel > 0 ? state.fuel / fuelRate : 0;
+  const organicHours =
+    state.organicMatter > 0 ? state.organicMatter / organicRate : 0;
+  const ranHours = Math.min(elapsedHours, fuelHours, organicHours);
+
+  const fuel = Math.max(0, state.fuel - fuelRate * ranHours);
   const organicMatter = Math.max(
     0,
-    state.organicMatter - organicMatterUsedPerHour * elapsedHours,
+    state.organicMatter - organicRate * ranHours,
   );
 
-  const fuelDepletesAt =
-    fuelUsedPerHour > 0
-      ? state.lastSave + (state.fuel / fuelUsedPerHour) * 60 * 60 * 1000
-      : null;
+  if (fuel <= 0) {
+    return {
+      organicMatter,
+      fuel: 0,
+      status: "no_fuel",
+      stopsAt: null,
+      stopsBecause: null,
+    };
+  }
+  if (organicMatter <= 0) {
+    return {
+      organicMatter: 0,
+      fuel,
+      status: "no_organic_matter",
+      stopsAt: null,
+      stopsBecause: null,
+    };
+  }
 
-  const organicMatterDepletesAt =
-    organicMatterUsedPerHour > 0
-      ? state.lastSave +
-        (state.organicMatter / organicMatterUsedPerHour) * 60 * 60 * 1000
-      : null;
-
-  return { organicMatter, fuel, fuelDepletesAt, organicMatterDepletesAt };
+  const fuelLeftHours = fuel / fuelRate;
+  const organicLeftHours = organicMatter / organicRate;
+  return {
+    organicMatter,
+    fuel,
+    status: "running",
+    stopsAt: nowMs + Math.min(fuelLeftHours, organicLeftHours) * HOUR_MS,
+    stopsBecause: fuelLeftHours <= organicLeftHours ? "fuel" : "organic_matter",
+  };
 }

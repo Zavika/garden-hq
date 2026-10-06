@@ -9,6 +9,7 @@ export * from "./garden";
 export * from "./plots";
 export * from "./profiles";
 export * from "./mayor";
+export * from "./text";
 export * from "./contests";
 export * from "./crops";
 export * from "./api";

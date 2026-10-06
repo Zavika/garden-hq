@@ -3,6 +3,38 @@ import electionResponse from "../fixtures/election-response.sample.json";
 import { normalizeMayor } from "./mayor";
 
 describe("normalizeMayor", () => {
+  it("strips Minecraft colour codes from names and descriptions", () => {
+    const mayor = normalizeMayor({
+      mayor: {
+        key: "finnegan",
+        name: "§bFinnegan",
+        perks: [
+          {
+            name: "§6Farming Simulator",
+            description: "§7Pests spawn §a+25%§7 less.",
+          },
+        ],
+        minister: {
+          key: "jerry",
+          name: "§dJerry",
+          perk: { name: "§eMinister Perk", description: "§7Text" },
+        },
+      },
+    });
+    expect(mayor).toEqual({
+      key: "finnegan",
+      name: "Finnegan",
+      perks: [
+        { name: "Farming Simulator", description: "Pests spawn +25% less." },
+      ],
+      minister: {
+        key: "jerry",
+        name: "Jerry",
+        perk: { name: "Minister Perk", description: "Text" },
+      },
+    });
+  });
+
   it("normalizes mayor, perks and minister", () => {
     expect(normalizeMayor(electionResponse)).toEqual({
       key: "finnegan",
