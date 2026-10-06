@@ -15,3 +15,4 @@ coverage/
 
 # raw API dumps (large, contain real player data)
 apps/worker/profiles.json
+apps/worker/garden.raw.json
