@@ -8,6 +8,7 @@ import {
   type GreenhouseCellRef,
 } from "@garden-hq/core";
 import { useMemo, useState } from "react";
+import { MAX_WATERING_INTERVAL_HOURS } from "../state/storage";
 import { useStorage, useStoredData } from "../state/StorageProvider";
 import { useNow } from "../state/useNow";
 import {
@@ -104,6 +105,27 @@ export function GreenhousePanel({
         >
           I watered it
         </button>
+      </p>
+      <p>
+        <label>
+          Remind me every{" "}
+          <input
+            type="number"
+            min={1}
+            max={MAX_WATERING_INTERVAL_HOURS}
+            step={1}
+            inputMode="numeric"
+            value={save?.wateringIntervalHours ?? ""}
+            onChange={(event) => {
+              const raw = event.target.value;
+              storage.setWateringInterval(
+                plotId,
+                raw === "" ? null : Number(raw),
+              );
+            }}
+          />{" "}
+          hours after watering
+        </label>
       </p>
       <GreenhouseGrid
         rows={vm.rows}

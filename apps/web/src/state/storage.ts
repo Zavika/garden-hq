@@ -8,12 +8,15 @@ export interface StoredLink {
 }
 
 export const MAX_GREENHOUSES = 3;
+export const MAX_WATERING_INTERVAL_HOURS = 720;
 
 export interface GreenhouseSave {
   /** Cell key "x,z" -> placed crop or mutation id. */
   cells: Record<string, string>;
   /** Epoch ms of the player's last "I watered it" press, or null. */
   lastWateredAt: number | null;
+  /** Player-chosen "water again after N hours"; null until set (no verified default). */
+  wateringIntervalHours: number | null;
 }
 
 export interface StoredData {
@@ -43,6 +46,7 @@ export interface GardenStorage {
     contentId: string | null,
   ): void;
   markGreenhouseWatered(plotId: string, at: number): void;
+  setWateringInterval(plotId: string, hours: number | null): void;
   setTimeZone(timeZone: string): void;
   clearAll(): void;
 }
@@ -94,6 +98,15 @@ function parseAssignments(v: unknown): Record<string, string> {
 
 const CELL_KEY_RE = /^\d,\d$/;
 
+function validInterval(v: unknown): number | null {
+  return typeof v === "number" &&
+    Number.isFinite(v) &&
+    v > 0 &&
+    v <= MAX_WATERING_INTERVAL_HOURS
+    ? v
+    : null;
+}
+
 function parseGreenhouses(v: unknown): Record<string, GreenhouseSave> {
   if (typeof v !== "object" || v === null || Array.isArray(v)) return {};
   const out: Record<string, GreenhouseSave> = {};
@@ -124,6 +137,7 @@ function parseGreenhouses(v: unknown): Record<string, GreenhouseSave> {
         typeof r.lastWateredAt === "number" && Number.isFinite(r.lastWateredAt)
           ? r.lastWateredAt
           : null,
+      wateringIntervalHours: validInterval(r.wateringIntervalHours),
     };
   }
   return out;
@@ -192,7 +206,11 @@ export function createGardenStorage(backing: Backing | null): GardenStorage {
         ...data,
         greenhouses: {
           ...data.greenhouses,
-          [plotId]: { cells: {}, lastWateredAt: null },
+          [plotId]: {
+            cells: {},
+            lastWateredAt: null,
+            wateringIntervalHours: null,
+          },
         },
       });
       return true;
@@ -223,6 +241,18 @@ export function createGardenStorage(backing: Backing | null): GardenStorage {
         greenhouses: {
           ...data.greenhouses,
           [plotId]: { ...save, lastWateredAt: at },
+        },
+      });
+    },
+    setWateringInterval(plotId, hours) {
+      const save = data.greenhouses[plotId];
+      if (save === undefined) return;
+      if (hours !== null && validInterval(hours) === null) return;
+      commit({
+        ...data,
+        greenhouses: {
+          ...data.greenhouses,
+          [plotId]: { ...save, wateringIntervalHours: hours },
         },
       });
     },

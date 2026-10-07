@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "thresholds": {
+    "contestWindowMinutes": 60,
+    "fuelEarlyWarningMinutes": 30,
+    "greenhouseLeadMinutes": 30,
+    "visitorQueueMax": 5
+  },
+  "maxActionsShown": 5
+}

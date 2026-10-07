@@ -1,10 +1,10 @@
 import { findProfileMember, normalizeGardenMember } from "@garden-hq/core";
 import { Hono } from "hono";
 import type { AppDeps } from "../app";
-import { cached } from "../cache";
 import type { Env } from "../env";
 import { AppError } from "../errors";
 import type { ClientFactory } from "../hypixel";
+import { cachedInMemory, type MemoryCache } from "../memcache";
 import { enforceRateLimit } from "../ratelimit";
 import { parseUuid } from "../validate";
 
@@ -13,6 +13,7 @@ const CACHE_TTL_SECONDS = 60;
 export function memberRoute(
   deps: AppDeps,
   clientFor: ClientFactory,
+  playerCache: MemoryCache,
 ): Hono<{ Bindings: Env }> {
   const route = new Hono<{ Bindings: Env }>();
 
@@ -21,8 +22,8 @@ export function memberRoute(
     const uuid = parseUuid(c.req.query("uuid"));
     await enforceRateLimit(c.env, c.req.header("CF-Connecting-IP"), deps.now);
 
-    const { value, fetchedAt } = await cached(
-      c.env.CACHE,
+    const { value, fetchedAt } = await cachedInMemory(
+      playerCache,
       `member:${profileId}:${uuid}`,
       CACHE_TTL_SECONDS,
       deps.now,

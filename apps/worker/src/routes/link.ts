@@ -1,10 +1,10 @@
 import { normalizeProfiles } from "@garden-hq/core";
 import { Hono } from "hono";
 import type { AppDeps } from "../app";
-import { cached } from "../cache";
 import type { Env } from "../env";
 import { AppError } from "../errors";
 import type { ClientFactory } from "../hypixel";
+import { cachedInMemory, type MemoryCache } from "../memcache";
 import { lookupUuid } from "../mojang";
 import { enforceRateLimit } from "../ratelimit";
 import { parseName } from "../validate";
@@ -14,6 +14,7 @@ const CACHE_TTL_SECONDS = 60;
 export function linkRoute(
   deps: AppDeps,
   clientFor: ClientFactory,
+  playerCache: MemoryCache,
 ): Hono<{ Bindings: Env }> {
   const route = new Hono<{ Bindings: Env }>();
 
@@ -22,8 +23,8 @@ export function linkRoute(
     await enforceRateLimit(c.env, c.req.header("CF-Connecting-IP"), deps.now);
 
     // Keyed by name: the uuid is unknown until Mojang answers.
-    const { value, fetchedAt } = await cached(
-      c.env.CACHE,
+    const { value, fetchedAt } = await cachedInMemory(
+      playerCache,
       `link:${name.toLowerCase()}`,
       CACHE_TTL_SECONDS,
       deps.now,

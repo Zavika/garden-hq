@@ -69,3 +69,11 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Godseed:** "all positive crop effects" (3x3 on Farmland); the forum says easiest is 12 different crops with Sunflower or Moonflower. **Jerryflower:** "Grow the Fertilized Jerryseed" (needs Move Jerry items at stage 5 per the wiki Jerryflower page). **Lonelily:** 0 adjacent crops.
 - **needsWater:** the older forum post sorts mutations into "no watering required" (commons) and "require watering" (others), but the current wiki table has no such column. Left `null` (no confirmed current per-mutation source).
 - **Wiki edits in 2026** (Mar 18 drop reductions, Aug 24 Shellfruit drop change) show the page is still being rebalanced; recipes may drift. Wiki also lists spawn weights (staff Discord quote) that are not stored.
+
+## Planner (Phase 3A, 2026-10-07)
+
+- **Compost shortfall for a plot unlock** — the API exposes Compost sitting in the composter bin, not the player's inventory, so the planner shows "Costs N Compost. Composter holds M ready." and never claims a shortfall. Resolves if the API (or the player, via an input) gives inventory Compost.
+- **Visitor copper / Garden XP value** — dropped from the planner. `data/visitors.json` (CLAUDE.md §5) does not exist yet; `planner.ts` has a `TODO(visitors.json)`. "Fastest source" for the next Garden level depends on it, so that row shows only the XP remaining.
+- **Planner thresholds** (`data/planner.json`): contest window 60 min, fuel early warning 30 min, Greenhouse lead 30 min, visitor queue 5. These are product choices, not game facts, except the queue size of 5 (CLAUDE.md §2).
+- **Greenhouse watering interval** — there is no verified water duration (see "Water/decay" above), so the row only fires when the player sets an interval AND has pressed "I watered it".
+- **Composter action ids** — `composter_no_fuel` / `composter_fuel_low` are keyed on `composter.lastSave`. A missing `last_save` (0) is treated as "just saved" for the forecast, but the id would be `...:0`. Flagged for the alert dedupe in milestone C.

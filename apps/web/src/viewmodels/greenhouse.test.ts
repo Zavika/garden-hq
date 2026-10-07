@@ -11,7 +11,11 @@ import {
 describe("buildGreenhouseViewModel", () => {
   it("builds a 10x10 grid of locked/empty/filled cells", () => {
     const vm = buildGreenhouseViewModel(
-      { cells: { "4,4": "wheat" }, lastWateredAt: null },
+      {
+        cells: { "4,4": "wheat" },
+        lastWateredAt: null,
+        wateringIntervalHours: null,
+      },
       LOCKED_CELLS,
     );
     expect(vm.rows).toHaveLength(10);
@@ -33,6 +37,7 @@ describe("buildGreenhouseViewModel", () => {
       {
         cells: { "0,0": "wheat", "4,4": "carrot", "4,5": "potato" },
         lastWateredAt: null,
+        wateringIntervalHours: null,
       },
       LOCKED_CELLS,
     );

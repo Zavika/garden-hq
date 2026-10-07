@@ -1,7 +1,9 @@
 import { normalizeGarden } from "@garden-hq/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  FakeKV,
   GARDEN_ROUTE,
+  PROFILES_ROUTE,
   START_ISO,
   fixtures,
   happyRoutes,
@@ -23,6 +25,45 @@ async function code(res: Response): Promise<string> {
 }
 
 describe("GET /api/garden", () => {
+  it("keeps per-player member data out of KV", async () => {
+    const uuid = "11111111-1111-1111-1111-111111111111";
+    const { get, env } = harness(
+      happyRoutes({
+        [PROFILES_ROUTE]: () =>
+          json({
+            success: true,
+            profiles: [
+              {
+                profile_id: PROFILE,
+                members: { [uuid.replace(/-/g, "")]: {} },
+              },
+            ],
+          }),
+      }),
+    );
+
+    const res = await get(`/api/member?profile=${PROFILE}&uuid=${uuid}`);
+
+    expect(res.status).toBe(200);
+    const kv = env.CACHE as unknown as FakeKV;
+    expect([...kv.store.keys()].filter((k) => k.startsWith("member:"))).toEqual(
+      [],
+    );
+  });
+
+  it("keeps per-player data out of KV", async () => {
+    const { get, env } = harness();
+
+    await get(`/api/garden?profile=${PROFILE}`);
+    await get("/api/link?name=TestFarmer");
+
+    const kv = env.CACHE as unknown as FakeKV;
+    const playerKeys = [...kv.store.keys()].filter(
+      (key) => key.startsWith("garden:") || key.startsWith("link:"),
+    );
+    expect(playerKeys).toEqual([]);
+  });
+
   it("returns the normalized GardenState with fetchedAt", async () => {
     const { get } = harness();
 

@@ -10,6 +10,7 @@ import {
   type ClientFactory,
 } from "./hypixel";
 import { logError, redact } from "./log";
+import { createMemoryCache } from "./memcache";
 import { contestsRoute } from "./routes/contests";
 import { gardenRoute } from "./routes/garden";
 import { linkRoute } from "./routes/link";
@@ -35,6 +36,8 @@ export function createApp(
 
   // One rate-limit state per app instance (per isolate) so RateLimit-* headers carry over.
   const hypixelState = createRateLimitState();
+  // Per-player responses are cached in memory, never in KV (free-plan write limit).
+  const playerCache = createMemoryCache();
   const clientFor: ClientFactory = (env) =>
     createHypixelClient({
       fetch: deps.fetch,
@@ -62,9 +65,9 @@ export function createApp(
     }),
   );
 
-  app.route("/api", linkRoute(deps, clientFor));
-  app.route("/api", gardenRoute(deps, clientFor));
-  app.route("/api", memberRoute(deps, clientFor));
+  app.route("/api", linkRoute(deps, clientFor, playerCache));
+  app.route("/api", gardenRoute(deps, clientFor, playerCache));
+  app.route("/api", memberRoute(deps, clientFor, playerCache));
   app.route("/api", contestsRoute(deps));
   app.route("/api", mayorRoute(deps, clientFor));
 

@@ -131,12 +131,62 @@ describe("createGardenStorage", () => {
 });
 
 describe("greenhouse storage", () => {
+  it("stores a watering interval, rejects bad values, and clears with null", () => {
+    const s = createGardenStorage(null);
+    s.markGreenhouse("beginner_3");
+    s.setWateringInterval("beginner_3", 8);
+    expect(s.getSnapshot().greenhouses.beginner_3?.wateringIntervalHours).toBe(
+      8,
+    );
+    s.setWateringInterval("beginner_3", 0);
+    s.setWateringInterval("beginner_3", -2);
+    s.setWateringInterval("beginner_3", Number.NaN);
+    s.setWateringInterval("beginner_3", 721);
+    expect(s.getSnapshot().greenhouses.beginner_3?.wateringIntervalHours).toBe(
+      8,
+    );
+    s.setWateringInterval("beginner_3", null);
+    expect(
+      s.getSnapshot().greenhouses.beginner_3?.wateringIntervalHours,
+    ).toBeNull();
+    s.setWateringInterval("beginner_1", 4); // not a Greenhouse: ignored
+    expect(s.getSnapshot().greenhouses.beginner_1).toBeUndefined();
+  });
+
+  it("loads a saved interval and drops an invalid one", () => {
+    const backing = new Map<string, string>();
+    const store = {
+      getItem: (k: string) => backing.get(k) ?? null,
+      setItem: (k: string, v: string) => void backing.set(k, v),
+      removeItem: (k: string) => void backing.delete(k),
+    };
+    const first = createGardenStorage(store);
+    first.markGreenhouse("beginner_3");
+    first.setWateringInterval("beginner_3", 6);
+    expect(
+      createGardenStorage(store).getSnapshot().greenhouses.beginner_3
+        ?.wateringIntervalHours,
+    ).toBe(6);
+
+    const raw = JSON.parse([...backing.values()][0] as string);
+    raw.greenhouses.beginner_3.wateringIntervalHours = "soon";
+    backing.set([...backing.keys()][0] as string, JSON.stringify(raw));
+    expect(
+      createGardenStorage(store).getSnapshot().greenhouses.beginner_3
+        ?.wateringIntervalHours,
+    ).toBeNull();
+  });
+
   it("marks a plot, defaulting to an empty unwatered grid, and is idempotent", () => {
     const s = createGardenStorage(null);
     expect(s.getSnapshot().greenhouses).toEqual({});
     expect(s.markGreenhouse("beginner_3")).toBe(true);
     expect(s.getSnapshot().greenhouses).toEqual({
-      beginner_3: { cells: {}, lastWateredAt: null },
+      beginner_3: {
+        cells: {},
+        lastWateredAt: null,
+        wateringIntervalHours: null,
+      },
     });
     s.setGreenhouseCell("beginner_3", "4,4", "wheat");
     expect(s.markGreenhouse("beginner_3")).toBe(true);
@@ -186,7 +236,11 @@ describe("greenhouse storage", () => {
     s.setGreenhouseCell("beginner_3", "4,4", "wheat");
     s.markGreenhouseWatered("beginner_3", 5);
     expect(createGardenStorage(backing).getSnapshot().greenhouses).toEqual({
-      beginner_3: { cells: { "4,4": "wheat" }, lastWateredAt: 5 },
+      beginner_3: {
+        cells: { "4,4": "wheat" },
+        lastWateredAt: 5,
+        wateringIntervalHours: null,
+      },
     });
 
     const corrupt = createGardenStorage(
@@ -204,7 +258,11 @@ describe("greenhouse storage", () => {
       }),
     );
     expect(corrupt.getSnapshot().greenhouses).toEqual({
-      beginner_3: { cells: { "4,4": "wheat" }, lastWateredAt: null },
+      beginner_3: {
+        cells: { "4,4": "wheat" },
+        lastWateredAt: null,
+        wateringIntervalHours: null,
+      },
     });
 
     s.clearAll();

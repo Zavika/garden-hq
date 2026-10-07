@@ -115,6 +115,19 @@ describe("GreenhousePanel", () => {
     expect(screen.getByText(/Recipe satisfied at cell/)).toBeInTheDocument();
   });
 
+  it("stores a watering reminder interval and clears it", async () => {
+    const { storage, user } = setup();
+    const input = screen.getByLabelText(/remind me every/i);
+    await user.type(input, "8");
+    expect(
+      storage.getSnapshot().greenhouses.beginner_3?.wateringIntervalHours,
+    ).toBe(8);
+    await user.clear(input);
+    expect(
+      storage.getSnapshot().greenhouses.beginner_3?.wateringIntervalHours,
+    ).toBeNull();
+  });
+
   it("records a manual watering time and shows its age", async () => {
     const { storage, user } = setup();
     expect(screen.getByText("Not watered yet")).toBeInTheDocument();

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { ComposterPanel } from "../components/ComposterPanel";
+import { DoNextCard } from "../components/DoNextCard";
 import { ErrorCard } from "../components/ErrorCard";
 import { Hud } from "../components/Hud";
 import { SyncBar } from "../components/SyncBar";
@@ -57,6 +58,7 @@ export function HomeScreen() {
         )
       ) : (
         <>
+          <DoNextCard garden={state} />
           <MapSection
             garden={state}
             assignments={assignments}
