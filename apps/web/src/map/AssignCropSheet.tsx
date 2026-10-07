@@ -25,6 +25,9 @@ export function AssignCropSheet({
   };
 }) {
   const [confirmRemove, setConfirmRemove] = useState(false);
+  // The internal id stays in the accessible name only; the heading shows what
+  // the player sees in game.
+  const title = plotNumber === undefined ? plotId : `Plot ${plotNumber}`;
   const label =
     plotNumber === undefined ? plotId : `Plot ${plotNumber} (${plotId})`;
 
@@ -45,7 +48,20 @@ export function AssignCropSheet({
         aria-label={`Assign crop to ${label}`}
         className="sheet"
       >
-        <h2>Assign crop — {label}</h2>
+        <header className="sheet-head">
+          <div>
+            <h2>{title}</h2>
+            <p className="sheet-sub">Choose a crop</p>
+          </div>
+          <button
+            type="button"
+            className="sheet-close"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        </header>
         <div className="crop-grid">
           {ALL_CROPS.filter((crop) => crop.unlockLevel <= gardenLevel).map(
             (crop) => (
@@ -60,43 +76,48 @@ export function AssignCropSheet({
             ),
           )}
         </div>
-        {currentCropId !== undefined ? (
-          <button type="button" onClick={() => onPick(null)}>
-            Clear
-          </button>
-        ) : null}
-        {greenhouse === undefined ? null : greenhouse.marked ? (
-          <>
-            <button type="button" onClick={greenhouse.onOpen}>
-              Open Greenhouse
-            </button>
-            {confirmRemove ? (
-              <button type="button" onClick={greenhouse.onRemove}>
-                Confirm &mdash; clears its grid
+        {currentCropId === undefined && greenhouse === undefined ? null : (
+          <div className="sheet-actions">
+            {currentCropId !== undefined ? (
+              <button type="button" onClick={() => onPick(null)}>
+                Clear crop
               </button>
+            ) : null}
+            {greenhouse === undefined ? null : greenhouse.marked ? (
+              <>
+                <button type="button" onClick={greenhouse.onOpen}>
+                  Open Greenhouse
+                </button>
+                {confirmRemove ? (
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={greenhouse.onRemove}
+                  >
+                    Confirm &mdash; clears its grid
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => setConfirmRemove(true)}>
+                    Remove Greenhouse
+                  </button>
+                )}
+              </>
             ) : (
-              <button type="button" onClick={() => setConfirmRemove(true)}>
-                Remove Greenhouse
+              <button
+                type="button"
+                disabled={!greenhouse.canMark}
+                onClick={greenhouse.onMark}
+              >
+                Mark as Greenhouse
               </button>
             )}
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              disabled={!greenhouse.canMark}
-              onClick={greenhouse.onMark}
-            >
-              Mark as Greenhouse
-            </button>
-            {greenhouse.canMark ? null : (
-              <p>You can have at most 3 Greenhouses.</p>
-            )}
-          </>
+          </div>
         )}
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
+        {greenhouse !== undefined &&
+        !greenhouse.marked &&
+        !greenhouse.canMark ? (
+          <p className="sheet-note">You can have at most 3 Greenhouses.</p>
+        ) : null}
       </div>
     </>
   );

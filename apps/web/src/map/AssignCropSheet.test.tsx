@@ -115,3 +115,28 @@ describe("AssignCropSheet greenhouse actions", () => {
     ).toBeNull();
   });
 });
+
+describe("AssignCropSheet header", () => {
+  it("titles the sheet with the in-game plot number only and closes from the header", async () => {
+    const onClose = vi.fn();
+    render(
+      <AssignCropSheet
+        plotId="intermediate_1"
+        plotNumber={5}
+        gardenLevel={10}
+        onPick={() => {}}
+        onClose={onClose}
+      />,
+    );
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Plot 5" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/intermediate_1/)).toBeNull();
+    // The internal id remains available to assistive tech.
+    expect(
+      screen.getByRole("dialog", { name: /intermediate_1/ }),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalled();
+  });
+});
