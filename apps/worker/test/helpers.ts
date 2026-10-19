@@ -1,5 +1,6 @@
 import { createApp } from "../src/app";
 import type { Env } from "../src/env";
+import { makeD1 } from "./d1";
 import contestsElitebot from "../../../packages/core/fixtures/contests-elitebot.sample.json";
 import contestsStrassburger from "../../../packages/core/fixtures/contests-strassburger.sample.json";
 import electionResponse from "../../../packages/core/fixtures/election-response.sample.json";
@@ -51,6 +52,7 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
   return {
     HYPIXEL_API_KEY: TEST_KEY,
     CACHE: new FakeKV() as unknown as KVNamespace,
+    DB: makeD1(),
     WEB_ORIGIN: "https://app.example",
     ...overrides,
   };
@@ -151,6 +153,8 @@ export function makeHarness(
     sleeps,
     get: (path: string, headers: Record<string, string> = {}) =>
       app.request(path, { headers }, env),
+    request: (path: string, init: RequestInit = {}) =>
+      app.request(path, init, env),
   };
 }
 

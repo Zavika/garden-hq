@@ -7,7 +7,8 @@ compatibility_flags = ["nodejs_compat"]
 # Origin of the deployed web app (Cloudflare Pages). Change if you add a custom domain.
 WEB_ORIGIN = "https://garden-hq-web.pages.dev"
 
-# KV cache for election/contests/per-player short caches and the fallback rate limiter.
+# KV cache for election/contests (public data) and the fallback rate limiter.
+# Per-player data is no longer cached here (it lives in D1).
 # No id: wrangler auto-provisions the namespace on first deploy.
 [[kv_namespaces]]
 binding = "CACHE"
@@ -18,3 +19,18 @@ binding = "CACHE"
 name = "RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10, period = 60 }
+
+# D1: player cloud saves (free plan: 5M rows read / 100k rows written per day).
+[[d1_databases]]
+binding = "DB"
+database_name = "garden-hq"
+database_id = "a2866bc5-ae1b-4634-a0d0-211010abadff"
+migrations_dir = "migrations"
+
+# Requests that present a sync code: 30 / 60 s per IP (failed lookups cost 5).
+# do NOT remove — without it every sync request falls back to KV counters and
+# burns the 1,000 writes/day free-plan limit.
+[[ratelimits]]
+name = "CODE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 30, period = 60 }

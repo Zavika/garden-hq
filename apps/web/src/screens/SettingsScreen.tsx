@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { SyncSection } from "../components/SyncSection";
 import { useStorage, useStoredData } from "../state/StorageProvider";
 
 function timeZones(current: string): string[] {
@@ -33,6 +34,8 @@ export function SettingsScreen() {
           ))}
         </select>
       </label>
+
+      <SyncSection />
 
       {link !== null ? (
         <>
@@ -69,6 +72,9 @@ export function SettingsScreen() {
       >
         Clear local data
       </button>
+      <p className="muted">
+        Clears this device only. Your cloud copy stays and reloads on next sync.
+      </p>
     </section>
   );
 }

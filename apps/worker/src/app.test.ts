@@ -45,7 +45,35 @@ describe("CORS", () => {
     expect(dev.headers.get("Access-Control-Allow-Origin")).toBe(DEV_ORIGIN);
   });
 
-  it("answers preflight with GET/OPTIONS only and no credentials", async () => {
+  it("answers preflight for writes and allows the Authorization header", async () => {
+    const preflight = (origin: string) =>
+      createApp().request(
+        "/api/sync",
+        {
+          method: "OPTIONS",
+          headers: {
+            Origin: origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type",
+          },
+        },
+        makeEnv(),
+      );
+
+    const ok = await preflight("https://app.example");
+    expect(ok.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://app.example",
+    );
+    expect(
+      ok.headers.get("Access-Control-Allow-Headers")?.toLowerCase(),
+    ).toContain("authorization");
+    expect(ok.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+
+    const bad = await preflight("https://evil.example");
+    expect(bad.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+  it("answers preflight with the allowed methods and no credentials", async () => {
     const res = await createApp().request(
       "/api/link",
       {
@@ -62,7 +90,9 @@ describe("CORS", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
       "https://app.example",
     );
-    expect(res.headers.get("Access-Control-Allow-Methods")).toBe("GET,OPTIONS");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toBe(
+      "GET,POST,DELETE,OPTIONS",
+    );
     expect(res.headers.get("Access-Control-Allow-Credentials")).toBeNull();
   });
 

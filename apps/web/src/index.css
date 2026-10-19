@@ -664,3 +664,36 @@ label {
 .do-next .muted {
   display: block;
 }
+
+/* Cloud save */
+.sync-section label {
+  display: block;
+}
+.sync-section input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0 8px;
+}
+.sync-code {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  font-size: 1rem;
+}
+.sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.sync-primary {
+  font-weight: 700;
+  border-color: var(--danger);
+}
+@media (max-width: 480px) {
+  .sync-section .sync-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

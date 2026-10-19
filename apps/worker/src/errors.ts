@@ -2,10 +2,11 @@ import type { ApiErrorCode } from "@garden-hq/core";
 
 export type ErrorCode = ApiErrorCode;
 
-type ErrorStatus = 400 | 404 | 429 | 500 | 502;
+type ErrorStatus = 400 | 401 | 404 | 429 | 500 | 502;
 
 const STATUS: Record<ErrorCode, ErrorStatus> = {
   bad_request: 400,
+  unauthorized: 401,
   unknown_player: 404,
   no_garden: 404,
   not_found: 404,

@@ -1,6 +1,6 @@
 # Phase 3 — Planner, cloud save, Discord alerts — Design
 
-**Date:** 2026-10-07 · **Status:** approved by owner with changes (applied 2026-10-07); nothing implemented. Free-plan limits re-verified against Cloudflare docs the same day.
+**Date:** 2026-10-07 · **Status:** approved by owner with changes (applied 2026-10-07); milestone A merged; milestone B implemented on branch `phase-3b-cloud-save` (not yet merged or deployed), with deviations: alert tables deferred to milestone C's migration 0003 (0002 adds per-account write-budget counters); `profiles` and `revision` columns added to `accounts`; `MAX_OPS_PER_REQUEST` is 40 with a single atomic batch. Free-plan limits re-verified against Cloudflare docs the same day.
 **Parent:** CLAUDE.md §4 Topology, §6 Data model, §7 Planner + Notifications, §8 Phase 3 (web push and PWA install are **out**, see Scope).
 **Path:** architectural (new D1 subsystem, new cron job, new notifier). Written without the usual question loop because the owner asked for a spec and then a stop; the owner's review changes are folded in and recorded in "Decisions" at the bottom.
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { LinkResponse } from "@garden-hq/core";
 import { ApiError } from "../api/client";
 import { useLink } from "../state/queries";
@@ -132,6 +132,9 @@ export function LinkScreen() {
           <p role="alert">{errorMessage(error)}</p>
         )
       ) : null}
+      <p>
+        <Link to="/settings">Restore from a sync code</Link>
+      </p>
     </section>
   );
 }

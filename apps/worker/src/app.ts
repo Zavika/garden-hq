@@ -11,11 +11,13 @@ import {
 } from "./hypixel";
 import { logError, redact } from "./log";
 import { createMemoryCache } from "./memcache";
+import { accountRoute } from "./routes/account";
 import { contestsRoute } from "./routes/contests";
 import { gardenRoute } from "./routes/garden";
 import { linkRoute } from "./routes/link";
 import { mayorRoute } from "./routes/mayor";
 import { memberRoute } from "./routes/member";
+import { syncRoute } from "./routes/sync";
 
 export interface AppDeps {
   fetch: typeof fetch;
@@ -53,7 +55,9 @@ export function createApp(
     cors({
       // c.env is undefined when the app is invoked without bindings.
       origin: allowedOriginFor(c.env ?? {}),
-      allowMethods: ["GET", "OPTIONS"],
+      allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+      allowHeaders: ["Authorization", "Content-Type", "If-None-Match"],
+      exposeHeaders: ["ETag", "Retry-After"],
       maxAge: 600,
     })(c, next),
   );
@@ -70,6 +74,8 @@ export function createApp(
   app.route("/api", memberRoute(deps, clientFor, playerCache));
   app.route("/api", contestsRoute(deps));
   app.route("/api", mayorRoute(deps, clientFor));
+  app.route("/api", accountRoute(deps));
+  app.route("/api", syncRoute(deps));
 
   app.notFound((c) => {
     c.header("Cache-Control", "no-store");

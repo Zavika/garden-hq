@@ -1,3 +1,4 @@
+import type { StoredData } from "./sync";
 import type {
   Contest,
   GardenMemberState,
@@ -15,6 +16,7 @@ export type ApiErrorCode =
   | "upstream_down"
   | "missing_api_key"
   | "bad_api_key"
+  | "unauthorized"
   | "internal";
 
 export interface ContestsSource {
@@ -49,4 +51,14 @@ export interface MayorResponse {
 export interface MemberResponse {
   member: GardenMemberState;
   fetchedAt: string;
+}
+
+export interface SyncStateResponse extends StoredData {
+  revision: number;
+  /** POST /api/sync only: ops the server skipped as invalid (omitted when none). */
+  rejected?: number;
+}
+
+export interface AccountCreateResponse {
+  syncCode: string;
 }

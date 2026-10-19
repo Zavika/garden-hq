@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createGardenStorage } from "../state/storage";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { SettingsScreen } from "./SettingsScreen";
@@ -43,5 +43,27 @@ describe("SettingsScreen", () => {
     );
     expect(storage.getSnapshot().link).toBeNull();
     expect(storage.getSnapshot().assignments).toEqual({});
+  });
+
+  it("clearing local data leaves the cloud copy alone", async () => {
+    const storage = linkedStorage();
+    const { sync } = renderWithProviders(<SettingsScreen />, { storage });
+    const deleteCloud = vi.spyOn(sync, "deleteCloud");
+    expect(
+      screen.getByText(
+        "Clears this device only. Your cloud copy stays and reloads on next sync.",
+      ),
+    ).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: /clear local data/i }),
+    );
+    expect(deleteCloud).not.toHaveBeenCalled();
+  });
+
+  it("shows the Cloud save section", () => {
+    renderWithProviders(<SettingsScreen />, { storage: linkedStorage() });
+    expect(
+      screen.getByRole("heading", { name: "Cloud save" }),
+    ).toBeInTheDocument();
   });
 });

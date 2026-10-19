@@ -51,7 +51,10 @@ export function createKvLimiter(
   };
 }
 
-/** Wraps the Cloudflare rate-limit binding (configured for a 60 s period). */
+/**
+ * Wraps the Cloudflare rate-limit binding. The fixed 60 s `retryAfter` assumes
+ * the binding is configured with `period = 60`.
+ */
 export function createBindingLimiter(binding: RateLimiterBinding): Limiter {
   return {
     async allow(key) {
@@ -65,6 +68,16 @@ export function pickLimiter(env: Env, now: () => number): Limiter {
   return env.RATE_LIMITER !== undefined
     ? createBindingLimiter(env.RATE_LIMITER)
     : createKvLimiter(env.CACHE, now);
+}
+
+export const CODE_LIMIT_PER_MINUTE = 30;
+/** Extra limiter units consumed per failed sync-code lookup. */
+export const CODE_FAILURE_COST = 4;
+
+export function pickCodeLimiter(env: Env, now: () => number): Limiter {
+  return env.CODE_LIMITER !== undefined
+    ? createBindingLimiter(env.CODE_LIMITER)
+    : createKvLimiter(env.CACHE, now, CODE_LIMIT_PER_MINUTE); // local dev only
 }
 
 export async function enforceRateLimit(

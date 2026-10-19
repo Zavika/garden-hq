@@ -133,4 +133,139 @@ describe("api client", () => {
       "http://api.test/api/member?profile=p1&uuid=u1",
     );
   });
+  describe("sync endpoints", () => {
+    const CODE = "abcdefghjkmnpqrstuvwxyz234567892";
+    const state = {
+      link: null,
+      assignments: {},
+      greenhouses: {},
+      timeZone: "Europe/Warsaw",
+      revision: 3,
+    };
+    const callOf = (fetchFn: ReturnType<typeof vi.fn>, i = 0) =>
+      fetchFn.mock.calls[i] as unknown as [string, RequestInit];
+
+    it("getSync sends the bearer code and If-None-Match, returns state and ETag", async () => {
+      const { client, fetchFn } = clientWith(
+        jsonResponse(state, { headers: { ETag: '"r3"' } }),
+      );
+      await expect(client.getSync(CODE, '"r2"')).resolves.toEqual({
+        state,
+        etag: '"r3"',
+      });
+      const [url, init] = callOf(fetchFn);
+      expect(url).toBe("http://api.test/api/sync");
+      expect(url).not.toContain(CODE);
+      const headers = new Headers(init.headers);
+      expect(headers.get("Authorization")).toBe(`Bearer ${CODE}`);
+      expect(headers.get("If-None-Match")).toBe('"r2"');
+      expect(init.method).toBe("GET");
+    });
+
+    it("getSync omits If-None-Match without an etag", async () => {
+      const { client, fetchFn } = clientWith(
+        jsonResponse(state, { headers: { ETag: '"r3"' } }),
+      );
+      await client.getSync(CODE, null);
+      expect(new Headers(callOf(fetchFn)[1].headers).has("If-None-Match")).toBe(
+        false,
+      );
+    });
+
+    it("getSync returns null on 304 without parsing a body", async () => {
+      const { client } = clientWith(new Response(null, { status: 304 }));
+      await expect(client.getSync(CODE, '"r3"')).resolves.toBeNull();
+    });
+
+    it("getSync maps 401 to unauthorized", async () => {
+      const { client } = clientWith(
+        jsonResponse(
+          { error: { code: "unauthorized", message: "no" } },
+          { status: 401 },
+        ),
+      );
+      await expect(client.getSync(CODE, null)).rejects.toMatchObject({
+        code: "unauthorized",
+        status: 401,
+      });
+    });
+
+    it("maps a bare 401 to unauthorized", async () => {
+      const { client } = clientWith(new Response("x", { status: 401 }));
+      await expect(client.getSync(CODE, null)).rejects.toMatchObject({
+        code: "unauthorized",
+      });
+    });
+
+    it("postSync sends JSON { ops } with the bearer code", async () => {
+      const { client, fetchFn } = clientWith(
+        jsonResponse(state, { headers: { ETag: '"r4"' } }),
+      );
+      const ops = [{ t: "setTimeZone", timeZone: "UTC" }] as const;
+      await expect(client.postSync(CODE, [...ops])).resolves.toEqual({
+        state,
+        etag: '"r4"',
+      });
+      const [url, init] = callOf(fetchFn);
+      expect(url).toBe("http://api.test/api/sync");
+      expect(init.method).toBe("POST");
+      const headers = new Headers(init.headers);
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(headers.get("Authorization")).toBe(`Bearer ${CODE}`);
+      expect(JSON.parse(init.body as string)).toEqual({ ops });
+    });
+
+    it("createAccount POSTs { link } without Authorization", async () => {
+      const { client, fetchFn } = clientWith(
+        jsonResponse({ syncCode: CODE }, { status: 201 }),
+      );
+      const link = { name: "Steve", uuid: "u", profileId: "p", profiles: [] };
+      await expect(client.createAccount(link)).resolves.toEqual({
+        syncCode: CODE,
+      });
+      const [url, init] = callOf(fetchFn);
+      expect(url).toBe("http://api.test/api/account");
+      expect(init.method).toBe("POST");
+      expect(new Headers(init.headers).has("Authorization")).toBe(false);
+      expect(JSON.parse(init.body as string)).toEqual({ link });
+    });
+
+    it("deleteAccount accepts 204", async () => {
+      const { client, fetchFn } = clientWith(
+        new Response(null, { status: 204 }),
+      );
+      await expect(client.deleteAccount(CODE)).resolves.toBeUndefined();
+      const [url, init] = callOf(fetchFn);
+      expect(url).toBe("http://api.test/api/account");
+      expect(url).not.toContain(CODE);
+      expect(init.method).toBe("DELETE");
+    });
+
+    it("a hung request is aborted and mapped to a network error", async () => {
+      const fetchFn = vi.fn(
+        (_url: unknown, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () =>
+              reject(new DOMException("aborted", "AbortError")),
+            );
+          }),
+      );
+      const client = createApiClient(
+        fetchFn as unknown as typeof fetch,
+        "http://api.test",
+        10,
+      );
+      await expect(client.postSync(CODE, [])).rejects.toMatchObject({
+        code: "network",
+        status: 0,
+      });
+    });
+
+    it("postSync without an ETag header is a bad_response", async () => {
+      const { client } = clientWith(jsonResponse(state));
+      await expect(client.postSync(CODE, [])).rejects.toMatchObject({
+        code: "bad_response",
+      });
+    });
+  });
 });

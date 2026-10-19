@@ -77,3 +77,23 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Planner thresholds** (`data/planner.json`): contest window 60 min, fuel early warning 30 min, Greenhouse lead 30 min, visitor queue 5. These are product choices, not game facts, except the queue size of 5 (CLAUDE.md §2).
 - **Greenhouse watering interval** — there is no verified water duration (see "Water/decay" above), so the row only fires when the player sets an interval AND has pressed "I watered it".
 - **Composter action ids** — `composter_no_fuel` / `composter_fuel_low` are keyed on `composter.lastSave`. A missing `last_save` (0) is treated as "just saved" for the forecast, but the id would be `...:0`. Flagged for the alert dedupe in milestone C.
+
+## D1 batch query counting (Phase 3B Task 5, checked 2026-10-12)
+
+- **Question:** does `db.batch([...])` count as one query or one per statement against the free plan's 50 queries per Worker invocation?
+- **Source:** developers.cloudflare.com/d1/platform/limits/ lists "Queries per Worker invocation: 1000 (Paid) / 50 (Free)" and says the limits for individual queries "apply to each individual statement contained within a batch statement". That sentence concerns per-query limits inside a batch; whether a batch's statements count toward the 50-queries-per-invocation limit is NOT confirmed.
+- **Mitigation:** `MAX_OPS_PER_REQUEST` in core is 40, so a POST is one atomic batch of at most 41 statements, plus about 4 other queries (auth lookup, account reload, 2-select state read): at most about 45 queries per POST even if every statement counts. No chunking (it would break atomicity and the revision bump).
+- **To verify:** check on first deploy with `wrangler tail` (look for D1 query-limit errors on a 40-op POST).
+- **Result of the Task 5 check:** the docs did not settle it, so it stays unconfirmed until the first deploy (see the checklist in `apps/worker/README.md`).
+
+## Free-plan CPU and limiter notes (Phase 3B Task 8, 2026-10-12)
+
+- **CPU vs the 10 ms free limit** — the CPU cost of SHA-256 on the sync code plus a 40-op atomic batch (up to 41 statements) is unmeasured. Measure on first deploy with `wrangler tail`; lower `MAX_OPS_PER_REQUEST` if CPU time exceeds 10 ms.
+- **`CODE_LIMITER` period** — the Workers rate-limit binding supports a fixed 60 s period (configured in `wrangler.toml`), so the `Retry-After` the Worker returns is approximate.
+- **KV-counter fallback limiter** — used only if the `[[ratelimits]]` binding is missing; it WRITES to KV (free plan: 1,000 writes/day), so it is dev-only and must not be relied on in production.
+
+## Cloud save final-review notes (Phase 3B, 2026-10-12)
+
+- **Two devices marking a 3rd Greenhouse at once** — the server keeps the first `markGreenhouse` (the cap is enforced in SQL); the second device's Greenhouse vanishes on its next rebase. Accepted trade-off of last-write-wins.
+- **Write budgets are tunable guesses** — `MAX_OPS_PER_ACCOUNT_PER_DAY = 1000` and `MAX_ACCOUNTS_CREATED_PER_DAY = 50` (`apps/worker/src/limits.ts`) are sized against the free plan's 100k rows written/day, not measured. The creation cap counts rows in `account_creations` (survives account deletion), not live accounts; accounts accumulate across days, so the real daily ceiling is live accounts x 1,000 ops. Revisit with real usage after the first deploy.
+- **Query count** — the budget counters ride in the existing final `UPDATE` of the atomic batch, so a POST still costs at most about 45 queries; account creation gains one `SELECT COUNT(*)` (limiter + count + insert).

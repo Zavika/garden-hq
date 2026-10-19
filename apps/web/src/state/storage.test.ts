@@ -280,4 +280,38 @@ describe("greenhouse storage", () => {
     expect(s.getSnapshot().greenhouses).toEqual({});
     expect(s.getSnapshot().assignments).toEqual({ beginner_1: "wheat" });
   });
+
+  it("replaceAll swaps data, persists and notifies once", () => {
+    const backing = fakeBacking();
+    const s = createGardenStorage(backing);
+    const listener = vi.fn();
+    s.subscribe(listener);
+    s.replaceAll({
+      link: null,
+      assignments: { beginner_1: "wheat" },
+      greenhouses: {},
+      timeZone: "UTC",
+    });
+    expect(s.getSnapshot().assignments).toEqual({ beginner_1: "wheat" });
+    expect(s.getSnapshot().timeZone).toBe("UTC");
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(backing.data["garden-hq:v1"] ?? "{}")).toMatchObject({
+      assignments: { beginner_1: "wheat" },
+    });
+  });
+
+  it("replaceAll sanitizes hostile input", () => {
+    const s = createGardenStorage(null);
+    s.replaceAll({
+      assignments: 5,
+      greenhouses: [],
+      timeZone: 7,
+    } as unknown as Parameters<typeof s.replaceAll>[0]);
+    expect(s.getSnapshot()).toEqual({
+      link: null,
+      assignments: {},
+      greenhouses: {},
+      timeZone: DEFAULT_TIME_ZONE,
+    });
+  });
 });

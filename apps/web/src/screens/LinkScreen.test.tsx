@@ -18,6 +18,7 @@ function renderLink() {
     <Routes>
       <Route path="/link" element={<LinkScreen />} />
       <Route path="/" element={<p>HOME</p>} />
+      <Route path="/settings" element={<p>SETTINGS</p>} />
     </Routes>,
     { route: "/link" },
   );
@@ -34,6 +35,14 @@ const ONE = {
 describe("LinkScreen", () => {
   beforeEach(() => {
     link.mockReset();
+  });
+
+  it("offers a way to restore from a sync code", async () => {
+    renderLink();
+    await userEvent.click(
+      screen.getByRole("link", { name: /restore from a sync code/i }),
+    );
+    expect(await screen.findByText("SETTINGS")).toBeInTheDocument();
   });
 
   it("links a single-profile player, stores the link and goes home", async () => {

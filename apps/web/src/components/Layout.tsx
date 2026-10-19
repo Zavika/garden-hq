@@ -7,8 +7,13 @@ export function Layout() {
   const { link } = useStoredData();
   const { pathname } = useLocation();
   const onLinkRoute = pathname === "/link";
+  // Settings stays reachable while unlinked: a fresh device restores its
+  // save there with a sync code, without needing a Hypixel link first.
+  const onSettingsRoute = pathname === "/settings";
 
-  if (link === null && !onLinkRoute) return <Navigate to="/link" replace />;
+  if (link === null && !onLinkRoute && !onSettingsRoute) {
+    return <Navigate to="/link" replace />;
+  }
 
   return (
     <div className={link !== null && !onLinkRoute ? "app with-tabs" : "app"}>

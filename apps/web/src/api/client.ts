@@ -5,6 +5,10 @@ import type {
   LinkResponse,
   MayorResponse,
   MemberResponse,
+  AccountCreateResponse,
+  StoredLink,
+  SyncOp,
+  SyncStateResponse,
 } from "@garden-hq/core";
 
 export type ClientErrorCode = ApiErrorCode | "network" | "bad_response";
@@ -41,11 +45,13 @@ const KNOWN_CODES: readonly ApiErrorCode[] = [
   "upstream_down",
   "missing_api_key",
   "bad_api_key",
+  "unauthorized",
   "internal",
 ];
 
 function codeFromStatus(status: number): ApiErrorCode {
   if (status === 400) return "bad_request";
+  if (status === 401) return "unauthorized";
   if (status === 404) return "not_found";
   if (status === 429) return "rate_limited";
   if (status === 502) return "upstream_down";
@@ -94,26 +100,63 @@ async function toApiError(res: Response): Promise<ApiError> {
   );
 }
 
+const REQUEST_TIMEOUT_MS = 20_000;
+
 export type FetchFn = typeof fetch;
 
 export function createApiClient(
   fetchFn: FetchFn = (input, init) => fetch(input, init),
   baseUrl: string = API_BASE,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
 ) {
-  async function get<T>(
+  interface RequestOptions {
+    params?: Record<string, string>;
+    headers?: Record<string, string>;
+    body?: unknown;
+  }
+
+  async function send(
+    method: string,
     path: string,
-    params?: Record<string, string>,
-  ): Promise<T> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : "";
+    opts: RequestOptions = {},
+  ): Promise<Response> {
+    const query = opts.params
+      ? `?${new URLSearchParams(opts.params).toString()}`
+      : "";
+    const url = `${baseUrl}${path}${query}`;
+    const headers: Record<string, string> = { ...opts.headers };
+    if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+    const plainGet = method === "GET" && Object.keys(headers).length === 0;
     let res: Response;
+    // Plain GETs stay option-free (unchanged behaviour); everything else times out.
+    const controller =
+      !plainGet && typeof AbortController !== "undefined"
+        ? new AbortController()
+        : null;
+    const timer =
+      controller !== null
+        ? setTimeout(() => controller.abort(), timeoutMs)
+        : null;
     try {
-      res = await fetchFn(`${baseUrl}${path}${query}`);
+      res = plainGet
+        ? await fetchFn(url)
+        : await fetchFn(url, {
+            method,
+            headers,
+            ...(opts.body !== undefined
+              ? { body: JSON.stringify(opts.body) }
+              : {}),
+            ...(controller !== null ? { signal: controller.signal } : {}),
+          });
     } catch {
       throw new ApiError("network", 0, "Network request failed");
+    } finally {
+      if (timer !== null) clearTimeout(timer);
     }
+    return res;
+  }
 
-    if (!res.ok) throw await toApiError(res);
-
+  async function parseJson<T>(res: Response): Promise<T> {
     let body: unknown;
     try {
       body = await res.json();
@@ -130,6 +173,32 @@ export function createApiClient(
     return body as T;
   }
 
+  async function request<T>(
+    method: string,
+    path: string,
+    opts: RequestOptions = {},
+  ): Promise<T> {
+    const res = await send(method, path, opts);
+    if (!res.ok) throw await toApiError(res);
+    return parseJson<T>(res);
+  }
+
+  function get<T>(path: string, params?: Record<string, string>): Promise<T> {
+    return request<T>("GET", path, params ? { params } : {});
+  }
+
+  const bearer = (code: string): Record<string, string> => ({
+    Authorization: `Bearer ${code}`,
+  });
+
+  function etagOf(res: Response): string {
+    const etag = res.headers.get("ETag");
+    if (etag === null) {
+      throw new ApiError("bad_response", res.status, "Missing ETag");
+    }
+    return etag;
+  }
+
   return {
     link: (name: string) => get<LinkResponse>("/api/link", { name }),
     garden: (profileId: string) =>
@@ -138,7 +207,49 @@ export function createApiClient(
       get<MemberResponse>("/api/member", { profile: profileId, uuid }),
     contests: () => get<ContestsResponse>("/api/contests"),
     mayor: () => get<MayorResponse>("/api/mayor"),
+    createAccount: (link: StoredLink) =>
+      request<AccountCreateResponse>("POST", "/api/account", {
+        body: { link },
+      }),
+    getSync: async (
+      code: string,
+      etag: string | null,
+    ): Promise<{ state: SyncStateResponse; etag: string } | null> => {
+      const res = await send("GET", "/api/sync", {
+        headers: {
+          ...bearer(code),
+          ...(etag !== null ? { "If-None-Match": etag } : {}),
+        },
+      });
+      if (res.status === 304) return null;
+      if (!res.ok) throw await toApiError(res);
+      const state = await parseJson<SyncStateResponse>(res);
+      return { state, etag: etagOf(res) };
+    },
+    postSync: async (
+      code: string,
+      ops: SyncOp[],
+    ): Promise<{ state: SyncStateResponse; etag: string }> => {
+      const res = await send("POST", "/api/sync", {
+        headers: bearer(code),
+        body: { ops },
+      });
+      if (!res.ok) throw await toApiError(res);
+      const state = await parseJson<SyncStateResponse>(res);
+      return { state, etag: etagOf(res) };
+    },
+    deleteAccount: async (code: string): Promise<void> => {
+      const res = await send("DELETE", "/api/account", {
+        headers: bearer(code),
+      });
+      if (!res.ok) throw await toApiError(res);
+    },
   };
 }
+
+export type SyncApi = Pick<
+  ReturnType<typeof createApiClient>,
+  "createAccount" | "getSync" | "postSync" | "deleteAccount"
+>;
 
 export const api = createApiClient();
