@@ -1,4 +1,6 @@
 import type {
+  AlertsStateResponse,
+  AlertTestResponse,
   ApiErrorCode,
   ContestsResponse,
   GardenResponse,
@@ -244,12 +246,41 @@ export function createApiClient(
       });
       if (!res.ok) throw await toApiError(res);
     },
+    getAlerts: (code: string) =>
+      request<AlertsStateResponse>("GET", "/api/alerts", {
+        headers: bearer(code),
+      }),
+    putWebhook: (code: string, url: string) =>
+      request<AlertsStateResponse>("PUT", "/api/alerts/webhook", {
+        headers: bearer(code),
+        body: { url },
+      }),
+    deleteWebhook: async (code: string): Promise<void> => {
+      const res = await send("DELETE", "/api/alerts/webhook", {
+        headers: bearer(code),
+      });
+      if (!res.ok) throw await toApiError(res);
+    },
+    testWebhook: (code: string) =>
+      request<AlertTestResponse>("POST", "/api/alerts/test", {
+        headers: bearer(code),
+      }),
+    putRules: (code: string, rules: Record<string, Record<string, unknown>>) =>
+      request<AlertsStateResponse>("PUT", "/api/alerts/rules", {
+        headers: bearer(code),
+        body: { rules },
+      }),
   };
 }
 
 export type SyncApi = Pick<
   ReturnType<typeof createApiClient>,
   "createAccount" | "getSync" | "postSync" | "deleteAccount"
+>;
+
+export type AlertsApi = Pick<
+  ReturnType<typeof createApiClient>,
+  "getAlerts" | "putWebhook" | "deleteWebhook" | "testWebhook" | "putRules"
 >;
 
 export const api = createApiClient();

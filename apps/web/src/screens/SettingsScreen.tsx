@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { AlertsSection } from "../components/AlertsSection";
 import { SyncSection } from "../components/SyncSection";
 import { useStorage, useStoredData } from "../state/StorageProvider";
 
@@ -36,6 +37,7 @@ export function SettingsScreen() {
       </label>
 
       <SyncSection />
+      <AlertsSection />
 
       {link !== null ? (
         <>

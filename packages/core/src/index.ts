@@ -17,6 +17,7 @@ export * from "./greenhouse-data";
 export * from "./member";
 export * from "./greenhouse";
 export * from "./planner";
+export * from "./alerts";
 
 export * from "./sync";
 export * from "./synccode";

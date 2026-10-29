@@ -135,7 +135,7 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
         }
       }
 
-      if (res.status === 403) {
+      if (res.status === 401 || res.status === 403) {
         // Hypixel says why in `cause` (e.g. "Invalid API key"); log that, never the key.
         logError("hypixel_forbidden", {
           cause: redact(await forbiddenCause(res), apiKey),

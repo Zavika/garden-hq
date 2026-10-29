@@ -97,3 +97,19 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Two devices marking a 3rd Greenhouse at once** — the server keeps the first `markGreenhouse` (the cap is enforced in SQL); the second device's Greenhouse vanishes on its next rebase. Accepted trade-off of last-write-wins.
 - **Write budgets are tunable guesses** — `MAX_OPS_PER_ACCOUNT_PER_DAY = 1000` and `MAX_ACCOUNTS_CREATED_PER_DAY = 50` (`apps/worker/src/limits.ts`) are sized against the free plan's 100k rows written/day, not measured. The creation cap counts rows in `account_creations` (survives account deletion), not live accounts; accounts accumulate across days, so the real daily ceiling is live accounts x 1,000 ops. Revisit with real usage after the first deploy.
 - **Query count** — the budget counters ride in the existing final `UPDATE` of the atomic batch, so a POST still costs at most about 45 queries; account creation gains one `SELECT COUNT(*)` (limiter + count + insert).
+
+## Alerts (Phase 3C, 2026-10-29)
+
+- **No `composter_full` / `no_organic_matter` alert** — `forecastComposter` can report `no_organic_matter`, but the spec lists only fuel alerts and the compost bin cap is unconfirmed (see "composter" above). Nothing fires for it.
+- **`composter_fuel_out` key with a missing `last_save`** — `lastSave` 0 yields key `0`, so the alert fires once ever for such a composter until a real save appears.
+- **Fuel alerts rely on the API's `last_save` being fresh** — `forecastComposter` projects forward from it. Whether `composter_data.last_save` advances while the player is away from SkyBlock is unverified (spec "Open verification items").
+- **Contest dedupe key is `startsAt`** (one alert per contest listing my matching crops), not the spec's `startsAt:cropId`.
+
+## Alerts cron (Phase 3C, 2026-10-29)
+
+- **CPU per cron run vs the 10 ms free limit** — parsing up to 10 stored snapshots (~5 KB each), up to 8 garden normalizations and the derive step are unmeasured. Measure on the first deploy with `wrangler tail`; lower `CRON_BATCH` / `MAX_HYPIXEL_CALLS_PER_RUN` if needed.
+- **Lead times below 5 min** — can't fire because the cron runs every 5 minutes, so `data/alerts.json` bounds `leadMinutes` to a minimum of 5.
+- **Subrequest counting** — the budget counts every D1 statement in a batch individually, every real `fetch`, and 2 for the contests KV read/write. Whether a `db.batch` counts as one query is unconfirmed (see "D1 batch query counting"); counting each statement is the conservative reading.
+- **Discord webhook behaviour** — assumed: 2xx (204) on success without `?wait=true`; 404 for a deleted webhook and 401 for a bad token; 429 with a JSON `retry_after` (seconds, may be fractional) and/or a `Retry-After` header. Confirm against Discord's docs / a real webhook on the first deploy.
+- **Hypixel `last_save` freshness** — `composter_data.last_save` drives the fuel forecast; whether it advances while the player is offline from SkyBlock is unverified (spec "Open verification items").
+- **Snapshot reuse** — a stored garden under 5 minutes old is reused, so in the 5-minute fast mode visitor alerts can lag up to ~10 minutes. Accepted for the free plan's Hypixel call budget.

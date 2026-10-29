@@ -141,3 +141,58 @@ export function unwrapGardenResponse(raw: unknown): unknown {
 
   return data.success === false ? null : raw;
 }
+
+function isObj(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function isNum(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v);
+}
+
+/**
+ * Validates a `GardenState` that was stored as JSON (the cron's snapshot). Not
+ * `normalizeGarden`: that reads the raw Hypixel shape. Returns null for anything
+ * that is not exactly our own output, so a corrupt or old-format row is refetched.
+ */
+export function parseGardenState(raw: unknown): GardenState | null {
+  if (!isObj(raw)) return null;
+  const { composter, greenhouse, visitors, unlockedPlotIds } = raw;
+  if (!isObj(composter) || !isObj(composter.upgrades) || !isObj(greenhouse))
+    return null;
+  const u = composter.upgrades;
+  const numbers = [
+    raw.level,
+    raw.experience,
+    raw.visitorsServedTotal,
+    composter.organicMatter,
+    composter.fuel,
+    composter.compostUnits,
+    composter.lastSave,
+    u.speed,
+    u.multiDrop,
+    u.fuelCap,
+    u.organicMatterCap,
+    u.costReduction,
+  ];
+  if (!numbers.every(isNum)) return null;
+  if (
+    !Array.isArray(unlockedPlotIds) ||
+    !unlockedPlotIds.every((p) => typeof p === "string")
+  )
+    return null;
+  if (
+    !Array.isArray(visitors) ||
+    !visitors.every(
+      (v) => isObj(v) && typeof v.id === "string" && typeof v.name === "string",
+    )
+  )
+    return null;
+  const cells = greenhouse.lockedCells;
+  if (
+    !Array.isArray(cells) ||
+    !cells.every((c) => isObj(c) && isNum(c.x) && isNum(c.z))
+  )
+    return null;
+  return raw as unknown as GardenState;
+}

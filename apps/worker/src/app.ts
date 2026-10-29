@@ -12,6 +12,7 @@ import {
 import { logError, redact } from "./log";
 import { createMemoryCache } from "./memcache";
 import { accountRoute } from "./routes/account";
+import { alertsRoute } from "./routes/alerts";
 import { contestsRoute } from "./routes/contests";
 import { gardenRoute } from "./routes/garden";
 import { linkRoute } from "./routes/link";
@@ -55,7 +56,7 @@ export function createApp(
     cors({
       // c.env is undefined when the app is invoked without bindings.
       origin: allowedOriginFor(c.env ?? {}),
-      allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowHeaders: ["Authorization", "Content-Type", "If-None-Match"],
       exposeHeaders: ["ETag", "Retry-After"],
       maxAge: 600,
@@ -76,6 +77,7 @@ export function createApp(
   app.route("/api", mayorRoute(deps, clientFor));
   app.route("/api", accountRoute(deps));
   app.route("/api", syncRoute(deps));
+  app.route("/api", alertsRoute(deps));
 
   app.notFound((c) => {
     c.header("Cache-Control", "no-store");

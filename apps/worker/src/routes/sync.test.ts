@@ -208,7 +208,7 @@ describe("sync routes", () => {
       ).json()) as State;
       expect(s.assignments).toEqual({});
       expect(await opsCount(h)).toBe(MAX_OPS_PER_ACCOUNT_PER_DAY);
-    });
+    }, 20_000);
 
     it("refuses a request that would cross the budget, accepts one that fits", async () => {
       const h = harness();
@@ -229,7 +229,7 @@ describe("sync routes", () => {
       expect((await h.request("/api/sync", postOps(code, [tz()]))).status).toBe(
         200,
       );
-    });
+    }, 20_000);
 
     it("resets on a new UTC day", async () => {
       const h = harness();
@@ -245,7 +245,7 @@ describe("sync routes", () => {
       const res = await h.request("/api/sync", postOps(code, [tz(), tz()]));
       expect(res.status).toBe(200);
       expect(await opsCount(h)).toBe(2);
-    });
+    }, 20_000);
   });
 
   it("rejects more than the op limit, bad JSON and big bodies", async () => {

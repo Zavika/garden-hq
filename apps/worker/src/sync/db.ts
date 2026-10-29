@@ -236,6 +236,13 @@ export async function deleteAccount(
   accountId: string,
 ): Promise<void> {
   await db.batch([
+    db.prepare("DELETE FROM alert_log WHERE account_id = ?1").bind(accountId),
+    db
+      .prepare("DELETE FROM garden_snapshot WHERE account_id = ?1")
+      .bind(accountId),
+    db
+      .prepare("DELETE FROM alert_settings WHERE account_id = ?1")
+      .bind(accountId),
     db
       .prepare("DELETE FROM plot_assignments WHERE account_id = ?1")
       .bind(accountId),

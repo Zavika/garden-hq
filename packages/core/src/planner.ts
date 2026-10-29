@@ -1,9 +1,18 @@
 import plannerData from "../../../data/planner.json";
-import { forecastComposter } from "./composter";
 import gardenLevels from "../../../data/garden-levels.json";
-import { getCrop } from "./crops";
+import {
+  composterAlarm,
+  contestsStartingWithin,
+  cropName,
+  greenhousesDue,
+  myCropIds,
+  visitorsAtLeast,
+  type GreenhousePlan,
+} from "./detect";
 import { cheapestNextPlot, getPlot } from "./plots";
 import type { Contest, GardenState } from "./types";
+
+export type { GreenhousePlan } from "./detect";
 
 interface PlannerData {
   thresholds: {
@@ -41,11 +50,6 @@ export interface PlannedAction {
   rank: number;
 }
 
-export interface GreenhousePlan {
-  lastWateredAt: number | null;
-  wateringIntervalHours: number | null;
-}
-
 export interface PlannerInput {
   /** Epoch ms. */
   now: number;
@@ -76,78 +80,54 @@ function minutesUntil(at: number, now: number): number {
   return Math.max(1, Math.ceil((at - now) / MINUTE));
 }
 
-function cropName(id: string): string {
-  return getCrop(id)?.name ?? id;
-}
-
 function contestActions({
   now,
   garden,
   contests,
   assignments,
 }: PlannerInput): Draft[] {
-  const unlocked = new Set(garden.unlockedPlotIds);
-  const mine = new Set(
-    Object.entries(assignments)
-      .filter(([plotId]) => unlocked.has(plotId))
-      .map(([, cropId]) => cropId),
-  );
-
-  const drafts: Draft[] = [];
-  for (const contest of contests) {
-    const until = contest.startsAt - now;
-    if (until < 0 || until > T.contestWindowMinutes * MINUTE) continue;
-    const matching = contest.crops.filter((id) => mine.has(id));
-    if (matching.length === 0) continue;
-
-    drafts.push({
-      kind: "contest_soon",
-      id: `contest_soon:${contest.startsAt}`,
-      title: `${matching.map(cropName).join(", ")} contest in ${minutesUntil(contest.startsAt, now)} min`,
-      detail: "A crop you have planted is in the next Jacob's Contest.",
-      dueAt: contest.startsAt,
-    });
-  }
-  return drafts;
+  const mine = myCropIds(assignments, garden.unlockedPlotIds);
+  return contestsStartingWithin(
+    contests,
+    mine,
+    now,
+    T.contestWindowMinutes,
+  ).map(({ contest, matching }) => ({
+    kind: "contest_soon",
+    id: `contest_soon:${contest.startsAt}`,
+    title: `${matching.map(cropName).join(", ")} contest in ${minutesUntil(contest.startsAt, now)} min`,
+    detail: "A crop you have planted is in the next Jacob's Contest.",
+    dueAt: contest.startsAt,
+  }));
 }
 
 function composterActions({ now, garden }: PlannerInput): Draft[] {
-  const { composter } = garden;
-  // A missing last_save (0) would otherwise count decades of runtime.
-  const safe =
-    composter.lastSave > 0 ? composter : { ...composter, lastSave: now };
-  const forecast = forecastComposter(safe, now);
-
-  if (forecast.status === "no_fuel") {
+  const alarm = composterAlarm(
+    garden.composter,
+    now,
+    T.fuelEarlyWarningMinutes,
+  );
+  if (alarm === null) return [];
+  if (alarm.kind === "no_fuel") {
     return [
       {
         kind: "composter_no_fuel",
-        id: `composter_no_fuel:${composter.lastSave}`,
+        id: `composter_no_fuel:${alarm.lastSave}`,
         title: "Composter is out of fuel",
         detail: "Add fuel so it keeps making Compost.",
         dueAt: null,
       },
     ];
   }
-
-  if (
-    forecast.status === "running" &&
-    forecast.stopsBecause === "fuel" &&
-    forecast.stopsAt !== null &&
-    forecast.stopsAt - now <= T.fuelEarlyWarningMinutes * MINUTE
-  ) {
-    return [
-      {
-        kind: "composter_fuel_low",
-        id: `composter_fuel_low:${composter.lastSave}`,
-        title: `Composter fuel runs out in ${minutesUntil(forecast.stopsAt, now)} min`,
-        detail: "Top up fuel before it stops.",
-        dueAt: forecast.stopsAt,
-      },
-    ];
-  }
-
-  return [];
+  return [
+    {
+      kind: "composter_fuel_low",
+      id: `composter_fuel_low:${alarm.lastSave}`,
+      title: `Composter fuel runs out in ${minutesUntil(alarm.stopsAt, now)} min`,
+      detail: "Top up fuel before it stops.",
+      dueAt: alarm.stopsAt,
+    },
+  ];
 }
 
 interface GardenLevelEntry {
@@ -158,7 +138,7 @@ const LEVELS = gardenLevels as GardenLevelEntry[];
 
 function visitorActions({ garden }: PlannerInput): Draft[] {
   // TODO(visitors.json): show copper and Garden XP value once data/visitors.json exists.
-  const { visitors } = garden;
+  const visitors = visitorsAtLeast(garden.visitors, 1);
   if (visitors.length === 0) return [];
   return [
     {
@@ -174,32 +154,22 @@ function visitorActions({ garden }: PlannerInput): Draft[] {
   ];
 }
 
-const HOUR_MS = 60 * MINUTE;
-
 function greenhouseActions({ now, greenhouses }: PlannerInput): Draft[] {
-  const drafts: Draft[] = [];
-  for (const [plotId, plan] of Object.entries(greenhouses)) {
-    // Never fires without a player-set interval AND a watering time: there is
-    // no verified water duration to fall back on (data/VERIFY.md "Water/decay").
-    if (plan.wateringIntervalHours === null || plan.lastWateredAt === null) {
-      continue;
-    }
-    const dueAt = plan.lastWateredAt + plan.wateringIntervalHours * HOUR_MS;
-    if (dueAt - now > T.greenhouseLeadMinutes * MINUTE) continue;
-
-    const plotNumber = getPlot(plotId)?.plotNumber;
-    drafts.push({
-      kind: "greenhouse_water",
-      id: `greenhouse_water:${plotId}:${plan.lastWateredAt}`,
-      title: `Water the Greenhouse${plotNumber === undefined ? "" : ` (plot ${plotNumber})`}`,
-      detail:
-        dueAt <= now
-          ? "Watering is due now."
-          : `Due in ${minutesUntil(dueAt, now)} min.`,
-      dueAt,
-    });
-  }
-  return drafts;
+  return greenhousesDue(greenhouses, now, T.greenhouseLeadMinutes).map(
+    ({ plotId, lastWateredAt, dueAt }) => {
+      const plotNumber = getPlot(plotId)?.plotNumber;
+      return {
+        kind: "greenhouse_water",
+        id: `greenhouse_water:${plotId}:${lastWateredAt}`,
+        title: `Water the Greenhouse${plotNumber === undefined ? "" : ` (plot ${plotNumber})`}`,
+        detail:
+          dueAt <= now
+            ? "Watering is due now."
+            : `Due in ${minutesUntil(dueAt, now)} min.`,
+        dueAt,
+      };
+    },
+  );
 }
 
 function plotAction({ garden }: PlannerInput): Draft[] {

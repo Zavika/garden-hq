@@ -182,6 +182,15 @@ describe("createHypixelClient", () => {
     );
   });
 
+  it("maps 401 to bad_api_key with no retry", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client, net } = setup(() =>
+      json({ success: false, cause: "Invalid API key" }, { status: 401 }),
+    );
+    expect((await failure(client.garden("p1"))).code).toBe("bad_api_key");
+    expect(net.calls).toHaveLength(1);
+  });
+
   it("still returns bad_api_key for an unreadable 403 body, and never logs the key", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const { client } = setup(

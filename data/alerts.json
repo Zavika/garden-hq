@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "lastVerified": "2026-10-29",
+  "enabledAfterTest": [
+    "contest_soon",
+    "composter_fuel_out",
+    "visitors_waiting",
+    "greenhouse_water"
+  ],
+  "rules": {
+    "contest_soon": { "leadMinutes": 5 },
+    "composter_fuel_out": {},
+    "composter_fuel_low": { "leadMinutes": 30 },
+    "visitors_waiting": { "threshold": 5 },
+    "greenhouse_water": {}
+  },
+  "bounds": {
+    "leadMinutes": { "min": 5, "max": 120 },
+    "threshold": { "min": 1, "max": 5 }
+  },
+  "sync": { "baselineMinutes": 15, "soonMinutes": 5, "soonHorizonMinutes": 20 }
+}

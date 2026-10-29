@@ -34,3 +34,8 @@ migrations_dir = "migrations"
 name = "CODE_LIMITER"
 namespace_id = "1002"
 simple = { limit = 30, period = 60 }
+
+# Discord alerts: sync due accounts and send alerts every 5 minutes.
+# Free plan allows 5 Cron Triggers per account; this uses one.
+[triggers]
+crons = ["*/5 * * * *"]

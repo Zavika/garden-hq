@@ -26,3 +26,31 @@ export function utcDay(now: number): number {
 export function secondsToNextUtcDay(now: number): number {
   return Math.max(1, Math.ceil(((utcDay(now) + 1) * MS_PER_DAY - now) / 1000));
 }
+
+/**
+ * Cron / alerts operating limits (Phase 3C). Tunable guesses sized against the
+ * free plan (50 subrequests and 10 ms CPU per invocation), not measured values:
+ * see data/VERIFY.md "Alerts cron".
+ */
+/**
+ * During the hourly contest surge every account moves to the 5-minute cadence
+ * and needs a fresh Hypixel snapshot, capped at MAX_HYPIXEL_CALLS_PER_RUN (8)
+ * per run, so more than ~8 alerting accounts would drop contest alerts.
+ * Follow-up: derive contest/greenhouse alerts from a stale snapshot.
+ */
+export const MAX_ALERTING_ACCOUNTS = 8;
+export const CRON_BATCH = 10;
+export const MAX_HYPIXEL_CALLS_PER_RUN = 8;
+/** Of the 50 allowed; the rest is headroom for retries and releases. */
+export const SUBREQUEST_BUDGET = 40;
+/** The Hypixel client retries a call up to 3 times (hypixel.ts MAX_ATTEMPTS). */
+export const HYPIXEL_ATTEMPT_RESERVE = 3;
+export const SNAPSHOT_REUSE_MS = 5 * 60_000;
+/** next_sync_at is set a few hundred ms after a cron tick; without slack a 5 min reschedule slips to 10. */
+export const CRON_SLACK_MS = 60_000;
+export const CRON_ERROR_RETRY_MS = 5 * 60_000;
+export const CRON_NO_GARDEN_RETRY_MS = 60 * 60_000;
+export const INACTIVE_ACCOUNT_MS = 60 * MS_PER_DAY;
+export const ALERT_LOG_RETENTION_MS = 7 * MS_PER_DAY;
+/** Upper bound for a Discord 429 retry_after reschedule. */
+export const MAX_DISCORD_RETRY_MS = 60 * 60_000;

@@ -1,3 +1,4 @@
+import type { AlertRules } from "./alerts";
 import type { StoredData } from "./sync";
 import type {
   Contest,
@@ -61,4 +62,18 @@ export interface SyncStateResponse extends StoredData {
 
 export interface AccountCreateResponse {
   syncCode: string;
+}
+
+export interface AlertsStateResponse {
+  hasWebhook: boolean;
+  /** Last 4 characters of the webhook token; the URL itself is never returned. */
+  webhookLast4: string | null;
+  /** null until a test message has been sent; false when Discord says the webhook is gone. */
+  webhookOk: boolean | null;
+  /** null until the first successful test message. */
+  rules: AlertRules | null;
+}
+
+export interface AlertTestResponse extends AlertsStateResponse {
+  test: "sent" | "failed" | "dead";
 }

@@ -269,3 +269,53 @@ describe("api client", () => {
     });
   });
 });
+
+describe("alerts client", () => {
+  it("sends the sync code as a bearer token and the right verbs", async () => {
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
+    const fetchFn = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), init });
+      return new Response(
+        JSON.stringify({
+          hasWebhook: false,
+          webhookLast4: null,
+          webhookOk: null,
+          rules: null,
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch;
+    const c = createApiClient(fetchFn, "https://api.test");
+
+    await c.getAlerts("CODE");
+    await c.putWebhook("CODE", "https://discord.com/api/webhooks/1/a");
+    await c.testWebhook("CODE");
+    await c.putRules("CODE", { contest_soon: { enabled: false } });
+
+    expect(calls.map((x) => [x.init?.method, x.url])).toEqual([
+      ["GET", "https://api.test/api/alerts"],
+      ["PUT", "https://api.test/api/alerts/webhook"],
+      ["POST", "https://api.test/api/alerts/test"],
+      ["PUT", "https://api.test/api/alerts/rules"],
+    ]);
+    for (const call of calls) {
+      expect((call.init?.headers as Record<string, string>).Authorization).toBe(
+        "Bearer CODE",
+      );
+    }
+    expect(JSON.parse(String(calls[1]?.init?.body))).toEqual({
+      url: "https://discord.com/api/webhooks/1/a",
+    });
+    expect(JSON.parse(String(calls[3]?.init?.body))).toEqual({
+      rules: { contest_soon: { enabled: false } },
+    });
+  });
+
+  it("deleteWebhook accepts a 204", async () => {
+    const c = createApiClient(
+      (async () => new Response(null, { status: 204 })) as typeof fetch,
+      "https://api.test",
+    );
+    await expect(c.deleteWebhook("CODE")).resolves.toBeUndefined();
+  });
+});

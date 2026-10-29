@@ -91,7 +91,7 @@ describe("CORS", () => {
       "https://app.example",
     );
     expect(res.headers.get("Access-Control-Allow-Methods")).toBe(
-      "GET,POST,DELETE,OPTIONS",
+      "GET,POST,PUT,DELETE,OPTIONS",
     );
     expect(res.headers.get("Access-Control-Allow-Credentials")).toBeNull();
   });

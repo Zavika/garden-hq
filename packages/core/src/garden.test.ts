@@ -4,6 +4,7 @@ import realGarden from "../fixtures/garden-response.real.sample.json";
 import {
   levelForExperience,
   normalizeGarden,
+  parseGardenState,
   unwrapGardenResponse,
 } from "./garden";
 
@@ -140,5 +141,37 @@ describe("normalizeGarden greenhouse", () => {
       { x: 1, z: 2 },
       { x: 9, z: 9 },
     ]);
+  });
+});
+
+describe("parseGardenState", () => {
+  it("round-trips a normalized garden", () => {
+    const garden = normalizeGarden(sampleResponse);
+    expect(parseGardenState(JSON.parse(JSON.stringify(garden)))).toEqual(
+      garden,
+    );
+  });
+  it.each([
+    ["not an object", 5],
+    ["null", null],
+    ["missing composter", { level: 1 }],
+    ["string level", { ...normalizeGarden(sampleResponse), level: "8" }],
+    [
+      "NaN fuel",
+      {
+        ...normalizeGarden(sampleResponse),
+        composter: {
+          ...normalizeGarden(sampleResponse).composter,
+          fuel: Number.NaN,
+        },
+      },
+    ],
+    [
+      "bad visitor",
+      { ...normalizeGarden(sampleResponse), visitors: [{ id: 1 }] },
+    ],
+    ["bad plots", { ...normalizeGarden(sampleResponse), unlockedPlotIds: [1] }],
+  ])("rejects %s", (_name, raw) => {
+    expect(parseGardenState(raw)).toBeNull();
   });
 });

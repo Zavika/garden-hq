@@ -1,4 +1,5 @@
 import { normalizeContests, type Contest } from "@garden-hq/core";
+import { cached } from "./cache";
 import { AppError } from "./errors";
 import { discardBody } from "./http";
 import { logUpstream } from "./log";
@@ -93,5 +94,18 @@ export async function fetchContests(
   throw new AppError(
     "upstream_down",
     "No contest schedule source is available",
+  );
+}
+
+export const CONTESTS_CACHE_TTL_SECONDS = 15 * 60;
+
+/** Shared by GET /api/contests and the cron: one KV key, so at most 96 writes/day for everyone. */
+export function getCachedContests(
+  kv: KVNamespace,
+  fetchFn: typeof fetch,
+  now: () => number,
+): Promise<{ value: ContestsResult; fetchedAt: number }> {
+  return cached(kv, "contests", CONTESTS_CACHE_TTL_SECONDS, now, () =>
+    fetchContests(fetchFn),
   );
 }

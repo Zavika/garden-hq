@@ -292,8 +292,22 @@ describe("sync db", () => {
   it("deleteAccount removes rows from all three tables", async () => {
     const { db, apply, count } = await setup();
     await apply([crop("beginner_1", "wheat"), gh("beginner_2")]);
+    await db.batch([
+      db.prepare(
+        "INSERT INTO alert_settings (account_id, updated_at) VALUES ('a1', 1)",
+      ),
+      db.prepare(
+        "INSERT INTO garden_snapshot (account_id, fetched_at, json) VALUES ('a1', 1, '{}')",
+      ),
+      db.prepare(
+        "INSERT INTO alert_log (account_id, type, key, sent_at) VALUES ('a1', 't', 'k', 1)",
+      ),
+    ]);
     await deleteAccount(db, "a1");
     expect(await count("accounts")).toBe(0);
+    expect(await count("alert_settings")).toBe(0);
+    expect(await count("garden_snapshot")).toBe(0);
+    expect(await count("alert_log")).toBe(0);
     expect(await count("plot_assignments")).toBe(0);
     expect(await count("greenhouses")).toBe(0);
   });

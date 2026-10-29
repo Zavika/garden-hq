@@ -5,6 +5,7 @@ import {
 } from "@garden-hq/core";
 import type { Env } from "./env";
 import { AppError } from "./errors";
+import { MS_PER_DAY } from "./limits";
 import { CODE_FAILURE_COST, pickCodeLimiter } from "./ratelimit";
 import { hashSyncCode } from "./synccode";
 
@@ -20,6 +21,8 @@ export interface AccountRow {
   opsDay: number;
   /** Ops applied on `opsDay`. */
   opsCount: number;
+  /** Last authenticated activity (bumped at most once per day). */
+  lastSeenAt: number;
 }
 
 export interface DbAccount {
@@ -32,10 +35,11 @@ export interface DbAccount {
   revision: number;
   ops_day: number;
   ops_count: number;
+  last_seen_at: number;
 }
 
 export const ACCOUNT_COLUMNS =
-  "id, mc_uuid, mc_name, profile_id, profiles, tz, revision, ops_day, ops_count";
+  "id, mc_uuid, mc_name, profile_id, profiles, tz, revision, ops_day, ops_count, last_seen_at";
 
 export function toAccountRow(row: DbAccount): AccountRow {
   return {
@@ -48,6 +52,7 @@ export function toAccountRow(row: DbAccount): AccountRow {
     revision: row.revision,
     opsDay: row.ops_day,
     opsCount: row.ops_count,
+    lastSeenAt: row.last_seen_at,
   };
 }
 
@@ -108,6 +113,20 @@ export async function authenticate(
       await limiter.allow(`code:${ip}`);
     }
     throw new AppError("unauthorized", "Unknown sync code");
+  }
+  const t = now();
+  if (t - row.last_seen_at >= MS_PER_DAY) {
+    // Any authenticated request is activity; at most one write per account per day.
+    try {
+      await c.env.DB.prepare(
+        "UPDATE accounts SET last_seen_at = ?2 WHERE id = ?1",
+      )
+        .bind(row.id, t)
+        .run();
+      row.last_seen_at = t;
+    } catch {
+      // Best effort: a failed activity bump must not fail the request.
+    }
   }
   return toAccountRow(row);
 }

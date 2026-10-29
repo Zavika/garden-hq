@@ -15,7 +15,7 @@ function fakeLimiter(success = true) {
   return { limit };
 }
 
-async function setup(success = true) {
+async function setup(success = true, lastSeen = 1) {
   const limiter = fakeLimiter(success);
   const env = makeEnv({ CODE_LIMITER: limiter });
   await env.DB.prepare(
@@ -31,7 +31,7 @@ async function setup(success = true) {
       "Europe/Warsaw",
       7,
       1,
-      1,
+      lastSeen,
     )
     .run();
   return { env, limiter };
@@ -99,6 +99,7 @@ describe("authenticate", () => {
       revision: 7,
       opsDay: 0,
       opsCount: 0,
+      lastSeenAt: 1,
     });
     expect(limiter.limit).toHaveBeenCalledTimes(1);
   });
@@ -130,5 +131,53 @@ describe("authenticate", () => {
     ]);
     expect(all).not.toContain(CODE);
     expect(all).not.toContain("B".repeat(32));
+  });
+
+  it("does not write last_seen_at when it is under a day old", async () => {
+    const { env } = await setup(true, now() - 1000);
+    const prepare = vi.spyOn(env.DB, "prepare");
+    await authenticate({ env, req: req(`Bearer ${CODE}`) }, now);
+    expect(prepare.mock.calls.some(([q]) => /UPDATE/i.test(q))).toBe(false);
+    const r = await env.DB.prepare(
+      "SELECT last_seen_at AS t FROM accounts",
+    ).first<{ t: number }>();
+    expect(r?.t).toBe(now() - 1000);
+  });
+
+  it("bumps a stale last_seen_at to now once, then leaves it", async () => {
+    const { env } = await setup(true, 1);
+    const day = 86_400_000;
+    let t = now() + day;
+    const row = await authenticate(
+      { env, req: req(`Bearer ${CODE}`) },
+      () => t,
+    );
+    expect(row.lastSeenAt).toBe(t);
+    const read = async () =>
+      (
+        await env.DB.prepare("SELECT last_seen_at AS t FROM accounts").first<{
+          t: number;
+        }>()
+      )?.t;
+    expect(await read()).toBe(t);
+    const first = t;
+    t += 5000;
+    await authenticate({ env, req: req(`Bearer ${CODE}`) }, () => t);
+    expect(await read()).toBe(first);
+  });
+
+  it("still authenticates when the last_seen_at update throws", async () => {
+    const { env } = await setup(true, 1);
+    const real = env.DB.prepare.bind(env.DB);
+    vi.spyOn(env.DB, "prepare").mockImplementation((q: string) => {
+      if (/UPDATE accounts/i.test(q)) throw new Error("db down");
+      return real(q);
+    });
+    const row = await authenticate(
+      { env, req: req(`Bearer ${CODE}`) },
+      () => now() + 86_400_000 * 2,
+    );
+    expect(row.id).toBeTruthy();
+    expect(row.lastSeenAt).toBe(1);
   });
 });
