@@ -192,3 +192,7 @@ Verified 2026-11-10 against the live `https://api.hypixel.net/v2/skyblock/bazaar
 - **Bazaar route CPU:** measure `/api/bazaar` on a cold cache with `wrangler tail` (target well under 10 ms). If over, options are a smaller wanted list or a browser-direct fetch (the endpoint allows CORS *).
 
 - **Compost bundle threshold:** `looseCompostMaxCost` (128) in data/bazaar.json is the largest plot rung CLAUDE.md confirms as loose Compost (tier C: 64, 96, 128, then Compost Bundles). The bundle-to-Compost ratio (rungs from 160 are multiples of 160) is unverified, so the "Next plot ... coins" row is hidden above the threshold.
+
+## Bazaar route CPU, measured on production (2026-11-10, after Phase 5C)
+
+`wrangler tail` while requesting `GET /api/bazaar` three times: **cold cache 11 ms CPU** (163 ms wall, upstream fetch 8 ms), then **3 ms** and **0 ms** from the KV cache (6-7 ms wall). The request outcome was `ok` (no resource-limit error), but 11 ms is above the 10 ms free-plan CPU limit, so an occasional cold request can be at risk. The cold path runs once per 10 minutes at most (KV TTL). If errors (Worker exceeded resource limits / 1102) ever show up for `/api/bazaar`, options in order: shrink the wanted-product list, move the fetch to the cron (which already tolerates longer runs), or fetch the public endpoint (CORS `*`) directly from the browser.
