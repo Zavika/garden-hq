@@ -7,12 +7,16 @@ import {
   parseOps,
   planJoin,
   seedOps,
-  type StoredData,
+  type StoredData as SyncedData,
   type SyncOp,
   type SyncStateResponse,
 } from "@garden-hq/core";
 import { ApiError, type SyncApi } from "../api/client";
-import type { Backing, GardenStorage } from "./storage";
+import type {
+  Backing,
+  GardenStorage,
+  StoredData as LocalData,
+} from "./storage";
 
 const REJECTED_MESSAGE =
   "Some changes were rejected by the server and were dropped.";
@@ -91,7 +95,7 @@ function sendable(ops: readonly SyncOp[]): SyncOp[] {
   return ops.filter((op) => parseOps([op]).ok);
 }
 
-function withoutRevision(state: SyncStateResponse): StoredData {
+function withoutRevision(state: SyncStateResponse): SyncedData {
   return {
     link: state.link,
     assignments: state.assignments,
@@ -253,9 +257,10 @@ export function createSyncEngine(opts: {
   function applyServer(state: SyncStateResponse): void {
     const server = withoutRevision(state);
     const local = base.getSnapshot();
-    const merged: StoredData = {
+    const merged: LocalData = {
       ...server,
       link: server.link ?? local.link,
+      progress: local.progress,
     };
     base.replaceAll(applyOps(merged, [...inFlight, ...persisted.pending]));
   }
@@ -501,7 +506,11 @@ export function createSyncEngine(opts: {
       persisted.pending = edits.reduce<SyncOp[]>(enqueueOp, []);
       base.replaceAll(
         applyOps(
-          { ...finalState, link: finalState.link ?? currentLink },
+          {
+            ...finalState,
+            link: finalState.link ?? currentLink,
+            progress: base.getSnapshot().progress,
+          },
           edits,
         ),
       );

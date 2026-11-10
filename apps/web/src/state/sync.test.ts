@@ -1,8 +1,10 @@
 import {
   applyOps,
+  EMPTY_PROGRESS,
   EMPTY_STORED_DATA,
   MAX_OPS_PER_REQUEST,
   seedOps,
+  type ProgressData,
   type StoredData,
   type SyncOp,
   type SyncStateResponse,
@@ -13,6 +15,7 @@ import {
   createGardenStorage,
   type Backing,
   type GardenStorage,
+  type StoredData as LocalData,
   type StoredLink,
 } from "./storage";
 import { createSyncEngine } from "./sync";
@@ -80,13 +83,19 @@ function setup(
   opts: {
     backing?: (Backing & { data: Record<string, string> }) | null;
     server?: StoredData;
-    local?: Partial<StoredData>;
+    local?: Partial<LocalData>;
   } = {},
 ) {
   const backing = opts.backing === undefined ? fakeBacking() : opts.backing;
   const fake = makeApi(opts.server);
   const base = createGardenStorage(null);
-  if (opts.local) base.replaceAll({ ...EMPTY_STORED_DATA, ...opts.local });
+  if (opts.local) {
+    base.replaceAll({
+      ...EMPTY_STORED_DATA,
+      progress: EMPTY_PROGRESS,
+      ...opts.local,
+    });
+  }
   const engine = createSyncEngine({
     base,
     api: fake.api,
@@ -848,7 +857,7 @@ describe("SyncEngine", () => {
       ]);
     });
 
-    const LOCAL_DATA: Partial<StoredData> = {
+    const LOCAL_DATA: Partial<LocalData> = {
       link: LINK,
       assignments: { beginner_1: "wheat" },
       greenhouses: {
@@ -983,6 +992,32 @@ describe("SyncEngine", () => {
       await vi.advanceTimersByTimeAsync(0);
       expect(fake.api.getSync).toHaveBeenCalledTimes(1);
       stop();
+    });
+  });
+
+  describe("local-only progress", () => {
+    const PROGRESS: ProgressData = {
+      ...EMPTY_PROGRESS,
+      archive: { xp: 70, doneQuests: 3, doneDays: ["2026-01-01"] },
+    };
+
+    it("survives a pull whose server state lacks progress", async () => {
+      const { engine, base, fake } = await signedInEngine();
+      base.setProgress(PROGRESS);
+      fake.setServer({ ...EMPTY_STORED_DATA, timeZone: "UTC" });
+      await engine.flush();
+      expect(base.getSnapshot().timeZone).toBe("UTC");
+      expect(base.getSnapshot().progress).toEqual(PROGRESS);
+    });
+
+    it("survives joinWithCode", async () => {
+      const { engine, base } = setup({
+        server: { ...EMPTY_STORED_DATA, assignments: { beginner_1: "carrot" } },
+        local: { progress: PROGRESS },
+      });
+      await engine.joinWithCode(GROUPED);
+      expect(base.getSnapshot().assignments).toEqual({ beginner_1: "carrot" });
+      expect(base.getSnapshot().progress).toEqual(PROGRESS);
     });
   });
 });

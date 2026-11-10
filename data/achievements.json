@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "lastVerified": "2026-11-10",
+  "achievements": [
+    {
+      "id": "first_greenhouse",
+      "check": "first_greenhouse",
+      "threshold": 1,
+      "title": "Green thumb",
+      "description": "Build your first Greenhouse.",
+      "xp": 50
+    },
+    {
+      "id": "plots_6",
+      "check": "plots_unlocked",
+      "threshold": 6,
+      "title": "Growing plot",
+      "description": "Unlock 6 plots.",
+      "xp": 30
+    },
+    {
+      "id": "plots_12",
+      "check": "plots_unlocked",
+      "threshold": 12,
+      "title": "Half a garden",
+      "description": "Unlock 12 plots.",
+      "xp": 60
+    },
+    {
+      "id": "plots_18",
+      "check": "plots_unlocked",
+      "threshold": 18,
+      "title": "Sprawling estate",
+      "description": "Unlock 18 plots.",
+      "xp": 100
+    },
+    {
+      "id": "plots_24",
+      "check": "plots_unlocked",
+      "threshold": 24,
+      "title": "Every plot",
+      "description": "Unlock all 24 plots.",
+      "xp": 200
+    },
+    {
+      "id": "crops_5",
+      "check": "crops_assigned",
+      "threshold": 5,
+      "title": "Crop sampler",
+      "description": "Assign 5 different crops to plots.",
+      "xp": 30
+    },
+    {
+      "id": "crops_13",
+      "check": "crops_assigned",
+      "threshold": 13,
+      "title": "Full harvest",
+      "description": "Assign all 13 crops to plots.",
+      "xp": 100
+    },
+    {
+      "id": "mutations_1",
+      "check": "mutations_discovered",
+      "threshold": 1,
+      "title": "First mutation",
+      "description": "Discover a Greenhouse mutation.",
+      "xp": 30
+    },
+    {
+      "id": "mutations_10",
+      "check": "mutations_discovered",
+      "threshold": 10,
+      "title": "Mutation hobbyist",
+      "description": "Discover 10 mutations.",
+      "xp": 60
+    },
+    {
+      "id": "mutations_20",
+      "check": "mutations_discovered",
+      "threshold": 20,
+      "title": "Mutation expert",
+      "description": "Discover 20 mutations.",
+      "xp": 100
+    },
+    {
+      "id": "mutations_40",
+      "check": "mutations_discovered",
+      "threshold": 40,
+      "title": "Mutation master",
+      "description": "Discover all 40 mutations.",
+      "xp": 200
+    },
+    {
+      "id": "garden_level_5",
+      "check": "garden_level",
+      "threshold": 5,
+      "title": "Garden level 5",
+      "description": "Reach Garden level 5.",
+      "xp": 40
+    },
+    {
+      "id": "garden_level_10",
+      "check": "garden_level",
+      "threshold": 10,
+      "title": "Garden level 10",
+      "description": "Reach Garden level 10.",
+      "xp": 80
+    },
+    {
+      "id": "garden_level_15",
+      "check": "garden_level",
+      "threshold": 15,
+      "title": "Garden level 15",
+      "description": "Reach the maximum Garden level.",
+      "xp": 200
+    },
+    {
+      "id": "visitors_50",
+      "check": "visitors_served",
+      "threshold": 50,
+      "title": "Good host",
+      "description": "Serve 50 visitors.",
+      "xp": 30
+    },
+    {
+      "id": "visitors_250",
+      "check": "visitors_served",
+      "threshold": 250,
+      "title": "Open door",
+      "description": "Serve 250 visitors.",
+      "xp": 80
+    },
+    {
+      "id": "visitors_1000",
+      "check": "visitors_served",
+      "threshold": 1000,
+      "title": "Barn legend",
+      "description": "Serve 1,000 visitors.",
+      "xp": 200
+    },
+    {
+      "id": "streak_3",
+      "check": "streak",
+      "threshold": 3,
+      "title": "Three in a row",
+      "description": "Reach a 3-day quest streak.",
+      "xp": 30
+    },
+    {
+      "id": "streak_7",
+      "check": "streak",
+      "threshold": 7,
+      "title": "Week streak",
+      "description": "Reach a 7-day quest streak.",
+      "xp": 60
+    },
+    {
+      "id": "streak_30",
+      "check": "streak",
+      "threshold": 30,
+      "title": "Month streak",
+      "description": "Reach a 30-day quest streak.",
+      "xp": 200
+    },
+    {
+      "id": "quests_10",
+      "check": "quests_done",
+      "threshold": 10,
+      "title": "Getting started",
+      "description": "Complete 10 quests.",
+      "xp": 30
+    },
+    {
+      "id": "quests_50",
+      "check": "quests_done",
+      "threshold": 50,
+      "title": "Regular",
+      "description": "Complete 50 quests.",
+      "xp": 80
+    },
+    {
+      "id": "quests_250",
+      "check": "quests_done",
+      "threshold": 250,
+      "title": "Dedicated farmer",
+      "description": "Complete 250 quests.",
+      "xp": 200
+    }
+  ]
+}

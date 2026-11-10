@@ -1,5 +1,8 @@
 import { asArray, asNumber, asRecord, asString } from "./coerce";
-import type { GardenMemberState } from "./types";
+import { DAYS_PER_MONTH, MONTHS_PER_YEAR, contestStartMs } from "./calendar";
+import { ALL_CROPS } from "./crops";
+import { MAX_CONTEST_ENTRIES } from "./quests";
+import type { ContestEntry, GardenMemberState } from "./types";
 
 function asStringArray(value: unknown): string[] {
   return asArray(value).filter(
@@ -15,6 +18,40 @@ function normalizeChips(raw: unknown): Record<string, number> {
     }
   }
   return chips;
+}
+
+const CROP_ID_BY_API_ID = new Map(
+  ALL_CROPS.flatMap((crop) =>
+    crop.apiId === null ? [] : [[crop.apiId, crop.id] as const],
+  ),
+);
+const CONTEST_KEY_RE = /^(\d+):(\d+)_(\d+):(.+)$/;
+
+// VERIFY: Hypixel ids for cactus (CACTUS) and cocoa (INK_SACK:3) are the expected
+// ones but were not seen on the one real profile (data/VERIFY.md).
+function normalizeContestEntries(raw: unknown): ContestEntry[] {
+  const entries: ContestEntry[] = [];
+  for (const [key, value] of Object.entries(asRecord(asRecord(raw).contests))) {
+    const match = CONTEST_KEY_RE.exec(key);
+    if (match === null) continue;
+    const [year, month, day] = [
+      Number(match[1]),
+      Number(match[2]),
+      Number(match[3]),
+    ];
+    if (month < 1 || month > MONTHS_PER_YEAR || day < 1 || day > DAYS_PER_MONTH)
+      continue;
+    const apiCropId = match[4] ?? "";
+    entries.push({
+      startsAt: contestStartMs(year, month, day),
+      apiCropId,
+      cropId: CROP_ID_BY_API_ID.get(apiCropId) ?? null,
+      collected: asNumber(asRecord(value).collected, 0),
+    });
+  }
+  return entries
+    .sort((a, b) => a.startsAt - b.startsAt)
+    .slice(-MAX_CONTEST_ENTRIES);
 }
 
 /**
@@ -35,6 +72,7 @@ export function normalizeGardenMember(raw: unknown): GardenMemberState {
     chips: normalizeChips(asRecord(member.player_data).garden_chips),
     hasGreenhouse:
       asString(asRecord(objectives.place_a_greenhouse).status) === "COMPLETE",
+    contestEntries: normalizeContestEntries(member.jacobs_contest),
   };
 }
 

@@ -585,3 +585,14 @@ describe("planJoin", () => {
     expect(r).toEqual({ ops: [], added: 0, kept: 0 });
   });
 });
+
+describe("generic applyOp/applyOps", () => {
+  it("preserves extra properties on the input", () => {
+    const input = { ...EMPTY_STORED_DATA, extra: 1 };
+    const out = applyOp(input, { t: "setTimeZone", timeZone: "UTC" });
+    expect(out.extra).toBe(1);
+    expect(out.timeZone).toBe("UTC");
+    const many = applyOps(input, [{ t: "setTimeZone", timeZone: "UTC" }]);
+    expect(many.extra).toBe(1);
+  });
+});

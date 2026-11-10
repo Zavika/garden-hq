@@ -6,7 +6,7 @@
     "baseDrop": "wheat",
     "pest": "fly",
     "tool": null,
-    "apiId": null,
+    "apiId": "WHEAT",
     "contestCrop": true
   },
   {
@@ -16,7 +16,7 @@
     "baseDrop": "carrot",
     "pest": "cricket",
     "tool": null,
-    "apiId": null,
+    "apiId": "CARROT_ITEM",
     "contestCrop": true
   },
   {
@@ -26,7 +26,7 @@
     "baseDrop": "potato",
     "pest": "locust",
     "tool": null,
-    "apiId": null,
+    "apiId": "POTATO_ITEM",
     "contestCrop": true
   },
   {
@@ -36,7 +36,7 @@
     "baseDrop": "pumpkin",
     "pest": "rat",
     "tool": null,
-    "apiId": null,
+    "apiId": "PUMPKIN",
     "contestCrop": true
   },
   {
@@ -46,7 +46,7 @@
     "baseDrop": "sugar_cane",
     "pest": "mosquito",
     "tool": null,
-    "apiId": null,
+    "apiId": "SUGAR_CANE",
     "contestCrop": true
   },
   {
@@ -56,7 +56,7 @@
     "baseDrop": "melon",
     "pest": "earthworm",
     "tool": null,
-    "apiId": null,
+    "apiId": "MELON",
     "contestCrop": true
   },
   {
@@ -66,7 +66,7 @@
     "baseDrop": "cactus",
     "pest": "mite",
     "tool": null,
-    "apiId": null,
+    "apiId": "CACTUS",
     "contestCrop": true
   },
   {
@@ -76,7 +76,7 @@
     "baseDrop": "cocoa_beans",
     "pest": "moth",
     "tool": null,
-    "apiId": null,
+    "apiId": "INK_SACK:3",
     "contestCrop": true
   },
   {
@@ -86,7 +86,7 @@
     "baseDrop": "mushroom",
     "pest": "slug",
     "tool": null,
-    "apiId": null,
+    "apiId": "MUSHROOM_COLLECTION",
     "contestCrop": true
   },
   {
@@ -96,7 +96,7 @@
     "baseDrop": "nether_wart",
     "pest": "beetle",
     "tool": null,
-    "apiId": null,
+    "apiId": "NETHER_STALK",
     "contestCrop": true
   },
   {

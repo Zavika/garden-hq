@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "lastVerified": "2026-11-10",
+  "maxLevel": 30,
+  "xpToNext": { "base": 60, "perLevel": 20 }
+}

@@ -1,0 +1,51 @@
+{
+  "jacobs_contest": {
+    "contests": {
+      "154:11_13:WHEAT": {
+        "collected": 27
+      },
+      "154:9_3:WHEAT": {
+        "collected": 285
+      },
+      "155:3_27:CARROT_ITEM": {
+        "collected": 2
+      },
+      "155:7_29:SUGAR_CANE": {
+        "collected": 1
+      },
+      "157:2_13:POTATO_ITEM": {
+        "collected": 1
+      },
+      "162:2_22:SUGAR_CANE": {
+        "collected": 76
+      },
+      "163:5_25:CARROT_ITEM": {
+        "collected": 1
+      },
+      "164:6_27:POTATO_ITEM": {
+        "collected": 1
+      },
+      "201:1_17:MUSHROOM_COLLECTION": {
+        "collected": 10
+      },
+      "462:10_29:MELON": {
+        "collected": 51020
+      },
+      "462:3_27:MELON": {
+        "collected": 45464
+      },
+      "476:7_20:MUSHROOM_COLLECTION": {
+        "collected": 10477
+      },
+      "476:7_20:PUMPKIN": {
+        "collected": 101615
+      },
+      "515:10_23:NETHER_STALK": {
+        "collected": 74924
+      },
+      "515:10_23:PUMPKIN": {
+        "collected": 1600
+      }
+    }
+  }
+}

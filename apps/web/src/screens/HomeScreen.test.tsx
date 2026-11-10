@@ -8,6 +8,7 @@ import { HomeScreen } from "./HomeScreen";
 const garden = vi.fn();
 vi.mock("../state/queries", () => ({
   useGarden: () => garden(),
+  useMember: () => ({ data: undefined }),
   useContests: () => ({ data: undefined }),
   useMayor: () => ({ data: undefined }),
 }));

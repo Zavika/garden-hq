@@ -83,6 +83,7 @@ describe("GreenhousePanel", () => {
         analyzedMutations: ["ashwreath", "shadevine", "dustgrain"],
         chips: { cropshot: 5, quickdraw: 2 },
         hasGreenhouse: true,
+        contestEntries: [],
       },
     });
     expect(

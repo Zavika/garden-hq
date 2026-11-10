@@ -10,7 +10,7 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 
 ## Crops
 
-- **`apiId`** (Hypixel collection/skill enum name per crop) — no source confirmed these; set to `null` in `data/crops.json` rather than guessed.
+- **`apiId`** — contest crops are mapped (8 observed on a real profile: WHEAT, CARROT_ITEM, POTATO_ITEM, PUMPKIN, SUGAR_CANE, MELON, MUSHROOM_COLLECTION, NETHER_STALK); **CACTUS and INK_SACK:3 (cocoa) are expected but unobserved**; flowers have none; unmapped ids are ignored by quests.
 - **`tool`** (farming tool per crop) — same; set to `null`.
 - **`contestCrop`** — medium confidence: research says all 10 classic crops (Wheat–Nether Wart) are contest crops and the 3 Garden flowers (Sunflower, Moonflower, Wild Rose) are not. Plausible and internally consistent, but re-verify against the actual Jacob's Contest crop list before relying on it for the contests feature (Phase 2/3).
 
@@ -113,3 +113,18 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Discord webhook behaviour** — assumed: 2xx (204) on success without `?wait=true`; 404 for a deleted webhook and 401 for a bad token; 429 with a JSON `retry_after` (seconds, may be fractional) and/or a `Retry-After` header. Confirm against Discord's docs / a real webhook on the first deploy.
 - **Hypixel `last_save` freshness** — `composter_data.last_save` drives the fuel forecast; whether it advances while the player is offline from SkyBlock is unverified (spec "Open verification items").
 - **Snapshot reuse** — a stored garden under 5 minutes old is reused, so in the 5-minute fast mode visitor alerts can lag up to ~10 minutes. Accepted for the free plan's Hypixel call budget.
+
+## Contest entries (Phase 4)
+
+- `member.jacobs_contest.contests` is keyed `"<sbYear>:<month>_<day>:<CROP_ID>"` with `{ collected, ... }`; the key format was seen on one real profile.
+- A contest is assumed to last exactly one SkyBlock day, so the key gives its start time.
+- Unverified whether an entry appears while the contest is running or only after it ends.
+
+## Gamification (Phase 4A, 2026-11-10)
+
+- **Garden snapshot freshness** - quests are generated, and API quests verified, only from a snapshot fetched within `freshMinutes` (10) of "now". How old a Hypixel garden/profile response can really be is unverified; a stale snapshot could credit a few minutes of earlier play.
+- **Balance numbers are guesses** - quest XP and targets (`data/quests.json`), the Player level curve (`data/player-levels.json`) and achievement XP (`data/achievements.json`) are proposals, not game facts.
+- **`discovered_greenhouse_crops` may contain non-mutation ids** - this would affect the mutation-count quests and the 40-mutation achievement tier (the 40 comes from `data/mutations.json`).
+- **`dayKey` with a non-zero `resetHour`** - the reset shift is a fixed number of hours, so on a DST-change day the rollover would be an hour off. `resetHour` is 0 today, so this is latent.
+- **Progress is local-only until milestone B** - quests, XP, streak and achievements live in localStorage; with Cloud save on they are preserved through sync but not yet uploaded.
+- **`contest_crop` timing** - see "Contest entries (Phase 4)": completion depends on when Hypixel writes `jacobs_contest.contests` entries.

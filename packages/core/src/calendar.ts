@@ -58,3 +58,14 @@ export function isDaytime(date: Date): boolean {
     MS_PER_SKYBLOCK_DAY;
   return msIntoDay < MS_PER_SKYBLOCK_DAY / 2;
 }
+
+/** Start of the SkyBlock day (year/month/day are 1-based). A Jacob's Contest occupies exactly one SkyBlock day. */
+export function contestStartMs(
+  year: number,
+  month: number,
+  day: number,
+): number {
+  const elapsedDays =
+    (year - 1) * DAYS_PER_YEAR + (month - 1) * DAYS_PER_MONTH + (day - 1);
+  return SKYBLOCK_EPOCH_MS + elapsedDays * MS_PER_SKYBLOCK_DAY;
+}

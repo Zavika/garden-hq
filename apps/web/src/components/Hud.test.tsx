@@ -53,6 +53,9 @@ describe("Hud", () => {
     expect(screen.getByText(/wheat, carrot, potato/i)).toBeInTheDocument();
     expect(screen.getByText("Finnegan")).toBeInTheDocument();
     expect(screen.getByText(/your crop/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", { name: "Player XP" }),
+    ).toBeInTheDocument();
   });
 
   it("strips Minecraft colour codes from the mayor name", () => {

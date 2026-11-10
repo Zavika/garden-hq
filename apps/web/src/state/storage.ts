@@ -2,15 +2,18 @@ import {
   applyOp,
   CELL_KEY_RE,
   DEFAULT_TIME_ZONE,
+  EMPTY_PROGRESS,
   EMPTY_STORED_DATA,
   getPlot,
   isPlaceableId,
   MAX_GREENHOUSES,
   MAX_WATERING_INTERVAL_HOURS,
+  sanitizeProgress,
   validWateringInterval,
   type GreenhouseSave,
   type ProfileSummary,
-  type StoredData,
+  type ProgressData,
+  type StoredData as SyncedData,
   type StoredLink,
   type SyncOp,
 } from "@garden-hq/core";
@@ -20,9 +23,15 @@ export {
   MAX_GREENHOUSES,
   MAX_WATERING_INTERVAL_HOURS,
   type GreenhouseSave,
-  type StoredData,
   type StoredLink,
 };
+
+/** Cloud-synced data plus device-local gamification progress. */
+export interface StoredData extends SyncedData {
+  progress: ProgressData;
+}
+
+const EMPTY: StoredData = { ...EMPTY_STORED_DATA, progress: EMPTY_PROGRESS };
 
 const STORAGE_KEY = "garden-hq:v1";
 
@@ -45,6 +54,8 @@ export interface GardenStorage {
   markGreenhouseWatered(plotId: string, at: number): void;
   setWateringInterval(plotId: string, hours: number | null): void;
   setTimeZone(timeZone: string): void;
+  /** Local-only (not synced); no sync op. */
+  setProgress(next: ProgressData): void;
   clearAll(): void;
   /** Swaps in sanitized data without any op side effects (sync engine). */
   replaceAll(next: StoredData): void;
@@ -125,24 +136,25 @@ function parseGreenhouses(v: unknown): Record<string, GreenhouseSave> {
 }
 
 export function sanitize(raw: unknown): StoredData {
-  if (typeof raw !== "object" || raw === null) return EMPTY_STORED_DATA;
+  if (typeof raw !== "object" || raw === null) return EMPTY;
   const d = raw as Record<string, unknown>;
   return {
     link: parseLink(d.link),
     assignments: parseAssignments(d.assignments),
     greenhouses: parseGreenhouses(d.greenhouses),
     timeZone: typeof d.timeZone === "string" ? d.timeZone : DEFAULT_TIME_ZONE,
+    progress: sanitizeProgress(d.progress),
   };
 }
 
 function load(backing: Backing | null): StoredData {
-  if (backing === null) return EMPTY_STORED_DATA;
+  if (backing === null) return EMPTY;
   try {
     const raw = backing.getItem(STORAGE_KEY);
-    if (raw === null) return EMPTY_STORED_DATA;
+    if (raw === null) return EMPTY;
     return sanitize(JSON.parse(raw));
   } catch {
-    return EMPTY_STORED_DATA;
+    return EMPTY;
   }
 }
 
@@ -191,7 +203,10 @@ export function createGardenStorage(backing: Backing | null): GardenStorage {
     setWateringInterval: (plotId, hours) =>
       void commitOp({ t: "setWateringInterval", plotId, hours }),
     setTimeZone: (timeZone) => void commitOp({ t: "setTimeZone", timeZone }),
-    clearAll: () => commit({ ...EMPTY_STORED_DATA }),
+    setProgress: (next) => {
+      if (next !== data.progress) commit({ ...data, progress: next });
+    },
+    clearAll: () => commit({ ...EMPTY }),
     replaceAll: (next) => commit(sanitize(next)),
   };
 }

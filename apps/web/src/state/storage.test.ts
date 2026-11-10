@@ -1,3 +1,4 @@
+import { EMPTY_PROGRESS, type ProgressData } from "@garden-hq/core";
 import { describe, expect, it, vi } from "vitest";
 import {
   createGardenStorage,
@@ -49,6 +50,7 @@ describe("createGardenStorage", () => {
       assignments: {},
       greenhouses: {},
       timeZone: DEFAULT_TIME_ZONE,
+      progress: EMPTY_PROGRESS,
     });
   });
 
@@ -111,6 +113,7 @@ describe("createGardenStorage", () => {
         assignments: {},
         greenhouses: {},
         timeZone: DEFAULT_TIME_ZONE,
+        progress: EMPTY_PROGRESS,
       });
     }
   });
@@ -291,6 +294,7 @@ describe("greenhouse storage", () => {
       assignments: { beginner_1: "wheat" },
       greenhouses: {},
       timeZone: "UTC",
+      progress: EMPTY_PROGRESS,
     });
     expect(s.getSnapshot().assignments).toEqual({ beginner_1: "wheat" });
     expect(s.getSnapshot().timeZone).toBe("UTC");
@@ -312,6 +316,58 @@ describe("greenhouse storage", () => {
       assignments: {},
       greenhouses: {},
       timeZone: DEFAULT_TIME_ZONE,
+      progress: EMPTY_PROGRESS,
     });
+  });
+});
+
+describe("progress storage", () => {
+  const PROGRESS: ProgressData = {
+    ...EMPTY_PROGRESS,
+    archive: { xp: 50, doneQuests: 2, doneDays: ["2026-01-01"] },
+  };
+
+  it("setProgress persists and notifies", () => {
+    const backing = fakeBacking();
+    const s = createGardenStorage(backing);
+    const listener = vi.fn();
+    s.subscribe(listener);
+    s.setProgress(PROGRESS);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(s.getSnapshot().progress).toBe(PROGRESS);
+    const reloaded = createGardenStorage(backing);
+    expect(reloaded.getSnapshot().progress).toEqual(PROGRESS);
+  });
+
+  it("setProgress with the same reference does not notify", () => {
+    const s = createGardenStorage(fakeBacking());
+    const listener = vi.fn();
+    s.subscribe(listener);
+    s.setProgress(s.getSnapshot().progress);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("a save without a progress key loads empty progress", () => {
+    const backing = fakeBacking({
+      "garden-hq:v1": JSON.stringify({ assignments: { beginner_1: "wheat" } }),
+    });
+    const s = createGardenStorage(backing);
+    expect(s.getSnapshot().progress).toEqual(EMPTY_PROGRESS);
+    expect(s.getSnapshot().assignments).toEqual({ beginner_1: "wheat" });
+  });
+
+  it("garbage progress is sanitized", () => {
+    const backing = fakeBacking({
+      "garden-hq:v1": JSON.stringify({ progress: { quests: "x", archive: 7 } }),
+    });
+    const s = createGardenStorage(backing);
+    expect(s.getSnapshot().progress).toEqual(EMPTY_PROGRESS);
+  });
+
+  it("clearAll resets progress", () => {
+    const s = createGardenStorage(fakeBacking());
+    s.setProgress(PROGRESS);
+    s.clearAll();
+    expect(s.getSnapshot().progress).toEqual(EMPTY_PROGRESS);
   });
 });

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { api } from "./api/client";
 import { Layout } from "./components/Layout";
+import { AchievementsScreen } from "./screens/AchievementsScreen";
 import { ContestsScreen } from "./screens/ContestsScreen";
 import { GreenhouseScreen } from "./screens/GreenhouseScreen";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -35,6 +36,7 @@ export default function App() {
                 <Route path="greenhouse" element={<GreenhouseScreen />} />
                 <Route path="link" element={<LinkScreen />} />
                 <Route path="contests" element={<ContestsScreen />} />
+                <Route path="achievements" element={<AchievementsScreen />} />
                 <Route path="settings" element={<SettingsScreen />} />
               </Route>
             </Routes>

@@ -3,6 +3,7 @@ import { useContests, useMayor } from "../state/queries";
 import { useNow } from "../state/useNow";
 import { buildHudViewModel, toSlot } from "../viewmodels/hud";
 import { Countdown } from "./Countdown";
+import { PlayerBadge } from "./PlayerBadge";
 import { CropIcon, DayNightIcon, SeasonIcon } from "./PixelArt";
 
 function cropName(id: string): string {
@@ -80,6 +81,7 @@ export function Hud({ assignedCropIds }: { assignedCropIds: string[] }) {
           </span>
         )}
       </span>
+      <PlayerBadge />
     </section>
   );
 }

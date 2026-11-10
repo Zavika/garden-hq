@@ -124,6 +124,7 @@ describe("api client", () => {
         analyzedMutations: [],
         chips: { cropshot: 5 },
         hasGreenhouse: true,
+        contestEntries: [],
       },
       fetchedAt: "2026-10-06T10:00:00.000Z",
     };

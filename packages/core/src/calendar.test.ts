@@ -3,6 +3,7 @@ import {
   DAYS_PER_MONTH,
   MS_PER_SKYBLOCK_DAY,
   SKYBLOCK_EPOCH_MS,
+  contestStartMs,
   isDaytime,
   seasonOf,
   skyblockDate,
@@ -66,4 +67,23 @@ describe("seasonOf", () => {
       expect(seasonOf(skyblockDate(now))).toBe(name);
     },
   );
+});
+
+describe("contestStartMs", () => {
+  it("is the inverse of skyblockDate at the start of a SkyBlock day", () => {
+    const ms = contestStartMs(516, 3, 3);
+    expect(skyblockDate(new Date(ms))).toMatchObject({
+      year: 516,
+      month: 3,
+      day: 3,
+    });
+    expect(skyblockDate(new Date(ms - 1))).toMatchObject({
+      year: 516,
+      month: 3,
+      day: 2,
+    });
+  });
+  it("year 1, month 1, day 1 is the epoch", () => {
+    expect(contestStartMs(1, 1, 1)).toBe(SKYBLOCK_EPOCH_MS);
+  });
 });

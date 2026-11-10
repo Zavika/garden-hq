@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import member from "../fixtures/member-greenhouse.real.sample.json";
+import contestFixture from "../fixtures/member-contests.real.sample.json";
+import { contestStartMs } from "./calendar";
 import { findProfileMember, normalizeGardenMember } from "./member";
 
 describe("normalizeGardenMember", () => {
@@ -15,6 +17,7 @@ describe("normalizeGardenMember", () => {
       analyzedMutations: ["ashwreath", "shadevine", "dustgrain"],
       chips: { cropshot: 5, quickdraw: 2 },
       hasGreenhouse: true,
+      contestEntries: [],
     });
   });
 
@@ -24,6 +27,7 @@ describe("normalizeGardenMember", () => {
       analyzedMutations: [],
       chips: {},
       hasGreenhouse: false,
+      contestEntries: [],
     };
     expect(normalizeGardenMember(undefined)).toEqual(empty);
     expect(normalizeGardenMember({})).toEqual(empty);
@@ -81,5 +85,69 @@ describe("findProfileMember", () => {
     ).toBeNull();
     expect(findProfileMember(null, "p", "u")).toBeNull();
     expect(findProfileMember({ profiles: "x" }, "p", "u")).toBeNull();
+  });
+});
+
+describe("contestEntries", () => {
+  it("parses keys, maps crop ids and skips malformed keys", () => {
+    const { contestEntries } = normalizeGardenMember({
+      jacobs_contest: {
+        contests: {
+          "516:3_6:CACTUS": { collected: 5 },
+          "516:3_3:MELON": { collected: 8000 },
+          "516:3_9:WEIRD_ID": { collected: 1 },
+          "not-a-key": { collected: 1 },
+          "516:13_1:MELON": { collected: 1 },
+        },
+      },
+    });
+    expect(contestEntries).toEqual([
+      {
+        startsAt: contestStartMs(516, 3, 3),
+        apiCropId: "MELON",
+        cropId: "melon",
+        collected: 8000,
+      },
+      {
+        startsAt: contestStartMs(516, 3, 6),
+        apiCropId: "CACTUS",
+        cropId: "cactus",
+        collected: 5,
+      },
+      {
+        startsAt: contestStartMs(516, 3, 9),
+        apiCropId: "WEIRD_ID",
+        cropId: null,
+        collected: 1,
+      },
+    ]);
+  });
+  it("is empty when the data is missing", () => {
+    expect(normalizeGardenMember({}).contestEntries).toEqual([]);
+  });
+  it("maps every crop id seen on the real profile", () => {
+    const { contestEntries } = normalizeGardenMember(contestFixture);
+    expect(contestEntries.length).toBeGreaterThanOrEqual(8);
+    expect(contestEntries.every((e) => e.cropId !== null)).toBe(true);
+  });
+});
+
+describe("normalizeGardenMember contest entry cap", () => {
+  it("keeps only the newest entries, sorted ascending", () => {
+    const contests: Record<string, { collected: number }> = {};
+    for (let i = 0; i < 250; i++) {
+      const year = 100 + Math.floor(i / 100);
+      const month = 1 + (Math.floor(i / 10) % 10);
+      const day = 1 + (i % 10);
+      contests[`${year}:${month}_${day}:MELON`] = { collected: i + 1 };
+    }
+    const out = normalizeGardenMember({
+      jacobs_contest: { contests },
+    }).contestEntries;
+    expect(out).toHaveLength(200);
+    const times = out.map((e) => e.startsAt);
+    expect([...times].sort((a, b) => a - b)).toEqual(times);
+    expect(out.at(-1)?.collected).toBe(250);
+    expect(out[0]?.collected).toBe(51);
   });
 });

@@ -3,6 +3,8 @@ import composter from "../../../data/composter.json";
 import crops from "../../../data/crops.json";
 import gardenLevels from "../../../data/garden-levels.json";
 import pests from "../../../data/pests.json";
+import playerLevels from "../../../data/player-levels.json";
+import questData from "../../../data/quests.json";
 import plots from "../../../data/plots.json";
 
 describe("data/garden-levels.json", () => {
@@ -66,5 +68,15 @@ describe("data/composter.json", () => {
         "speed",
       ].sort(),
     );
+  });
+});
+
+describe("versioned data files", () => {
+  it.each([
+    ["quests", questData],
+    ["player-levels", playerLevels],
+  ])("%s has a non-empty lastVerified", (_name, file) => {
+    expect(typeof file.lastVerified).toBe("string");
+    expect(file.lastVerified.length).toBeGreaterThan(0);
   });
 });

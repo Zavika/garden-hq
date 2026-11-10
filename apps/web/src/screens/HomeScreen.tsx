@@ -5,15 +5,18 @@ import { ComposterPanel } from "../components/ComposterPanel";
 import { DoNextCard } from "../components/DoNextCard";
 import { ErrorCard } from "../components/ErrorCard";
 import { Hud } from "../components/Hud";
+import { QuestCard } from "../components/QuestCard";
 import { SyncBar } from "../components/SyncBar";
 import { VisitorsPanel } from "../components/VisitorsPanel";
 import { MapSection } from "../map/MapSection";
+import { useProgressEngine } from "../state/progress";
 import { useGarden } from "../state/queries";
 import { useStoredData } from "../state/StorageProvider";
 
 export function HomeScreen() {
   const { link, assignments, greenhouses } = useStoredData();
   const garden = useGarden(link?.profileId ?? null);
+  useProgressEngine();
 
   const greenhousePlotIds = useMemo(
     () => Object.keys(greenhouses),
@@ -59,6 +62,7 @@ export function HomeScreen() {
       ) : (
         <>
           <DoNextCard garden={state} />
+          <QuestCard garden={state} />
           <MapSection
             garden={state}
             assignments={assignments}

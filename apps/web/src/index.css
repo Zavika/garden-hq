@@ -246,6 +246,33 @@ label {
   align-items: center;
   gap: 6px;
 }
+.player-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+.xp-bar {
+  display: inline-flex;
+  gap: 1px;
+}
+.xp-bar i {
+  width: 5px;
+  height: 8px;
+  background: var(--seg-off);
+}
+.xp-bar i.on {
+  background: var(--accent);
+}
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.streak.at-risk {
+  opacity: 0.8;
+}
 .hud-contest {
   gap: 8px;
 }
@@ -695,5 +722,80 @@ label {
   .sync-section .sync-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+/* Daily quests */
+.quest-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.quest {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 6px 0;
+}
+.quest-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.quest-xp {
+  white-space: nowrap;
+  color: var(--muted);
+}
+.quest-action {
+  grid-column: 2 / -1;
+  justify-self: start;
+}
+.quest-box {
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2px solid var(--fg);
+  background: transparent;
+}
+.quest.done .quest-box {
+  background: var(--accent);
+}
+.quest.done .quest-title {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* Achievements */
+.achievements {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.ach {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 2px solid var(--fg);
+  background: var(--parch-hi);
+}
+.ach.locked {
+  opacity: 0.6;
+  border-style: dashed;
+}
+.ach-title {
+  font-weight: bold;
+}
+.ach-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+}
+@media (min-width: 600px) {
+  .achievements {
+    grid-template-columns: 1fr 1fr;
   }
 }

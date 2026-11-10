@@ -24,12 +24,23 @@ export interface GreenhouseState {
   lockedCells: GreenhouseCellRef[];
 }
 
+export interface ContestEntry {
+  /** Start of the contest's SkyBlock day, epoch ms. */
+  startsAt: number;
+  apiCropId: string;
+  /** Our crop id, or null when the API id is unmapped. */
+  cropId: string | null;
+  collected: number;
+}
+
 export interface GardenMemberState {
   discoveredMutations: string[];
   analyzedMutations: string[];
   /** Chip id -> chip level. */
   chips: Record<string, number>;
   hasGreenhouse: boolean;
+  /** Jacob's contest results, sorted by startsAt ascending. */
+  contestEntries: ContestEntry[];
 }
 
 export interface GardenState {

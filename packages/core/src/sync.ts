@@ -70,7 +70,7 @@ export type SyncOp =
   | { t: "setTimeZone"; timeZone: string }
   | { t: "setLink"; link: StoredLink };
 
-export function applyOp(data: StoredData, op: SyncOp): StoredData {
+export function applyOp<T extends StoredData>(data: T, op: SyncOp): T {
   switch (op.t) {
     case "setAssignment": {
       if (op.cropId === null) {
@@ -167,8 +167,11 @@ export function applyOp(data: StoredData, op: SyncOp): StoredData {
   }
 }
 
-export function applyOps(data: StoredData, ops: readonly SyncOp[]): StoredData {
-  return ops.reduce(applyOp, data);
+export function applyOps<T extends StoredData>(
+  data: T,
+  ops: readonly SyncOp[],
+): T {
+  return ops.reduce((acc, op) => applyOp(acc, op), data);
 }
 
 // ---------------------------------------------------------------- validation

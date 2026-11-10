@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "lastVerified": "2026-11-10",
+  "questsPerDay": 3,
+  "resetHour": 0,
+  "freshMinutes": 10,
+  "skewMinutes": 5,
+  "maxContestEntries": 200,
+  "keepDays": 14,
+  "unlockMaxShortfall": 16,
+  "kinds": {
+    "serve_visitors": { "xp": 25, "min": 3, "max": 5 },
+    "gain_garden_xp": {
+      "xp": 25,
+      "percentOfNextLevel": 5,
+      "min": 50,
+      "max": 1000,
+      "roundTo": 10
+    },
+    "unlock_plot": { "xp": 40 },
+    "discover_mutation": { "xp": 40 },
+    "analyze_mutation": { "xp": 25 },
+    "water_greenhouse": { "xp": 10 },
+    "contest_crop": { "xp": 25 }
+  }
+}

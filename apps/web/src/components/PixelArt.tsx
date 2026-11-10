@@ -189,6 +189,32 @@ export function CropIcon({
   );
 }
 
+const FLAME = [
+  "...o...",
+  "..oo...",
+  "..ooo..",
+  ".oooyo.",
+  ".ooyyo.",
+  "ooyyyoo",
+  "ooyyyoo",
+  ".oyyyo.",
+  "..ooo..",
+];
+
+/** Streak flame; greyed out when the streak is at risk. */
+export function FlameIcon({ atRisk }: { atRisk: boolean }) {
+  return (
+    <PixelArt
+      rows={FLAME}
+      palette={
+        atRisk ? { o: "#868e96", y: "#ced4da" } : { o: "#e8590c", y: "#ffd43b" }
+      }
+      size={2}
+      className="icon"
+    />
+  );
+}
+
 const SKINS = ["#f1c9a0", "#d9a273", "#a8744a", "#7a4e2d"];
 const HAIRS = ["#3a2412", "#b5651d", "#e0b040", "#222222", "#8c3b2a"];
 const SHIRTS = ["#3f7fbf", "#c8501f", "#4f9a35", "#8a56b8", "#d9a21e"];
