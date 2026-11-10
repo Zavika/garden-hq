@@ -1,9 +1,7 @@
 # Phase 5 — Polish: design
 
 Status: **draft for review** (2026-11-10). Nothing here is implemented.
-Scope comes from the owner's request plus CLAUDE.md §8 Phase 5. Sound toggle and
-the mobile-layout pass are in CLAUDE.md Phase 5 but not in this request; they are
-listed under "Out of scope" and can be added as a 5F.
+Scope comes from the owner's request plus CLAUDE.md §8 Phase 5. The sound toggle is dropped; the mobile pass is 5F (section 10).
 
 ## 1. Decomposition
 
@@ -263,19 +261,27 @@ script that prints a key pair; setting the secret is a `wrangler secret put`.
 
 ## 8. Out of scope
 
-- Sound toggle and mobile-layout pass (CLAUDE.md Phase 5; not in this request).
+- Sound toggle (dropped by the owner).
 - Sprite animation, growth stages, visitor sprites, pest sprites.
 - Planner integration of bazaar prices.
 - Native app wrappers, background sync, periodic sync.
 - Email alerts.
 
-## 9. Decisions I need from the owner
+## 9. Owner decisions (2026-11-10)
 
-1. **Privacy contact** (email or GitHub issues URL) for 5B. Blocks 5B only.
-2. **Order**: is 5A, 5B, 5D, 5C, 5E acceptable?
-3. **`vite-plugin-pwa`** as a new dev dependency (5D).
-4. **Sound toggle and mobile pass**: add as 5F, or drop?
-5. **Sprite scope**: single frame per crop is enough for now?
-6. **Push**: OK to generate VAPID keys and have you set the secret at the start of 5E?
+1. Privacy contact: `https://github.com/Zavika/garden-hq/issues` (repo is public).
+2. Order 5A, 5B, 5D, 5C, 5E, then **5F mobile pass**: approved.
+3. `vite-plugin-pwa` dev dependency: approved.
+4. Mobile pass added as 5F (after 5E). **Sound toggle dropped.**
+5. One frame per crop: approved. `apps/web/public/sprites/README.md` must list every expected filename and size.
+6. VAPID key-pair script: approved; the owner sets the secret at 5E.
+7. **iOS**: web push only works when installed to the Home Screen (iOS 16.4+). The install hint (5D) must explain this; the push toggle (5E) says "Add to Home Screen first" on iOS Safari when not installed.
+8. **Public repo**: never commit secrets, keys, real player ids or personal data. Use `.dev.vars`, `wrangler secret`, `gh secret`. Test fixtures stay anonymised. Audited 2026-11-10: raw API dumps are gitignored, fixtures use placeholder ids.
 
-Everything else above is a ruling I will make and record if you do not object.
+## 10. 5F — Mobile pass (scope)
+
+Audit and fix every screen at 380 px and 320 px width: no horizontal scroll, tap
+targets at least 44 px, tab bar and sheets usable one-handed, map frame at integer
+scale, safe-area insets in standalone mode (notch / home indicator), no hover-only
+affordances. Done with a viewport-width test matrix (jsdom layout assertions where
+possible) plus a manual checklist in `data/VERIFY.md`.
