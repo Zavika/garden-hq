@@ -5,6 +5,7 @@ import {
   defaultAlertRules,
   deriveAlerts,
   nextSyncAt,
+  streakOnlyWakeAt,
   streakWindowStart,
   parseAlertRules,
   type AlertInput,
@@ -448,6 +449,38 @@ describe("streak_risk", () => {
     expect(streakWindowStart(streakRules(4), NOW + 10 * HOUR)).toBe(
       NOW + 6 * HOUR,
     );
+  });
+  describe("streakOnlyWakeAt", () => {
+    const only = (leadHours = 3): AlertRules => {
+      const rules = defaultAlertRules(false);
+      rules.streak_risk = { enabled: true, leadHours };
+      return rules;
+    };
+    it("returns the window start while it is in the future", () => {
+      expect(streakOnlyWakeAt(only(), NOW, NOW + 10 * HOUR)).toBe(
+        NOW + 7 * HOUR,
+      );
+    });
+    it("returns null once the window is open (including its exact edge)", () => {
+      expect(streakOnlyWakeAt(only(), NOW, NOW + 3 * HOUR)).toBeNull();
+      expect(streakOnlyWakeAt(only(), NOW, NOW + HOUR)).toBeNull();
+    });
+    it("returns null when another rule is on", () => {
+      const rules = only();
+      rules.visitors_waiting = { ...rules.visitors_waiting, enabled: true };
+      expect(streakOnlyWakeAt(rules, NOW, NOW + 10 * HOUR)).toBeNull();
+    });
+    it("returns null when streak_risk is off", () => {
+      expect(
+        streakOnlyWakeAt(defaultAlertRules(false), NOW, NOW + 10 * HOUR),
+      ).toBeNull();
+    });
+    it("follows leadHours", () => {
+      expect(streakOnlyWakeAt(only(12), NOW, NOW + 10 * HOUR)).toBeNull();
+      expect(streakOnlyWakeAt(only(1), NOW, NOW + 10 * HOUR)).toBe(
+        NOW + 9 * HOUR,
+      );
+    });
   });
   it("needs no wake-up: nextSyncAt ignores streak info", () => {
     const i = input({

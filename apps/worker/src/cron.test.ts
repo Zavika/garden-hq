@@ -747,6 +747,59 @@ describe("runSync — streak_risk guard", () => {
     expect(t.gardenCalls()).toBe(0);
   });
 
+  describe("streak-only accounts", () => {
+    function only(): AlertRules {
+      const rules = defaultAlertRules(false);
+      rules.streak_risk = { enabled: true, leadHours: 3 };
+      return rules;
+    }
+
+    it("are skipped, with no Hypixel call or quest read, until the window opens", async () => {
+      const start = Date.UTC(2026, 9, 1, 12, 0, 0); // reset 22:00Z is 10 h away
+      const t = setup({}, start);
+      await seedStreak(t, { streak: 5, start, rules: only() });
+      const prepare = vi.spyOn(t.env.DB, "prepare");
+      const summary = await t.run();
+      expect(summary.processed).toBe(1);
+      expect(t.gardenCalls()).toBe(0);
+      expect(
+        prepare.mock.calls.filter(([sql]) => sql.includes("quest_log")),
+      ).toHaveLength(0);
+      expect(await nextSync(t.env.DB, "a")).toBe(
+        Date.UTC(2026, 9, 1, 19, 0, 0), // reset − 3 h
+      );
+    });
+
+    it("are not due again before the window, then sync at the normal cadence", async () => {
+      const start = Date.UTC(2026, 9, 1, 12, 0, 0);
+      const t = setup({}, start);
+      await seedStreak(t, { streak: 5, start, rules: only() });
+      await t.run();
+      t.clock.advance(6 * HOUR + 30 * MIN); // 18:30Z, still before 19:00Z
+      expect((await t.run()).due).toBe(0);
+      t.clock.advance(31 * MIN); // 19:01Z, window open
+      const inWindow = await t.run();
+      expect(inWindow.due).toBe(1);
+      expect(t.gardenCalls()).toBe(1);
+      expect(await nextSync(t.env.DB, "a")).toBe(t.clock.now() + 15 * MIN);
+    });
+
+    it("still alert inside the window", async () => {
+      const t = setup({}, WIN);
+      await seedStreak(t, { streak: 5, rules: only() });
+      await t.run();
+      expect(t.posts()).toBe(1);
+    });
+
+    it("keep the normal cadence when another rule is on", async () => {
+      const start = Date.UTC(2026, 9, 1, 12, 0, 0);
+      const t = setup({}, start);
+      await seedStreak(t, { streak: 5, start }); // all rules on
+      await t.run();
+      expect(await nextSync(t.env.DB, "a")).toBe(start + 15 * MIN);
+    });
+  });
+
   it("stays silent below the minimum streak", async () => {
     const t = setup({}, WIN);
     await seedStreak(t, { streak: 2 });

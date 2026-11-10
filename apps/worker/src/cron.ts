@@ -6,6 +6,7 @@ import {
   nextResetMs,
   nextSyncAt,
   normalizeGarden,
+  streakOnlyWakeAt,
   streakWindowStart,
   summarizeProgress,
   unwrapGardenResponse,
@@ -304,6 +305,14 @@ async function processAccount(
   const rules = parseStoredRules(account.rules);
   if (rules === null || !Object.values(rules).some((r) => r.enabled)) {
     await setNextSync(ctx, account.accountId, now + PARK_MS);
+    return;
+  }
+
+  // Streak-only accounts cannot alert before the lead window opens: skip them
+  // (no Hypixel call, no quest reads) until then, then use the normal cadence.
+  const wakeAt = streakOnlyWakeAt(rules, now, nextResetMs(now, account.tz));
+  if (wakeAt !== null) {
+    await setNextSync(ctx, account.accountId, wakeAt);
     return;
   }
 

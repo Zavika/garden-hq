@@ -141,5 +141,6 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Guard credits only garden-based quests** - before alerting, the cron re-checks today's quests against a fresh garden; only garden-based quests (visitors served, garden XP, plot unlock) can be confirmed. Member-based quests (mutations, contest crop) and user-logged waterings are not confirmable by the cron, so a rare false alarm is possible.
 - **Needs Cloud save progress** - the alert only works for accounts whose quests exist in Cloud save (quests are created when the app opens).
 - **Parameters** - `leadHours` is editable (1..12, default 3, off by default); `minStreak` is fixed at 3 in `data/alerts.json`.
+- **Streak-only accounts** - when `streak_risk` is the only enabled rule the cron skips the account (no Hypixel call, no quest reads, one `next_sync_at` write) until `reset - leadHours`, then uses the normal 15 min cadence (`streakOnlyWakeAt` in core).
 - **Cost** - each cron tick inside the alert window costs about 4 D1 reads per opted-in account; completions written by the cron count toward the account's daily ops counter and `last_seen_at`.
 - **CPU/budget unmeasured on real D1** - measure the extra statements with `wrangler tail`.

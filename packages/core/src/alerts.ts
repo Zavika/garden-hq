@@ -151,6 +151,26 @@ export function streakWindowStart(rules: AlertRules, resetAt: number): number {
   return resetAt - streakLeadHours(rules) * HOUR;
 }
 
+/**
+ * When streak_risk is the only enabled rule, nothing can fire before the lead
+ * window opens, so the account needs no sync until then. Returns that wake-up
+ * time while it is still in the future; null when the account has other rules,
+ * streak_risk is off, or the window is already open.
+ */
+export function streakOnlyWakeAt(
+  rules: AlertRules,
+  now: number,
+  resetAt: number,
+): number | null {
+  if (!rules.streak_risk.enabled) return null;
+  const others = ALERT_TYPES.some(
+    (t) => t !== "streak_risk" && rules[t].enabled,
+  );
+  if (others) return null;
+  const start = streakWindowStart(rules, resetAt);
+  return now < start ? start : null;
+}
+
 function streakLeadHours(rules: AlertRules): number {
   return (
     rules.streak_risk.leadHours ??
@@ -296,9 +316,10 @@ export function deriveAlerts(input: AlertInput): AlertCandidate[] {
  * When the cron should look at this account again: the baseline, or the short
  * interval when an alert is due to fire within the horizon. Only events whose
  * rule is on count, and only ones still in the future (an alert that is already
- * due has been claimed this run). streak_risk needs no special wake-up: the
+ * due has been claimed this run). streak_risk needs no special wake-up here: the
  * baseline cadence is shorter than the smallest lead window (1 h), so an
- * opted-in account is always synced inside its window.
+ * opted-in account is always synced inside its window. Streak-only accounts are
+ * held back until the window opens by streakOnlyWakeAt (applied by the cron).
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for the public signature (see doc comment)
 export function nextSyncAt(input: AlertInput, _fetchedAt: number): number {
