@@ -13,6 +13,7 @@ import { logError, redact, redactWebhooks } from "./log";
 import { createMemoryCache } from "./memcache";
 import { accountRoute } from "./routes/account";
 import { alertsRoute } from "./routes/alerts";
+import { bazaarRoute } from "./routes/bazaar";
 import { contestsRoute } from "./routes/contests";
 import { gardenRoute } from "./routes/garden";
 import { linkRoute } from "./routes/link";
@@ -75,6 +76,7 @@ export function createApp(
   app.route("/api", memberRoute(deps, clientFor, playerCache));
   app.route("/api", contestsRoute(deps));
   app.route("/api", mayorRoute(deps, clientFor));
+  app.route("/api", bazaarRoute(deps, clientFor));
   app.route("/api", accountRoute(deps));
   app.route("/api", syncRoute(deps));
   app.route("/api", alertsRoute(deps));

@@ -32,6 +32,8 @@ export interface HypixelClient {
   profiles(uuid: string): Promise<unknown>;
   garden(profileId: string): Promise<unknown>;
   election(): Promise<unknown>;
+  /** Raw response body text of the public Bazaar endpoint (not parsed). */
+  bazaar(): Promise<string>;
 }
 
 export type ClientFactory = (env: Env) => HypixelClient;
@@ -79,6 +81,7 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
     path: string,
     query: string,
     auth: boolean,
+    asText = false,
   ): Promise<unknown> {
     // Pasted secrets often carry a trailing newline, which makes the header invalid.
     const apiKey = deps.apiKey?.trim();
@@ -129,7 +132,8 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
 
       if (res.ok) {
         try {
-          return await res.json();
+          // Text mode hands the raw body to a scanner: it is never JSON.parsed here.
+          return asText ? await res.text() : await res.json();
         } catch {
           throw upstreamDown();
         }
@@ -192,5 +196,12 @@ export function createHypixelClient(deps: HypixelDeps): HypixelClient {
         true,
       ),
     election: () => request("/v2/resources/skyblock/election", "", false),
+    // ~3.4 MB: returned as raw text (parsing it would blow the Worker CPU limit).
+    bazaar: async () => {
+      const body = await request("/v2/skyblock/bazaar", "", false, true);
+      // A 404 resolves to null; surface it as an upstream failure.
+      if (typeof body !== "string") throw upstreamDown();
+      return body;
+    },
   };
 }

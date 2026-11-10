@@ -11,6 +11,7 @@ vi.mock("../state/queries", () => ({
   useMember: () => ({ data: undefined }),
   useContests: () => ({ data: undefined }),
   useMayor: () => ({ data: undefined }),
+  useBazaar: () => ({ data: undefined, isError: false }),
 }));
 
 function linkedStorage() {

@@ -85,6 +85,45 @@ describe("createHypixelClient", () => {
     expect(seen).toBeNull();
   });
 
+  it("returns the raw bazaar body as text, without a key", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const raw = '{"success":true,"products":{}}';
+    let seen: string | null = "unset";
+    const net = routedFetch({
+      "api.hypixel.net/v2/skyblock/bazaar": ({ headers }) => {
+        seen = headers.get("API-Key");
+        return new Response(raw);
+      },
+    });
+    const client = createHypixelClient({
+      fetch: net.fetch,
+      apiKey: undefined,
+      now: makeClock().now,
+      sleep: makeSleep().sleep,
+      state: createRateLimitState(),
+    });
+
+    expect(await client.bazaar()).toBe(raw);
+    expect(seen).toBeNull();
+  });
+
+  it("maps a bazaar 404 to upstream_down", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const net = routedFetch({
+      "api.hypixel.net/v2/skyblock/bazaar": () =>
+        new Response("nope", { status: 404 }),
+    });
+    const client = createHypixelClient({
+      fetch: net.fetch,
+      apiKey: undefined,
+      now: makeClock().now,
+      sleep: makeSleep().sleep,
+      state: createRateLimitState(),
+    });
+
+    expect((await failure(client.bazaar())).code).toBe("upstream_down");
+  });
+
   it("returns null on 404", async () => {
     const { client } = setup(() => new Response("nope", { status: 404 }));
     expect(await client.garden("p1")).toBeNull();

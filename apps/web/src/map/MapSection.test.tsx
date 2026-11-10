@@ -21,6 +21,10 @@ vi.mock("./MapScene", () => ({
   },
 }));
 
+vi.mock("../state/queries", () => ({
+  useBazaar: () => ({ data: undefined, isError: false }),
+}));
+
 const garden = normalizeGarden({
   garden_experience: 0,
   unlocked_plots_ids: ["beginner_1"],

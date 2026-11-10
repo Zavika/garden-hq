@@ -174,3 +174,21 @@ Real install and offline behaviour cannot be exercised under jsdom; check by han
 - **Offline launch**: after one online visit, airplane mode and relaunch shows the app shell and the "last synced" state.
 - **Update flow**: after a new deploy, the "New version available" toast appears; Reload swaps to the new version, Later keeps the old one until the next visit.
 - **No API caching**: `/api` requests are never served from the service worker. DevTools > Application > Cache Storage contains only precache entries (no runtime caches).
+
+## Bazaar (Phase 5C)
+
+Verified 2026-11-10 against the live `https://api.hypixel.net/v2/skyblock/bazaar` response (3.46 MB) and hypixelskyblock.minecraft.wiki. `data/bazaar.json` carries `lastVerified`.
+
+- **Order-book semantics (verified live, contradicts the naive reading of the names):** `buy_summary` holds the **sell offers (asks)**: ascending, best (lowest) first; this is what an instant buyer pays and matches `quick_status.buyPrice`. `sell_summary` holds the **buy orders (bids)**: descending, best (highest) first; this is what an instant seller receives and matches `quick_status.sellPrice`. Example ENCHANTED_CARROT: sell_summary 466.2, 466, 465.7... (quick_status.sellPrice 466.08); buy_summary 495.4, 495.5, 498.8... (quick_status.buyPrice 499.06). Hence `sellOffer` = min(buy_summary) and `instantSell` = max(sell_summary). Min/max are used so ordering never matters. COMPOST: lowest ask 7072.8.
+- **Compaction ratios (wiki, all 160 raw per enchanted):** WHEAT -> ENCHANTED_WHEAT, CARROT_ITEM -> ENCHANTED_CARROT, POTATO_ITEM -> ENCHANTED_POTATO, PUMPKIN -> ENCHANTED_PUMPKIN, SUGAR_CANE -> ENCHANTED_SUGAR, MELON -> ENCHANTED_MELON (Enchanted Melon Slice), INK_SACK:3 -> ENCHANTED_COCOA, NETHER_STALK -> ENCHANTED_NETHER_STALK, MOONFLOWER -> ENCHANTED_MOONFLOWER, WILD_ROSE -> ENCHANTED_WILD_ROSE. All ids exist in the live response. Wheat uses ENCHANTED_WHEAT (the old Enchanted Hay Bale is a separate, higher tier made of 160 Enchanted Wheat).
+- **Left out as unverified (not in `data/bazaar.json`):**
+  - `cactus`: the wiki is ambiguous whether ENCHANTED_CACTUS_GREEN is crafted from 160 Cactus or 160 Cactus Green (the smelted dye); the Garden drops Cactus.
+  - `mushroom`: the Garden drops both red and brown mushrooms and the crop's API id is MUSHROOM_COLLECTION; which product represents it is not settled.
+  - `sunflower`: no SUNFLOWER product exists; the base item is probably DOUBLE_PLANT (shared meta id) but the wiki does not state it and the live price ratio does not match.
+- **Moonflower / Wild Rose:** the wiki confirms the 160 ratio but does not state the raw item id; MOONFLOWER and WILD_ROSE are the matching live product ids (Moonflower ask ratio matches closely).
+- **Price-ratio cross-check is weak:** raw crop asks are NPC-floor-like, so the live enchanted/raw ratio is only roughly 160x; the wiki is the source for ratios.
+- **Text-scan fragility:** extraction scans the body for `"ID":{"product_id":"ID"` and reads `sell_summary`/`buy_summary` as flat arrays of `pricePerUnit`. If Hypixel changes the field order or key format, extraction returns fewer products and the route fails closed (upstream_down, nothing cached).
+- **Fixture:** `packages/core/fixtures/bazaar-response.sample.json` is real public data truncated to 4 entries per book; the ENCHANTED_WHEAT arrays were reordered by hand (no live product had unordered books) to prove min/max.
+- **Bazaar route CPU:** measure `/api/bazaar` on a cold cache with `wrangler tail` (target well under 10 ms). If over, options are a smaller wanted list or a browser-direct fetch (the endpoint allows CORS *).
+
+- **Compost bundle threshold:** `looseCompostMaxCost` (128) in data/bazaar.json is the largest plot rung CLAUDE.md confirms as loose Compost (tier C: 64, 96, 128, then Compost Bundles). The bundle-to-Compost ratio (rungs from 160 are multiples of 160) is unverified, so the "Next plot ... coins" row is hidden above the threshold.

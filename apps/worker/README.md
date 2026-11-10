@@ -1,6 +1,6 @@
 # @garden-hq/worker
 
-Hono API on Cloudflare Workers. Routes: `GET /api/link?name=`, `/api/garden?profile=`, `/api/member?profile=&uuid=`, `/api/contests`, `/api/mayor`, `/health`, plus the cloud-save routes `POST /api/account`, `DELETE /api/account`, `GET /api/sync` and `POST /api/sync` (see Cloud save), plus the alerts routes `GET /api/alerts`, `PUT/DELETE /api/alerts/webhook`, `POST /api/alerts/test` and `PUT /api/alerts/rules`.
+Hono API on Cloudflare Workers. Routes: `GET /api/link?name=`, `/api/garden?profile=`, `/api/member?profile=&uuid=`, `/api/contests`, `/api/mayor`, `/api/bazaar` (public Bazaar prices for ~40 farming products; the ~3.4 MB upstream body is fetched as text and text-scanned, never `JSON.parse`d, to stay under the Worker CPU limit; cached in KV for 10 min), `/health`, plus the cloud-save routes `POST /api/account`, `DELETE /api/account`, `GET /api/sync` and `POST /api/sync` (see Cloud save), plus the alerts routes `GET /api/alerts`, `PUT/DELETE /api/alerts/webhook`, `POST /api/alerts/test` and `PUT /api/alerts/rules`.
 
 ## Deployed URL
 

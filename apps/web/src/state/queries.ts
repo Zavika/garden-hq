@@ -42,6 +42,16 @@ export function useContests() {
   });
 }
 
+export function useBazaar() {
+  return useQuery({
+    queryKey: ["bazaar"],
+    queryFn: () => api.bazaar(),
+    refetchInterval: 5 * MINUTE,
+    staleTime: 5 * MINUTE,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useMayor() {
   return useQuery({
     queryKey: ["mayor"],

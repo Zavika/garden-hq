@@ -1,0 +1,67 @@
+{
+  "lastVerified": "2026-11-10",
+  "compostId": "COMPOST",
+  "looseCompostMaxCost": 128,
+  "crops": [
+    {
+      "cropId": "wheat",
+      "rawId": "WHEAT",
+      "enchantedId": "ENCHANTED_WHEAT",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "carrot",
+      "rawId": "CARROT_ITEM",
+      "enchantedId": "ENCHANTED_CARROT",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "potato",
+      "rawId": "POTATO_ITEM",
+      "enchantedId": "ENCHANTED_POTATO",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "pumpkin",
+      "rawId": "PUMPKIN",
+      "enchantedId": "ENCHANTED_PUMPKIN",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "sugar_cane",
+      "rawId": "SUGAR_CANE",
+      "enchantedId": "ENCHANTED_SUGAR",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "melon",
+      "rawId": "MELON",
+      "enchantedId": "ENCHANTED_MELON",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "cocoa_beans",
+      "rawId": "INK_SACK:3",
+      "enchantedId": "ENCHANTED_COCOA",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "nether_wart",
+      "rawId": "NETHER_STALK",
+      "enchantedId": "ENCHANTED_NETHER_STALK",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "moonflower",
+      "rawId": "MOONFLOWER",
+      "enchantedId": "ENCHANTED_MOONFLOWER",
+      "rawPerEnchanted": 160
+    },
+    {
+      "cropId": "wild_rose",
+      "rawId": "WILD_ROSE",
+      "enchantedId": "ENCHANTED_WILD_ROSE",
+      "rawPerEnchanted": 160
+    }
+  ]
+}

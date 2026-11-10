@@ -832,3 +832,38 @@ label {
 .update-toast span {
   flex: 1;
 }
+
+.bazaar-list {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.bazaar-list th,
+.bazaar-list td {
+  padding: 4px 0;
+  text-align: left;
+  font-weight: inherit;
+  overflow-wrap: anywhere;
+}
+.bazaar-list th.num,
+.bazaar-list td.num {
+  width: 5.5rem;
+  text-align: right;
+}
+.bazaar-head {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.crop-hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+}

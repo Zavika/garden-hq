@@ -116,6 +116,25 @@ describe("AssignCropSheet greenhouse actions", () => {
   });
 });
 
+describe("AssignCropSheet value hints", () => {
+  it("shows the sell-offer value per 160 crops when provided", () => {
+    render(
+      <AssignCropSheet
+        plotId="beginner_1"
+        gardenLevel={2}
+        onPick={() => {}}
+        onClose={() => {}}
+        cropValueHints={{ wheat: 12345.6, carrot: null }}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /Wheat.*12,346 coins.*160/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Carrot" })).toBeInTheDocument();
+    expect(screen.getByText(/not per hour/i)).toBeInTheDocument();
+  });
+});
+
 describe("AssignCropSheet header", () => {
   it("titles the sheet with the in-game plot number only and closes from the header", async () => {
     const onClose = vi.fn();

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Navigate } from "react-router-dom";
+import { cheapestNextPlot } from "@garden-hq/core";
 import { ApiError } from "../api/client";
+import { BazaarHints } from "../components/BazaarHints";
 import { ComposterPanel } from "../components/ComposterPanel";
 import { DoNextCard } from "../components/DoNextCard";
 import { ErrorCard } from "../components/ErrorCard";
@@ -32,6 +34,10 @@ export function HomeScreen() {
       : null;
   const state = garden.data?.garden;
   const assignedCropIds = Object.values(assignments);
+  const nextPlot =
+    state === undefined
+      ? undefined
+      : cheapestNextPlot(state.unlockedPlotIds, state.level);
 
   return (
     <>
@@ -70,6 +76,13 @@ export function HomeScreen() {
           />
           <ComposterPanel composter={state.composter} />
           <VisitorsPanel visitors={state.visitors} />
+          <BazaarHints
+            nextPlot={
+              nextPlot === undefined
+                ? undefined
+                : { plotNumber: nextPlot.plotNumber, cost: nextPlot.cost }
+            }
+          />
         </>
       )}
     </>

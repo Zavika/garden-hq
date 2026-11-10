@@ -2,6 +2,7 @@ import type {
   AlertsStateResponse,
   AlertTestResponse,
   ApiErrorCode,
+  BazaarPrices,
   ContestsResponse,
   GardenResponse,
   LinkResponse,
@@ -12,6 +13,12 @@ import type {
   SyncOp,
   SyncStateResponse,
 } from "@garden-hq/core";
+
+export interface BazaarResponse {
+  prices: BazaarPrices;
+  lastUpdated: number | null;
+  fetchedAt: string;
+}
 
 export type ClientErrorCode = ApiErrorCode | "network" | "bad_response";
 
@@ -209,6 +216,7 @@ export function createApiClient(
       get<MemberResponse>("/api/member", { profile: profileId, uuid }),
     contests: () => get<ContestsResponse>("/api/contests"),
     mayor: () => get<MayorResponse>("/api/mayor"),
+    bazaar: () => get<BazaarResponse>("/api/bazaar"),
     createAccount: (link: StoredLink) =>
       request<AccountCreateResponse>("POST", "/api/account", {
         body: { link },

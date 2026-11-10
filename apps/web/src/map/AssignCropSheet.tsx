@@ -9,7 +9,10 @@ export function AssignCropSheet({
   onPick,
   onClose,
   greenhouse,
+  cropValueHints,
 }: {
+  /** Sell-offer coins per 160 crops by crop id; absent while unknown. */
+  cropValueHints?: Record<string, number | null>;
   plotId: string;
   plotNumber?: number;
   currentCropId?: string;
@@ -51,7 +54,12 @@ export function AssignCropSheet({
         <header className="sheet-head">
           <div>
             <h2>{title}</h2>
-            <p className="sheet-sub">Choose a crop</p>
+            <p className="sheet-sub">
+              Choose a crop
+              {cropValueHints === undefined
+                ? ""
+                : " (sell offer, coins per 160 crops, not per hour)"}
+            </p>
           </div>
           <button
             type="button"
@@ -72,6 +80,15 @@ export function AssignCropSheet({
                 onClick={() => onPick(crop.id)}
               >
                 {crop.name}
+                {cropValueHints?.[crop.id] != null ? (
+                  <small className="crop-hint num">
+                    {" "}
+                    {Math.round(
+                      cropValueHints[crop.id] as number,
+                    ).toLocaleString("en-US")}{" "}
+                    coins / 160
+                  </small>
+                ) : null}
               </button>
             ),
           )}

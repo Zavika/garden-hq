@@ -26,3 +26,4 @@ export * from "./quest-eval";
 export * from "./progress";
 export * from "./achievements";
 export * from "./progress-step";
+export * from "./bazaar";

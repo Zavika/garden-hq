@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import type { GardenState } from "@garden-hq/core";
+import { cropValues, type GardenState } from "@garden-hq/core";
 import { useNavigate } from "react-router-dom";
+import { useBazaar } from "../state/queries";
 import { useStorage } from "../state/StorageProvider";
 import { MAX_GREENHOUSES } from "../state/storage";
 import { useUi } from "../state/ui";
@@ -47,6 +48,19 @@ export function MapSection({
   );
   const onUnavailable = useCallback(() => setWebglFailed(true), []);
 
+  const bazaar = useBazaar();
+  const cropValueHints = useMemo(() => {
+    if (bazaar.data === undefined) return undefined;
+    const hints: Record<string, number | null> = {};
+    for (const v of cropValues({
+      prices: bazaar.data.prices,
+      lastUpdated: bazaar.data.lastUpdated,
+    })) {
+      hints[v.cropId] = v.sellOffer;
+    }
+    return hints;
+  }, [bazaar.data]);
+
   const plots = viewModel.tiles.filter((t): t is PlotTile => t.kind === "plot");
   const hovered = plots.find((t) => t.plotId === hoveredPlotId);
   const selected = plots.find((t) => t.plotId === selectedPlotId);
@@ -79,6 +93,7 @@ export function MapSection({
           plotNumber={selected.plotNumber}
           currentCropId={selected.cropId}
           gardenLevel={garden.level}
+          cropValueHints={cropValueHints}
           onPick={(cropId) => {
             storage.setAssignment(selected.plotId, cropId);
             selectPlot(null);
