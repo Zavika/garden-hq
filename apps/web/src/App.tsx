@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { api } from "./api/client";
 import { Layout } from "./components/Layout";
+import { CreditsScreen } from "./pages/CreditsScreen";
+import { PrivacyScreen } from "./pages/PrivacyScreen";
 import { AchievementsScreen } from "./screens/AchievementsScreen";
 import { ContestsScreen } from "./screens/ContestsScreen";
 import { GreenhouseScreen } from "./screens/GreenhouseScreen";
@@ -38,6 +40,8 @@ export default function App() {
                 <Route path="contests" element={<ContestsScreen />} />
                 <Route path="achievements" element={<AchievementsScreen />} />
                 <Route path="settings" element={<SettingsScreen />} />
+                <Route path="credits" element={<CreditsScreen />} />
+                <Route path="privacy" element={<PrivacyScreen />} />
               </Route>
             </Routes>
           </BrowserRouter>

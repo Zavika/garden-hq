@@ -1,4 +1,5 @@
 import { useContests } from "../state/queries";
+import { PublicPageLinks } from "./PublicPageLinks";
 
 export function Footer() {
   const contests = useContests();
@@ -18,16 +19,9 @@ export function Footer() {
             EliteBot
           </a>
         )}
-        ; game facts from the{" "}
-        <a
-          href="https://hypixelskyblock.minecraft.wiki"
-          target="_blank"
-          rel="noreferrer"
-        >
-          SkyBlock wiki
-        </a>
-        ; plot layout after SkyHanni.
+        .
       </p>
+      <PublicPageLinks />
     </footer>
   );
 }

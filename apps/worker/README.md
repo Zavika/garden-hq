@@ -85,3 +85,7 @@ Without a key `/api/contests` and `/api/mayor` still work; `/api/link` and `/api
 ## Limits
 
 Per-IP 10 req/min (shared by link + garden + member + account creation); 60 s per-player cache; contests 15 min; mayor 1 h. Requests that present a sync code: 30 req/min per IP (`CODE_LIMITER`), where a failed lookup costs 5 in total. `POST /api/sync`: max 40 ops, body limit 64 KB, one atomic batch of at most 41 statements. An invalid op is skipped, not fatal: the valid ones are applied and the response carries `rejected: N` (only structural errors, such as a non-array `ops`, more than 40 ops or an oversized body, return 400). Write budgets (`src/limits.ts`, tunable guesses against the free plan's 100k rows/day): each account may apply `MAX_OPS_PER_ACCOUNT_PER_DAY` = 1000 ops per UTC day, and at most `MAX_ACCOUNTS_CREATED_PER_DAY` = 50 accounts are created per rolling 24 h; both answer 429 `rate_limited`. The creation cap counts rows in `account_creations` (no account id, no PII), so it survives account deletion: create, spend, delete, create cannot evade it. Account creation costs rate-limit + count + one 2-statement batch (account row + creation row). The cap bounds creations, not live accounts, so the real daily ceiling is live accounts x 1,000 ops. Alerts: see 'Discord alerts (cron)'.
+
+## Privacy page
+
+Adding a D1 table requires updating `apps/web/src/pages/privacy.ts`; a test (`privacy.drift.test.ts`) enforces it.

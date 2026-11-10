@@ -9,7 +9,7 @@ import {
   createRateLimitState,
   type ClientFactory,
 } from "./hypixel";
-import { logError, redact } from "./log";
+import { logError, redact, redactWebhooks } from "./log";
 import { createMemoryCache } from "./memcache";
 import { accountRoute } from "./routes/account";
 import { alertsRoute } from "./routes/alerts";
@@ -94,7 +94,7 @@ export function createApp(
 
     logError("unhandled", {
       name: err.name,
-      message: redact(err.message, c.env?.HYPIXEL_API_KEY),
+      message: redactWebhooks(redact(err.message, c.env?.HYPIXEL_API_KEY)),
     });
     c.header("Cache-Control", "no-store");
     return c.json(errorBody(new AppError("internal", "Internal error")), 500);

@@ -1,0 +1,42 @@
+{
+  "spriteArtist": "",
+  "sources": [
+    {
+      "name": "EliteBot contest API",
+      "url": "https://api.elitebot.dev",
+      "use": "Jacob's Contest schedule"
+    },
+    {
+      "name": "Jacob's Contest fallback",
+      "url": "https://jacobs.strassburger.dev",
+      "use": "Jacob's Contest schedule when the primary source is unavailable"
+    },
+    {
+      "name": "SkyBlock wiki",
+      "url": "https://hypixelskyblock.minecraft.wiki",
+      "use": "Game facts"
+    },
+    {
+      "name": "SkyHanni",
+      "url": "https://github.com/hannibal002/SkyHanni",
+      "use": "Plot layout reference"
+    },
+    {
+      "name": "Hypixel Public API",
+      "url": "https://developer.hypixel.net",
+      "use": "Garden and profile data"
+    },
+    {
+      "name": "Mojang API",
+      "url": "https://minecraft.wiki/w/Mojang_API",
+      "use": "Username lookup"
+    }
+  ],
+  "libraries": [
+    { "name": "React", "url": "https://react.dev" },
+    { "name": "Vite", "url": "https://vite.dev" },
+    { "name": "PixiJS", "url": "https://pixijs.com" },
+    { "name": "Hono", "url": "https://hono.dev" },
+    { "name": "Cloudflare Workers", "url": "https://workers.cloudflare.com" }
+  ]
+}

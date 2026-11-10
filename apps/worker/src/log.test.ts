@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { logError, logUpstream, redact } from "./log";
+import { logError, logUpstream, redact, redactWebhooks } from "./log";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -13,6 +13,16 @@ describe("redact", () => {
   it("leaves text alone when there is no secret", () => {
     expect(redact("hello", undefined)).toBe("hello");
     expect(redact("hello", "")).toBe("hello");
+  });
+});
+
+describe("redactWebhooks", () => {
+  it("replaces every webhook URL", () => {
+    expect(
+      redactWebhooks(
+        "a https://discord.com/api/webhooks/1/x-y b https://discordapp.com/api/webhooks/2/z",
+      ),
+    ).toBe("a [redacted] b [redacted]");
   });
 });
 

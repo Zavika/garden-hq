@@ -28,6 +28,8 @@ function routes() {
         <Route path="/" element={<p>HOME</p>} />
         <Route path="/link" element={<p>LINK</p>} />
         <Route path="/settings" element={<p>SETTINGS</p>} />
+        <Route path="/privacy" element={<p>PRIVACY</p>} />
+        <Route path="/credits" element={<p>CREDITS</p>} />
       </Route>
     </Routes>
   );
@@ -56,25 +58,44 @@ describe("Layout", () => {
     renderWithProviders(routes(), { route: "/" });
     expect(screen.getByText("LINK")).toBeInTheDocument();
     expect(screen.queryByText("HOME")).not.toBeInTheDocument();
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Main" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not redirect /settings for an unlinked user (restore from a code)", () => {
     renderWithProviders(routes(), { route: "/settings" });
     expect(screen.getByText("SETTINGS")).toBeInTheDocument();
     expect(screen.queryByText("LINK")).not.toBeInTheDocument();
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Main" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["/privacy", "PRIVACY"],
+    ["/credits", "CREDITS"],
+    ["/privacy/", "PRIVACY"],
+    ["/credits/", "CREDITS"],
+  ])("does not redirect %s for an unlinked user", (route, text) => {
+    renderWithProviders(routes(), { route });
+    expect(screen.getByText(text)).toBeInTheDocument();
+    expect(screen.queryByText("LINK")).not.toBeInTheDocument();
   });
 
   it("hides the tab bar on /link for a linked user", () => {
     renderWithProviders(routes(), { route: "/link", storage: linkedStorage() });
     expect(screen.getByText("LINK")).toBeInTheDocument();
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Main" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the tab bar for a linked user at /", () => {
     renderWithProviders(routes(), { route: "/", storage: linkedStorage() });
     expect(screen.getByText("HOME")).toBeInTheDocument();
-    expect(screen.getByRole("navigation")).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Main" }),
+    ).toBeInTheDocument();
   });
 });

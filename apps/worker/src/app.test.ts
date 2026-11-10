@@ -180,6 +180,24 @@ describe("error handling", () => {
   });
 });
 
+describe("error handling webhook redaction", () => {
+  it("never logs a Discord webhook URL from an error message", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const app = createApp();
+    app.get("/api/boom", () => {
+      throw new Error(
+        "D1 failed: https://discord.com/api/webhooks/123/abc-def end",
+      );
+    });
+    const res = await app.request("/api/boom", {}, makeEnv());
+    expect(res.status).toBe(500);
+    const everything = error.mock.calls.flat().join(" ");
+    expect(everything).toContain("[redacted]");
+    expect(everything).not.toContain("abc-def");
+  });
+});
+
 describe("error handling without bindings", () => {
   it("still returns the 500 internal body when no env is bound", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});

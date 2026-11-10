@@ -159,3 +159,8 @@ Method: `wrangler tail garden-hq-worker --format json` for ~16 min (3 cron ticks
 
 - **Real rendering of owner art on the map is a manual check** - the Pixi scene is not rendered under jsdom (the map tests mock `MapScene`). Verify by eye with real files in `apps/web/public/sprites/`: edges stay crisp at 1x/2x/3x scale, and the draw order is right (buyable glow, padlock and dim, plot-number badge, visitor markers all above the sprites).
 - **Missing slot = placeholder** - a slot with no file keeps the programmatic drawing; a failed texture load silently falls back too.
+
+## Privacy page (Phase 5B)
+
+- Text audited 2026-11-10 against `apps/worker/migrations`, `apps/web/src/state/storage.ts` and `sync.ts`. Update `apps/web/src/pages/privacy.ts` whenever storage, tables or recipients change; a drift test covers tables and browser keys only.
+- Re-audit list when changing anything below: `apps/worker/migrations`, `apps/web/src/state/storage.ts`, `apps/web/src/state/sync.ts`, `apps/worker/src/mojang.ts`, `apps/worker/src/ratelimit.ts`, `apps/worker/src/cron.ts`, `apps/worker/src/sync/db.ts` (`deleteAccount`).

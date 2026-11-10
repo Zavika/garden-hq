@@ -5,13 +5,19 @@ import { TabBar } from "./TabBar";
 
 export function Layout() {
   const { link } = useStoredData();
-  const { pathname } = useLocation();
+  const { pathname: rawPathname } = useLocation();
+  const pathname =
+    rawPathname.length > 1 ? rawPathname.replace(/\/+$/, "") : rawPathname;
   const onLinkRoute = pathname === "/link";
   // Settings stays reachable while unlinked: a fresh device restores its
   // save there with a sync code, without needing a Hypixel link first.
-  const onSettingsRoute = pathname === "/settings";
+  // /privacy and /credits are public notices, readable before linking.
+  const onOpenRoute =
+    pathname === "/settings" ||
+    pathname === "/privacy" ||
+    pathname === "/credits";
 
-  if (link === null && !onLinkRoute && !onSettingsRoute) {
+  if (link === null && !onLinkRoute && !onOpenRoute) {
     return <Navigate to="/link" replace />;
   }
 

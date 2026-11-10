@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AlertsSection } from "../components/AlertsSection";
+import { PublicPageLinks } from "../components/PublicPageLinks";
 import { SyncSection } from "../components/SyncSection";
 import { useStorage, useStoredData } from "../state/StorageProvider";
 
@@ -77,6 +78,7 @@ export function SettingsScreen() {
       <p className="muted">
         Clears this device only. Your cloud copy stays and reloads on next sync.
       </p>
+      <PublicPageLinks />
     </section>
   );
 }

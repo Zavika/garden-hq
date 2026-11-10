@@ -806,3 +806,7 @@ label {
   display: inline-block;
   vertical-align: middle;
 }
+
+.privacy-contact {
+  overflow-wrap: anywhere;
+}
