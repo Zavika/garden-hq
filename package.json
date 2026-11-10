@@ -12,6 +12,7 @@
     "test": "pnpm -r --if-present run test",
     "typecheck": "pnpm -r --if-present run typecheck",
     "lint": "eslint .",
+    "sprites:check": "pnpm --filter @garden-hq/web sprites:check",
     "format": "prettier --check .",
     "format:write": "prettier --write ."
   },

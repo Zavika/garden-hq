@@ -799,3 +799,10 @@ label {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.sprite {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: inline-block;
+  vertical-align: middle;
+}

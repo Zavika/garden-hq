@@ -1,9 +1,13 @@
-import { Application, Container, Graphics, type Ticker } from "pixi.js";
+import { Application, Container, Graphics, Sprite, type Ticker } from "pixi.js";
 import { GRID_SIZE } from "@garden-hq/core";
 import type { BarnTile, MapViewModel, PlotTile } from "../viewmodels/map";
 import { COLORS, cropColor } from "./palette";
 import { tracksHover } from "./pointer";
 import { TILE, tilePxFor } from "./layout";
+import { plotSpriteSlots } from "./plotSprites";
+import { PRESENT_SLOTS } from "../sprites/manifest";
+import type { SpriteSlot } from "../sprites/slots";
+import { loadTextures, type TextureMap } from "../sprites/textures";
 
 export interface SceneHandlers {
   onPlotTap(plotId: string, state: PlotTile["state"]): void;
@@ -38,6 +42,7 @@ export class MapScene {
   /** Glowing "+" outlines on buyable plots; pulsed by the ticker. */
   private glows: Graphics[] = [];
   private phase = 0;
+  private textures: TextureMap = new Map();
 
   private tick = (ticker: Ticker): void => {
     this.phase += ticker.deltaTime * 0.07;
@@ -62,6 +67,11 @@ export class MapScene {
         resolution: 1,
         autoDensity: false,
       });
+      if (this.destroyed) {
+        app.destroy(false, { children: true });
+        return;
+      }
+      this.textures = await loadTextures(PRESENT_SLOTS);
       if (this.destroyed) {
         app.destroy(false, { children: true });
         return;
@@ -110,7 +120,8 @@ export class MapScene {
   }
 
   private draw(vm: MapViewModel): void {
-    for (const child of this.world.removeChildren()) child.destroy();
+    for (const child of this.world.removeChildren())
+      child.destroy({ children: true }); // never `true`: textures are shared across redraws
     this.glows = [];
     for (const tile of vm.tiles) {
       this.world.addChild(
@@ -191,6 +202,15 @@ export class MapScene {
     }
   }
 
+  /** A sprite for the slot at tile pixel (x, y), or null when no texture is present. */
+  private sprite(slot: SpriteSlot, x: number, y: number): Sprite | null {
+    const texture = this.textures.get(slot);
+    if (texture === undefined) return null;
+    const sprite = new Sprite(texture);
+    sprite.position.set(x, y);
+    return sprite;
+  }
+
   private plotGraphic(tile: PlotTile): Container {
     const root = new Container();
     const g = new Graphics();
@@ -198,18 +218,31 @@ export class MapScene {
     const x = tile.x * TILE;
     const y = tile.y * TILE;
 
-    this.grass(g, tile.x, tile.y);
+    const slots = plotSpriteSlots(tile, (s) => this.textures.has(s));
+    const baseSprite =
+      slots.base === null ? null : this.sprite(slots.base, x, y);
+    // With a base sprite, programmatic extras go in a second Graphics above it.
+    const top = baseSprite === null ? g : new Graphics();
+
+    if (baseSprite === null) {
+      this.grass(g, tile.x, tile.y);
+    } else {
+      root.addChild(baseSprite);
+      root.addChild(top);
+    }
 
     if (tile.state === "locked") {
-      this.weeds(g, tile.x, tile.y);
-      this.fence(g, x, y);
+      if (baseSprite === null) {
+        this.weeds(g, tile.x, tile.y);
+        this.fence(g, x, y);
+      }
 
       if (tile.availability === "unreachable") {
-        g.rect(x, y, TILE, TILE).fill({ color: COLORS.dim, alpha: 0.45 });
+        top.rect(x, y, TILE, TILE).fill({ color: COLORS.dim, alpha: 0.45 });
         // Small padlock: body then shackle.
-        g.rect(x + 6, y + 8, 5, 4).fill(COLORS.lockDark);
-        g.rect(x + 7, y + 5, 3, 3).fill(COLORS.lockDark);
-        g.rect(x + 8, y + 6, 1, 2).fill(COLORS.dim);
+        top.rect(x + 6, y + 8, 5, 4).fill(COLORS.lockDark);
+        top.rect(x + 7, y + 5, 3, 3).fill(COLORS.lockDark);
+        top.rect(x + 8, y + 6, 1, 2).fill(COLORS.dim);
       } else {
         // Buyable: a pulsing gold outline and "+" that sit above the fence.
         const glow = new Graphics();
@@ -226,10 +259,17 @@ export class MapScene {
         root.addChild(glow);
       }
     } else {
-      this.tilledSoil(g, tile.x, tile.y);
+      if (baseSprite === null) this.tilledSoil(g, tile.x, tile.y);
+      const overlaySprite =
+        slots.overlay === null ? null : this.sprite(slots.overlay, x, y);
+      if (overlaySprite !== null) root.addChild(overlaySprite);
       if (tile.greenhouse) {
-        this.glassHouse(g, x, y);
-      } else if (tile.state === "assigned" && tile.cropId !== undefined) {
+        if (overlaySprite === null) this.glassHouse(top, x, y);
+      } else if (
+        overlaySprite === null &&
+        tile.state === "assigned" &&
+        tile.cropId !== undefined
+      ) {
         const colour = cropColor(tile.cropId);
         // 3x3 plants in the lower-right, clear of the plot-number badge
         // (which lives in the top-left ~6px of the tile).
@@ -237,8 +277,8 @@ export class MapScene {
           for (let col = 0; col < 3; col++) {
             const px = x + 6 + col * 3;
             const py = y + 6 + row * 3;
-            g.rect(px, py, 2, 2).fill(colour);
-            g.rect(px, py, 2, 1).fill({ color: 0xffffff, alpha: 0.3 });
+            top.rect(px, py, 2, 2).fill(colour);
+            top.rect(px, py, 2, 1).fill({ color: 0xffffff, alpha: 0.3 });
           }
         }
       }
@@ -273,12 +313,32 @@ export class MapScene {
     }
   }
 
-  private barnGraphic(tile: BarnTile): Graphics {
+  private barnGraphic(tile: BarnTile): Container {
+    const root = new Container();
     const g = new Graphics();
+    root.addChild(g);
     const x = tile.x * TILE;
     const y = tile.y * TILE;
     this.grass(g, tile.x, tile.y);
 
+    const barnSprite = this.sprite("barn", x, y);
+    // Visitor markers always draw last, above the barn sprite.
+    let dots = g;
+    if (barnSprite !== null) {
+      root.addChild(barnSprite);
+      dots = new Graphics();
+      root.addChild(dots);
+    } else {
+      this.barnPlaceholder(g, x, y);
+    }
+
+    tile.visitors.forEach((_, i) => {
+      dots.rect(x + 1 + i * 3, y + TILE - 2, 2, 2).fill(COLORS.visitor);
+    });
+    return root;
+  }
+
+  private barnPlaceholder(g: Graphics, x: number, y: number): void {
     // Roof: stepped gable, then the wall and a braced door.
     g.rect(x + 5, y + 1, 6, 1).fill(COLORS.barnRoof);
     g.rect(x + 3, y + 2, 10, 1).fill(COLORS.barnRoof);
@@ -296,10 +356,5 @@ export class MapScene {
       g.rect(x + 9 - i, y + 9 + i, 1, 1).fill(COLORS.barnTrim);
     }
     g.rect(x + 1, y + 14, 14, 1).fill(COLORS.barnShadow);
-
-    tile.visitors.forEach((_, i) => {
-      g.rect(x + 1 + i * 3, y + TILE - 2, 2, 2).fill(COLORS.visitor);
-    });
-    return g;
   }
 }

@@ -1,4 +1,6 @@
 import { cropColor } from "../map/palette";
+import { Sprite } from "../sprites/Sprite";
+import { cropSlot, type SpriteSlot } from "../sprites/slots";
 
 /** Renders a tiny sprite from a character grid. "." (or an unknown char) is transparent. */
 export function PixelArt({
@@ -174,17 +176,27 @@ const CROP = [
 export function CropIcon({
   cropId,
   size = 2,
+  present,
 }: {
   cropId: string;
   size?: number;
+  present?: readonly SpriteSlot[];
 }) {
   const base = cropColor(cropId);
   return (
-    <PixelArt
-      rows={CROP}
-      size={size}
+    <Sprite
+      slot={cropSlot(cropId)}
+      present={present}
+      scale={1}
       className="icon"
-      palette={{ c: hex(base), h: lighten(base, 60), g: "#4f9a35" }}
+      fallback={
+        <PixelArt
+          rows={CROP}
+          size={size}
+          className="icon"
+          palette={{ c: hex(base), h: lighten(base, 60), g: "#4f9a35" }}
+        />
+      }
     />
   );
 }

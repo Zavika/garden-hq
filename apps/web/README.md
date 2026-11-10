@@ -30,3 +30,7 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Sprites
+
+Drop 16x16 PNGs into `public/sprites/` (soil, locked, greenhouse, barn, `crops/<id>.png`) and the map and `Sprite` component use them instead of the built-in placeholders; see [`public/sprites/README.md`](public/sprites/README.md) for the exact names and rules.

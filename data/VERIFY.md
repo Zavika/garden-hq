@@ -154,3 +154,8 @@ Method: `wrangler tail garden-hq-worker --format json` for ~16 min (3 cron ticks
 - **Request proxy**: `GET /api/garden` (one Hypixel fetch + normalize + response) took 2-3 ms CPU; one outlier request took 8 ms CPU (626 ms wall).
 - **Not measured**: a tick that processes accounts (Hypixel fetch, snapshot write, claims, Discord send, streak guard). If each account costs about 3 ms CPU, a tick at the cap (`MAX_HYPIXEL_CALLS_PER_RUN` = 8) would be near or above the 10 ms free-plan CPU limit. `CRON_BATCH` (10) and the call cap (8) were left unchanged because there is no loaded measurement to justify a number.
 - **How to finish this**: enable alerts on one or two real accounts, then re-run the tail across a few ticks and record CPU per tick against `processed`.
+
+## Sprites (Phase 5A, 2026-11-10)
+
+- **Real rendering of owner art on the map is a manual check** - the Pixi scene is not rendered under jsdom (the map tests mock `MapScene`). Verify by eye with real files in `apps/web/public/sprites/`: edges stay crisp at 1x/2x/3x scale, and the draw order is right (buyable glow, padlock and dim, plot-number badge, visitor markers all above the sprites).
+- **Missing slot = placeholder** - a slot with no file keeps the programmatic drawing; a failed texture load silently falls back too.
