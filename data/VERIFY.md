@@ -144,3 +144,13 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Streak-only accounts** - when `streak_risk` is the only enabled rule the cron skips the account (no Hypixel call, no quest reads, one `next_sync_at` write) until `reset - leadHours`, then uses the normal 15 min cadence (`streakOnlyWakeAt` in core).
 - **Cost** - each cron tick inside the alert window costs about 4 D1 reads per opted-in account; completions written by the cron count toward the account's daily ops counter and `last_seen_at`.
 - **CPU/budget unmeasured on real D1** - measure the extra statements with `wrangler tail`.
+
+## Production cron measurement (2026-11-10, after Phase 4)
+
+Method: `wrangler tail garden-hq-worker --format json` for ~16 min (3 cron ticks, 19:50-20:00 CEST) plus `wrangler d1 insights garden-hq --time-period 1h`.
+
+- **Idle ticks: 2-3 ms CPU** (2, 2, 3 ms), 105-331 ms wall, 1 subrequest, `due: 0`. Production had **no account with alerts enabled**, so no loaded tick was observed.
+- **D1** (last hour): the due-accounts query ran 9 times, 2 rows read per run (18 total), 0 rows written. Nothing else in the cron touched D1.
+- **Request proxy**: `GET /api/garden` (one Hypixel fetch + normalize + response) took 2-3 ms CPU; one outlier request took 8 ms CPU (626 ms wall).
+- **Not measured**: a tick that processes accounts (Hypixel fetch, snapshot write, claims, Discord send, streak guard). If each account costs about 3 ms CPU, a tick at the cap (`MAX_HYPIXEL_CALLS_PER_RUN` = 8) would be near or above the 10 ms free-plan CPU limit. `CRON_BATCH` (10) and the call cap (8) were left unchanged because there is no loaded measurement to justify a number.
+- **How to finish this**: enable alerts on one or two real accounts, then re-run the tail across a few ticks and record CPU per tick against `processed`.
