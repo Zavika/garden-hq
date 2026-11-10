@@ -810,3 +810,25 @@ label {
 .privacy-contact {
   overflow-wrap: anywhere;
 }
+
+/* PWA update toast: above the tab bar, safe-area aware. */
+.update-toast {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--tabbar-h) + 8px + env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 8px 12px;
+  background: var(--parch-hi);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.update-toast span {
+  flex: 1;
+}

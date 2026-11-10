@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AlertsSection } from "../components/AlertsSection";
+import { InstallSection } from "../components/InstallSection";
 import { PublicPageLinks } from "../components/PublicPageLinks";
 import { SyncSection } from "../components/SyncSection";
 import { useStorage, useStoredData } from "../state/StorageProvider";
@@ -37,6 +38,7 @@ export function SettingsScreen() {
         </select>
       </label>
 
+      <InstallSection />
       <SyncSection />
       <AlertsSection />
 

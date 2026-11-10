@@ -164,3 +164,13 @@ Method: `wrangler tail garden-hq-worker --format json` for ~16 min (3 cron ticks
 
 - Text audited 2026-11-10 against `apps/worker/migrations`, `apps/web/src/state/storage.ts` and `sync.ts`. Update `apps/web/src/pages/privacy.ts` whenever storage, tables or recipients change; a drift test covers tables and browser keys only.
 - Re-audit list when changing anything below: `apps/worker/migrations`, `apps/web/src/state/storage.ts`, `apps/web/src/state/sync.ts`, `apps/worker/src/mojang.ts`, `apps/worker/src/ratelimit.ts`, `apps/worker/src/cron.ts`, `apps/worker/src/sync/db.ts` (`deleteAccount`).
+
+## PWA (Phase 5D)
+
+Real install and offline behaviour cannot be exercised under jsdom; check by hand on a production deploy:
+
+- **Install**: Chrome desktop (install icon in the address bar) and Chrome on Android (Install app) offer the install and open standalone.
+- **iOS**: Safari > Share > Add to Home Screen; the app opens standalone with the sprout icon.
+- **Offline launch**: after one online visit, airplane mode and relaunch shows the app shell and the "last synced" state.
+- **Update flow**: after a new deploy, the "New version available" toast appears; Reload swaps to the new version, Later keeps the old one until the next visit.
+- **No API caching**: `/api` requests are never served from the service worker. DevTools > Application > Cache Storage contains only precache entries (no runtime caches).

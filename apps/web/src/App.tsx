@@ -5,6 +5,7 @@ import { api } from "./api/client";
 import { Layout } from "./components/Layout";
 import { CreditsScreen } from "./pages/CreditsScreen";
 import { PrivacyScreen } from "./pages/PrivacyScreen";
+import { UpdateToast } from "./pwa/UpdateToast";
 import { AchievementsScreen } from "./screens/AchievementsScreen";
 import { ContestsScreen } from "./screens/ContestsScreen";
 import { GreenhouseScreen } from "./screens/GreenhouseScreen";
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="privacy" element={<PrivacyScreen />} />
               </Route>
             </Routes>
+            <UpdateToast />
           </BrowserRouter>
         </SyncProvider>
       </StorageProvider>

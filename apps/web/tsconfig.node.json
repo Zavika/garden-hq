@@ -19,5 +19,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "vite/**/*.ts", "src/sprites/slots.ts"]
+  "include": [
+    "vite.config.ts",
+    "vite/**/*.ts",
+    "scripts/**/*.ts",
+    "src/sprites/slots.ts"
+  ]
 }
