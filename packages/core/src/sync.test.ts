@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { getAchievement } from "./achievements";
+import { EMPTY_PROGRESS } from "./progress";
+import { questXp, type QuestRecord } from "./quests";
 import {
   applyOp,
   applyOps,
@@ -594,5 +597,264 @@ describe("generic applyOp/applyOps", () => {
     expect(out.timeZone).toBe("UTC");
     const many = applyOps(input, [{ t: "setTimeZone", timeZone: "UTC" }]);
     expect(many.extra).toBe(1);
+  });
+});
+
+// ------------------------------------------------------------------ progress
+
+function qrec(
+  day: string,
+  slot: number,
+  over: Partial<QuestRecord> = {},
+): QuestRecord {
+  return {
+    day,
+    slot,
+    kind: "water_greenhouse",
+    params: {},
+    baseline: null,
+    createdAt: 1,
+    expiresAt: 2,
+    doneAt: null,
+    xp: questXp("water_greenhouse"),
+    ...over,
+  };
+}
+const DAY = "2026-11-10";
+const ACH = "first_greenhouse";
+const ACH_XP = getAchievement(ACH)?.xp ?? -1;
+
+describe("progress ops: applyOp", () => {
+  it("setQuests adds missing slots, first write wins, idempotent", () => {
+    const first = applyOp(data(), {
+      t: "setQuests",
+      day: DAY,
+      quests: [qrec(DAY, 0), qrec(DAY, 1)],
+    });
+    expect(first.progress.quests).toHaveLength(2);
+    const second = applyOp(first, {
+      t: "setQuests",
+      day: DAY,
+      quests: [qrec(DAY, 1, { createdAt: 99 }), qrec(DAY, 2)],
+    });
+    expect(second.progress.quests).toHaveLength(3);
+    expect(second.progress.quests.find((q) => q.slot === 1)?.createdAt).toBe(1);
+    const third = applyOp(second, {
+      t: "setQuests",
+      day: DAY,
+      quests: [qrec(DAY, 0)],
+    });
+    expect(third).toBe(second);
+  });
+
+  it("completeQuest sets doneAt once, checks kind", () => {
+    const base = applyOp(data(), {
+      t: "setQuests",
+      day: DAY,
+      quests: [qrec(DAY, 0)],
+    });
+    const op = {
+      t: "completeQuest",
+      day: DAY,
+      slot: 0,
+      kind: "water_greenhouse",
+      at: 50,
+    } as const;
+    const done = applyOp(base, op);
+    expect(done.progress.quests[0]?.doneAt).toBe(50);
+    expect(applyOp(done, { ...op, at: 10 })).toBe(done);
+    expect(applyOp(base, { ...op, slot: 2 })).toBe(base);
+    expect(applyOp(base, { ...op, kind: "serve_visitors" })).toBe(base);
+    expect(applyOp(data(), op).progress).toBe(EMPTY_PROGRESS);
+  });
+
+  it("unlockAchievement inserts, keeps original", () => {
+    const a = applyOp(data(), {
+      t: "unlockAchievement",
+      id: ACH,
+      at: 5,
+      xp: ACH_XP,
+    });
+    expect(a.progress.achievements[ACH]).toEqual({ at: 5, xp: ACH_XP });
+    const b = applyOp(a, {
+      t: "unlockAchievement",
+      id: ACH,
+      at: 9,
+      xp: ACH_XP,
+    });
+    expect(b).toBe(a);
+  });
+});
+
+describe("progress ops: parseOps", () => {
+  const good = {
+    t: "setQuests",
+    day: DAY,
+    quests: [qrec(DAY, 0), qrec(DAY, 1)],
+  };
+  const bad = (op: unknown) => expect(parseOne(op).ok).toBe(false);
+
+  it("accepts valid ops", () => {
+    expect(parseOne(good).ok).toBe(true);
+    expect(
+      parseOne({
+        t: "completeQuest",
+        day: DAY,
+        slot: 1,
+        kind: "serve_visitors",
+        at: 3,
+      }).ok,
+    ).toBe(true);
+    expect(
+      parseOne({ t: "unlockAchievement", id: ACH, at: 3, xp: ACH_XP }).ok,
+    ).toBe(true);
+  });
+
+  it("rejects bad setQuests", () => {
+    bad({ ...good, quests: [{ ...qrec(DAY, 0), kind: "nope" }] });
+    bad({ ...good, quests: [{ ...qrec(DAY, 0), xp: 9999 }] });
+    bad({ ...good, quests: [qrec("2026-11-09", 0)] });
+    bad({ ...good, quests: [qrec(DAY, 0), qrec(DAY, 0)] });
+    bad({ ...good, quests: [] });
+    bad({ ...good, quests: [0, 1, 2, 0].map((s) => qrec(DAY, s)) });
+    bad({ ...good, quests: [qrec(DAY, 3)] });
+    bad({ ...good, day: "nope", quests: [qrec("nope", 0)] });
+  });
+
+  it("rejects bad completeQuest", () => {
+    const c = {
+      t: "completeQuest",
+      day: DAY,
+      slot: 0,
+      kind: "serve_visitors",
+      at: 3,
+    };
+    expect(parseOne(c).ok).toBe(true);
+    bad({ ...c, slot: 3 });
+    bad({ ...c, slot: 0.5 });
+    bad({ ...c, at: -1 });
+    bad({ ...c, at: "x" });
+    bad({ ...c, kind: "nope" });
+    bad({ ...c, day: "x" });
+  });
+
+  it("rejects bad unlockAchievement", () => {
+    const u = { t: "unlockAchievement", id: ACH, at: 3, xp: ACH_XP };
+    bad({ ...u, id: "nope" });
+    bad({ ...u, xp: ACH_XP + 1 });
+    bad({ ...u, at: -5 });
+  });
+});
+
+describe("progress ops: queue and seed", () => {
+  it("opKey formats", () => {
+    expect(opKey({ t: "setQuests", day: DAY, quests: [] })).toBe(`q:${DAY}`);
+    expect(
+      opKey({
+        t: "completeQuest",
+        day: DAY,
+        slot: 2,
+        kind: "serve_visitors",
+        at: 1,
+      }),
+    ).toBe(`qd:${DAY}:2`);
+    expect(opKey({ t: "unlockAchievement", id: ACH, at: 1, xp: 1 })).toBe(
+      `ach:${ACH}`,
+    );
+  });
+
+  it("enqueueOp replaces same-day setQuests only", () => {
+    const a: SyncOp = { t: "setQuests", day: DAY, quests: [qrec(DAY, 0)] };
+    const b: SyncOp = {
+      t: "setQuests",
+      day: DAY,
+      quests: [qrec(DAY, 0), qrec(DAY, 1)],
+    };
+    const c: SyncOp = {
+      t: "setQuests",
+      day: "2026-11-11",
+      quests: [qrec("2026-11-11", 0)],
+    };
+    expect(enqueueOp([a], b)).toEqual([b]);
+    expect(enqueueOp([a], c)).toEqual([a, c]);
+  });
+
+  const local = data({
+    progress: {
+      ...EMPTY_PROGRESS,
+      quests: [
+        qrec(DAY, 0, { doneAt: 7 }),
+        qrec(DAY, 1),
+        qrec("2026-11-11", 0),
+      ],
+      achievements: { [ACH]: { at: 4, xp: ACH_XP } },
+    },
+  });
+  const isProgressOp = (o: SyncOp) =>
+    o.t === "setQuests" ||
+    o.t === "completeQuest" ||
+    o.t === "unlockAchievement";
+
+  it("seedOps emits progress ops", () => {
+    const ops = seedOps(local);
+    expect(ops.filter((o) => o.t === "setQuests")).toHaveLength(2);
+    expect(ops.filter((o) => o.t === "completeQuest")).toHaveLength(1);
+    expect(ops.filter((o) => o.t === "unlockAchievement")).toHaveLength(1);
+    expect(seedOps(data()).filter(isProgressOp)).toEqual([]);
+  });
+
+  it("planJoin adds only what the server lacks", () => {
+    const server = data({
+      progress: {
+        ...EMPTY_PROGRESS,
+        quests: [qrec(DAY, 0, { doneAt: 7 })],
+        achievements: { [ACH]: { at: 1, xp: ACH_XP } },
+      },
+    });
+    const { ops, added } = planJoin(local, server);
+    const sq = ops.filter((o) => o.t === "setQuests");
+    expect(sq).toHaveLength(2);
+    expect(ops.some((o) => o.t === "unlockAchievement")).toBe(false);
+    const total = sq.reduce(
+      (n, o) => n + (o.t === "setQuests" ? o.quests.length : 0),
+      0,
+    );
+    expect(total).toBe(2);
+    expect(added).toBe(2);
+  });
+
+  it("planJoin carries local completions onto undone server records", () => {
+    const loc = data({
+      progress: {
+        ...EMPTY_PROGRESS,
+        quests: [
+          qrec(DAY, 0, { doneAt: 7 }),
+          qrec(DAY, 1, { doneAt: 8 }),
+          qrec(DAY, 2, { doneAt: 9 }),
+        ],
+      },
+    });
+    const server = data({
+      progress: {
+        ...EMPTY_PROGRESS,
+        quests: [
+          qrec(DAY, 0),
+          qrec(DAY, 1, { doneAt: 3 }),
+          qrec(DAY, 2, { kind: "serve_visitors" }),
+        ],
+      },
+    });
+    const { ops, added, kept } = planJoin(loc, server);
+    expect(ops).toEqual([
+      {
+        t: "completeQuest",
+        day: DAY,
+        slot: 0,
+        kind: "water_greenhouse",
+        at: 7,
+      },
+    ]);
+    expect(added).toBe(1);
+    expect(kept).toBe(1);
   });
 });

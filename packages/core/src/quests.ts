@@ -2,7 +2,7 @@ import gardenLevels from "../../../data/garden-levels.json";
 import questData from "../../../data/quests.json";
 import { ALL_MUTATIONS } from "./greenhouse-data";
 import { cheapestNextPlot, getPlot } from "./plots";
-import { DEFAULT_TIME_ZONE } from "./sync";
+import { DEFAULT_TIME_ZONE } from "./timezone";
 import type { Contest, GardenMemberState, GardenState } from "./types";
 
 export const QUEST_KINDS = [

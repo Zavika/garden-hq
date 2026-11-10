@@ -1,12 +1,30 @@
+import { getAchievement } from "./achievements";
 import { getCrop } from "./crops";
 import { isPlaceableId } from "./greenhouse-data";
 import { getPlot } from "./plots";
+import {
+  EMPTY_PROGRESS,
+  addQuests,
+  completeQuest,
+  parseQuestRecord,
+  progressOps,
+  unlockAchievement,
+  type ProgressData,
+} from "./progress";
+import {
+  QUEST_KINDS,
+  QUESTS_PER_DAY,
+  questXp,
+  type QuestKind,
+  type QuestRecord,
+} from "./quests";
+import { DEFAULT_TIME_ZONE } from "./timezone";
 import type { ProfileSummary } from "./types";
 
 export const MAX_GREENHOUSES = 3;
 export const MAX_WATERING_INTERVAL_HOURS = 720;
 export const MAX_OPS_PER_REQUEST = 40;
-export const DEFAULT_TIME_ZONE = "Europe/Warsaw";
+export { DEFAULT_TIME_ZONE } from "./timezone";
 export const CELL_KEY_RE = /^\d,\d$/;
 
 const UUID_RE =
@@ -15,6 +33,7 @@ const NAME_RE = /^[A-Za-z0-9_]{1,16}$/;
 const MAX_PROFILES = 20;
 const MAX_TEXT = 64;
 const MAX_EPOCH_MS = 8.64e15;
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export interface StoredLink {
   name: string;
@@ -37,6 +56,7 @@ export interface StoredData {
   assignments: Record<string, string>;
   greenhouses: Record<string, GreenhouseSave>;
   timeZone: string;
+  progress: ProgressData;
 }
 
 export const EMPTY_STORED_DATA: StoredData = {
@@ -44,6 +64,7 @@ export const EMPTY_STORED_DATA: StoredData = {
   assignments: {},
   greenhouses: {},
   timeZone: DEFAULT_TIME_ZONE,
+  progress: EMPTY_PROGRESS,
 };
 
 export function validWateringInterval(v: unknown): number | null {
@@ -68,7 +89,16 @@ export type SyncOp =
   | { t: "markGreenhouseWatered"; plotId: string; at: number }
   | { t: "setWateringInterval"; plotId: string; hours: number | null }
   | { t: "setTimeZone"; timeZone: string }
-  | { t: "setLink"; link: StoredLink };
+  | { t: "setLink"; link: StoredLink }
+  | { t: "setQuests"; day: string; quests: QuestRecord[] }
+  | {
+      t: "completeQuest";
+      day: string;
+      slot: number;
+      kind: QuestKind;
+      at: number;
+    }
+  | { t: "unlockAchievement"; id: string; at: number; xp: number };
 
 export function applyOp<T extends StoredData>(data: T, op: SyncOp): T {
   switch (op.t) {
@@ -164,7 +194,31 @@ export function applyOp<T extends StoredData>(data: T, op: SyncOp): T {
         : { ...data, timeZone: op.timeZone };
     case "setLink":
       return data.link === op.link ? data : { ...data, link: op.link };
+    case "setQuests":
+      return withProgress(data, addQuests(data.progress, op.quests));
+    case "completeQuest": {
+      const target = data.progress.quests.find(
+        (q) => q.day === op.day && q.slot === op.slot,
+      );
+      if (target === undefined || target.kind !== op.kind) return data;
+      return withProgress(
+        data,
+        completeQuest(data.progress, op.day, op.slot, op.at),
+      );
+    }
+    case "unlockAchievement":
+      return withProgress(
+        data,
+        unlockAchievement(data.progress, op.id, op.at, op.xp),
+      );
   }
+}
+
+function withProgress<T extends StoredData>(
+  data: T,
+  progress: ProgressData,
+): T {
+  return progress === data.progress ? data : { ...data, progress };
 }
 
 export function applyOps<T extends StoredData>(
@@ -228,6 +282,18 @@ function parseLink(v: unknown): Parsed<StoredLink> {
     out.push({ profileId: p.profileId, name: p.name, selected: p.selected });
   }
   return { ok: true, value: { name, uuid, profileId, profiles: out } };
+}
+
+function validTimestamp(v: unknown): v is number {
+  return (
+    typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= MAX_EPOCH_MS
+  );
+}
+
+function validSlot(v: unknown): v is number {
+  return (
+    typeof v === "number" && Number.isInteger(v) && v >= 0 && v < QUESTS_PER_DAY
+  );
 }
 
 function parseOp(raw: unknown): Parsed<SyncOp> {
@@ -301,6 +367,53 @@ function parseOp(raw: unknown): Parsed<SyncOp> {
       if (!link.ok) return link;
       return { ok: true, value: { t: raw.t, link: link.value } };
     }
+    case "setQuests": {
+      const { day, quests } = raw;
+      if (typeof day !== "string" || !DAY_RE.test(day)) return fail("bad day");
+      if (
+        !Array.isArray(quests) ||
+        quests.length < 1 ||
+        quests.length > QUESTS_PER_DAY
+      ) {
+        return fail("bad quests");
+      }
+      const out: QuestRecord[] = [];
+      const slots = new Set<number>();
+      for (const item of quests as unknown[]) {
+        const rec = parseQuestRecord(item);
+        if (rec === null || rec.day !== day) return fail("bad quest record");
+        if (isRecord(item) && item.xp !== questXp(rec.kind)) {
+          return fail("bad quest xp");
+        }
+        if (slots.has(rec.slot)) return fail("duplicate slot");
+        slots.add(rec.slot);
+        out.push(rec);
+      }
+      return { ok: true, value: { t: raw.t, day, quests: out } };
+    }
+    case "completeQuest": {
+      const { day, slot, kind, at } = raw;
+      if (typeof day !== "string" || !DAY_RE.test(day)) return fail("bad day");
+      if (!validSlot(slot)) return fail("bad slot");
+      if (!(QUEST_KINDS as readonly unknown[]).includes(kind)) {
+        return fail("unknown quest kind");
+      }
+      if (!validTimestamp(at)) return fail("bad timestamp");
+      return {
+        ok: true,
+        value: { t: raw.t, day, slot, kind: kind as QuestKind, at },
+      };
+    }
+    case "unlockAchievement": {
+      const { id, at, xp } = raw;
+      const def = typeof id === "string" ? getAchievement(id) : undefined;
+      if (typeof id !== "string" || def === undefined) {
+        return fail("unknown achievement");
+      }
+      if (xp !== def.xp) return fail("bad achievement xp");
+      if (!validTimestamp(at)) return fail("bad timestamp");
+      return { ok: true, value: { t: raw.t, id, at, xp: def.xp } };
+    }
     default:
       return fail("unknown op");
   }
@@ -359,6 +472,12 @@ export function opKey(op: SyncOp): string {
       return "tz";
     case "setLink":
       return "link";
+    case "setQuests":
+      return `q:${op.day}`;
+    case "completeQuest":
+      return `qd:${op.day}:${op.slot}`;
+    case "unlockAchievement":
+      return `ach:${op.id}`;
   }
 }
 
@@ -416,6 +535,7 @@ export function seedOps(local: StoredData): SyncOp[] {
       });
     }
   }
+  ops.push(...progressOps(EMPTY_PROGRESS, local.progress));
   return ops;
 }
 
@@ -491,5 +611,40 @@ export function planJoin(
       }
     }
   }
+
+  const have = new Map(
+    server.progress.quests.map((q) => [`${q.day}|${q.slot}`, q]),
+  );
+  const missing: QuestRecord[] = [];
+  const completions: SyncOp[] = [];
+  for (const q of local.progress.quests) {
+    const theirs = have.get(`${q.day}|${q.slot}`);
+    if (theirs === undefined) missing.push(q);
+    else if (theirs.kind !== q.kind) kept++;
+    else if (q.doneAt !== null && theirs.doneAt === null) {
+      completions.push({
+        t: "completeQuest",
+        day: q.day,
+        slot: q.slot,
+        kind: q.kind,
+        at: q.doneAt,
+      });
+      added++;
+    }
+  }
+  const achievements = Object.fromEntries(
+    Object.entries(local.progress.achievements).filter(
+      ([id]) => !Object.hasOwn(server.progress.achievements, id),
+    ),
+  );
+  added += missing.length + Object.keys(achievements).length;
+  ops.push(
+    ...progressOps(EMPTY_PROGRESS, {
+      ...EMPTY_PROGRESS,
+      quests: missing,
+      achievements,
+    }),
+    ...completions,
+  );
   return { ops, added, kept };
 }

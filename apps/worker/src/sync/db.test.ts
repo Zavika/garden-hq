@@ -1,4 +1,5 @@
 import {
+  EMPTY_PROGRESS,
   applyOps,
   EMPTY_STORED_DATA,
   MAX_OPS_PER_REQUEST,
@@ -37,7 +38,7 @@ async function setup() {
   const state = async () => {
     const acc = await loadAccount(db, "a1");
     if (acc === null) throw new Error("no account");
-    return readState(db, acc);
+    return readState(db, acc, 100);
   };
   const apply = (ops: SyncOp[]) => applyOpsToDb(db, "a1", ops, 100);
   const count = async (table: string) =>
@@ -69,6 +70,7 @@ describe("sync db", () => {
       assignments: {},
       greenhouses: {},
       timeZone: "Europe/Warsaw",
+      progress: EMPTY_PROGRESS,
       revision: 0,
     });
   });

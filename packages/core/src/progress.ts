@@ -10,6 +10,7 @@ import {
   type QuestKind,
   type QuestRecord,
 } from "./quests";
+import type { SyncOp } from "./sync";
 
 const LEVELS = levelData as {
   maxLevel: number;
@@ -59,7 +60,7 @@ function parseParams(raw: unknown): Record<string, string | number> | null {
   return out;
 }
 
-function parseRecord(raw: unknown): QuestRecord | null {
+export function parseQuestRecord(raw: unknown): QuestRecord | null {
   const r = asRecord(raw);
   const { kind, day, slot, createdAt, expiresAt, doneAt, baseline } = r;
   if (!isKind(kind)) return null;
@@ -100,7 +101,7 @@ export function sanitizeProgress(raw: unknown): ProgressData {
   const seen = new Set<string>();
   const quests: QuestRecord[] = [];
   for (const item of asArray(r.quests)) {
-    const rec = parseRecord(item);
+    const rec = parseQuestRecord(item);
     if (rec === null) continue;
     const key = `${rec.day}|${rec.slot}`;
     if (seen.has(key)) continue;
@@ -254,4 +255,39 @@ export function summarizeProgress(
     doneToday,
     doneQuests: p.archive.doneQuests + done.length,
   };
+}
+
+/** Ops that turn `prev` into `next` (append-only; compaction produces none). */
+export function progressOps(prev: ProgressData, next: ProgressData): SyncOp[] {
+  if (prev === next) return [];
+  const ops: SyncOp[] = [];
+  const old = new Map(prev.quests.map((q) => [`${q.day}|${q.slot}`, q]));
+  const created = new Map<string, QuestRecord[]>();
+  for (const q of next.quests) {
+    const before = old.get(`${q.day}|${q.slot}`);
+    if (before === undefined) {
+      created.set(q.day, [...(created.get(q.day) ?? []), q]);
+    }
+  }
+  for (const [day, quests] of created)
+    ops.push({ t: "setQuests", day, quests });
+  for (const q of next.quests) {
+    const before = old.get(`${q.day}|${q.slot}`);
+    // A record created and done in the same diff also needs its completion.
+    if (q.doneAt !== null && (before === undefined || before.doneAt === null)) {
+      ops.push({
+        t: "completeQuest",
+        day: q.day,
+        slot: q.slot,
+        kind: q.kind,
+        at: q.doneAt,
+      });
+    }
+  }
+  for (const [id, a] of Object.entries(next.achievements)) {
+    if (!Object.hasOwn(prev.achievements, id)) {
+      ops.push({ t: "unlockAchievement", id, at: a.at, xp: a.xp });
+    }
+  }
+  return ops;
 }

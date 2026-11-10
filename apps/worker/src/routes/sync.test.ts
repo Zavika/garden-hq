@@ -1,3 +1,4 @@
+import { EMPTY_PROGRESS } from "@garden-hq/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MAX_OPS_PER_ACCOUNT_PER_DAY } from "../limits";
 import { FakeKV, makeHarness } from "../../test/helpers";
@@ -68,6 +69,7 @@ describe("sync routes", () => {
       assignments: {},
       greenhouses: {},
       timeZone: "Europe/Warsaw",
+      progress: EMPTY_PROGRESS,
       revision: 0,
     });
     const again = await h.request(
@@ -345,5 +347,72 @@ describe("sync routes", () => {
     expect(logs.join("\n")).not.toContain(code);
     expect(logs.join("\n")).not.toContain(hash);
     expect(kvSize(h)).toBe(before);
+  });
+
+  it("stores progress ops, bumps the ETag and rejects bad xp", async () => {
+    const h = harness();
+    const code = await newAccount(h);
+    const etag0 = (await h.request("/api/sync", auth(code))).headers.get(
+      "ETag",
+    );
+    const day = "2026-10-01";
+    const now = h.clock.now();
+    const rec = {
+      day,
+      slot: 0,
+      kind: "unlock_plot",
+      params: {},
+      baseline: null,
+      createdAt: now,
+      expiresAt: now + 1000,
+      doneAt: null,
+      xp: 40,
+    };
+    const res = await h.request(
+      "/api/sync",
+      postOps(code, [
+        { t: "setQuests", day, quests: [rec] },
+        { t: "completeQuest", day, slot: 0, kind: "unlock_plot", at: now },
+        { t: "unlockAchievement", id: "first_greenhouse", at: 5, xp: 50 },
+        { t: "unlockAchievement", id: "plots_6", at: 5, xp: 1 },
+      ]),
+    );
+    expect(((await res.json()) as { rejected?: number }).rejected).toBe(1);
+    const got = await h.request("/api/sync", auth(code));
+    expect(got.headers.get("ETag")).not.toBe(etag0);
+    const body = (await got.json()) as {
+      progress: {
+        quests: { doneAt: number | null }[];
+        achievements: Record<string, unknown>;
+      };
+    };
+    expect(body.progress.quests).toHaveLength(1);
+    expect(body.progress.quests[0]?.doneAt).toBe(now);
+    expect(Object.keys(body.progress.achievements)).toEqual([
+      "first_greenhouse",
+    ]);
+    const again = await h.request(
+      "/api/sync",
+      auth(code, { "If-None-Match": got.headers.get("ETag") ?? "" }),
+    );
+    expect(again.status).toBe(304);
+  });
+
+  it("drops progress ops outside the day window", async () => {
+    const h = harness();
+    const code = await newAccount(h);
+    const res = await h.request(
+      "/api/sync",
+      postOps(code, [
+        {
+          t: "completeQuest",
+          day: "2030-01-01",
+          slot: 0,
+          kind: "unlock_plot",
+          at: h.clock.now(),
+        },
+      ]),
+    );
+    expect(((await res.json()) as { rejected?: number }).rejected).toBe(1);
   });
 });

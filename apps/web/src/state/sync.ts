@@ -1,11 +1,13 @@
 import {
   applyOps,
+  EMPTY_PROGRESS,
   enqueueOp,
   isSyncCode,
   MAX_OPS_PER_REQUEST,
   normalizeSyncCode,
   parseOps,
   planJoin,
+  progressOps,
   seedOps,
   type StoredData as SyncedData,
   type SyncOp,
@@ -59,6 +61,8 @@ interface Persisted {
   pending: SyncOp[];
   etag: string | null;
   syncedAt: number | null;
+  /** Local progress has been uploaded (or merged by a join) once. */
+  progressSeeded: boolean;
 }
 
 function loadPersisted(backing: Backing | null): Persisted {
@@ -67,6 +71,7 @@ function loadPersisted(backing: Backing | null): Persisted {
     pending: [],
     etag: null,
     syncedAt: null,
+    progressSeeded: false,
   };
   if (backing === null) return empty;
   try {
@@ -84,6 +89,7 @@ function loadPersisted(backing: Backing | null): Persisted {
         typeof p.syncedAt === "number" && Number.isFinite(p.syncedAt)
           ? p.syncedAt
           : null,
+      progressSeeded: p.progressSeeded === true,
     };
   } catch {
     return empty;
@@ -101,7 +107,13 @@ function withoutRevision(state: SyncStateResponse): SyncedData {
     assignments: state.assignments,
     greenhouses: state.greenhouses,
     timeZone: state.timeZone,
+    progress: state.progress,
   };
+}
+
+/** How many user-visible items an op carries (setQuests holds several). */
+function opWeight(op: SyncOp): number {
+  return op.t === "setQuests" ? op.quests.length : 1;
 }
 
 function chunks<T>(items: readonly T[], size: number): T[][] {
@@ -218,6 +230,7 @@ export function createSyncEngine(opts: {
           pending: [...inFlight, ...persisted.pending],
           etag: persisted.etag,
           syncedAt: persisted.syncedAt,
+          progressSeeded: persisted.progressSeeded,
         }),
       );
     } catch {
@@ -238,6 +251,21 @@ export function createSyncEngine(opts: {
     }, debounceMs);
   }
 
+  /**
+   * Existing cloud-save users never ran seedOps/planJoin for progress: upload
+   * it once, before any pull can adopt the server's (empty) progress.
+   */
+  function seedProgressOnce(): void {
+    if (persisted.code === null || persisted.progressSeeded) return;
+    persisted.progressSeeded = true;
+    const ops = sendable(
+      progressOps(EMPTY_PROGRESS, base.getSnapshot().progress),
+    );
+    persisted.pending = ops.reduce(enqueueOp, persisted.pending);
+    save();
+    notify();
+  }
+
   function enqueue(op: SyncOp): void {
     if (persisted.code === null) return;
     if (sendable([op]).length === 0) return;
@@ -255,12 +283,13 @@ export function createSyncEngine(opts: {
 
   /** Rebases not-yet-acknowledged ops on top of the server state. */
   function applyServer(state: SyncStateResponse): void {
+    seedProgressOnce();
     const server = withoutRevision(state);
     const local = base.getSnapshot();
     const merged: LocalData = {
       ...server,
       link: server.link ?? local.link,
-      progress: local.progress,
+      progress: server.progress,
     };
     base.replaceAll(applyOps(merged, [...inFlight, ...persisted.pending]));
   }
@@ -360,6 +389,7 @@ export function createSyncEngine(opts: {
   function flush(): Promise<void> {
     const code = persisted.code;
     if (code === null || status === "unauthorized") return Promise.resolve();
+    seedProgressOnce();
     clearTimer();
     if (running !== null && runningEpoch === epoch) return running;
     const gen = epoch;
@@ -403,6 +433,17 @@ export function createSyncEngine(opts: {
 
   const storage: GardenStorage = {
     ...base,
+    setProgress: (next) => {
+      const before = base.getSnapshot().progress;
+      base.setProgress(next);
+      const after = base.getSnapshot().progress;
+      if (after === before) return;
+      // setProgress already committed the whole `next` (including compaction).
+      for (const op of progressOps(before, after)) {
+        enqueue(op);
+        if (joining) joinBuffer.push(op);
+      }
+    },
     setLink: wrap(base.setLink, (link) => ({ t: "setLink", link })),
     setAssignment: wrap(base.setAssignment, (plotId, cropId) => ({
       t: "setAssignment",
@@ -450,6 +491,8 @@ export function createSyncEngine(opts: {
     persisted.pending = [];
     persisted.etag = null;
     persisted.syncedAt = null;
+    // enableWithNewAccount (seedOps) and joinWithCode (planJoin) seed progress.
+    persisted.progressSeeded = true;
     status = "idle";
     error = null;
   }
@@ -493,8 +536,10 @@ export function createSyncEngine(opts: {
       const ops = sendable(plan.ops);
 
       let latest = first;
+      let serverRejected = 0;
       for (const part of chunks(ops, MAX_OPS_PER_REQUEST)) {
         latest = await api.postSync(code, part);
+        serverRejected += latest.state.rejected ?? 0;
       }
 
       // Everything succeeded: only now touch local state.
@@ -509,15 +554,19 @@ export function createSyncEngine(opts: {
           {
             ...finalState,
             link: finalState.link ?? currentLink,
-            progress: base.getSnapshot().progress,
+            progress: finalState.progress,
           },
           edits,
         ),
       );
       persisted.etag = latest.etag;
       persisted.syncedAt = now();
+      const kept = new Set(ops);
+      const droppedItems = plan.ops
+        .filter((op) => !kept.has(op))
+        .reduce((sum, op) => sum + opWeight(op), 0);
       summary = {
-        added: plan.added - (plan.ops.length - ops.length),
+        added: Math.max(0, plan.added - droppedItems - serverRejected),
         kept: plan.kept,
       };
       succeeded = true;
@@ -548,6 +597,7 @@ export function createSyncEngine(opts: {
     persisted.pending = [];
     persisted.etag = null;
     persisted.syncedAt = null;
+    persisted.progressSeeded = false;
     status = "signed_out";
     summary = null;
     error = null;

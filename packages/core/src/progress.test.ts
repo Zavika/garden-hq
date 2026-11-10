@@ -5,6 +5,7 @@ import {
   addQuests,
   compactProgress,
   completeQuest,
+  progressOps,
   sanitizeProgress,
   summarizeProgress,
   unlockAchievement,
@@ -315,5 +316,46 @@ describe("summarizeProgress", () => {
       today,
     );
     expect(s.streak).toBe(4);
+  });
+});
+
+describe("progressOps", () => {
+  const A = rec("2026-11-10", 0, false);
+  it("same reference and unchanged give nothing", () => {
+    const x = p({ quests: [A] });
+    expect(progressOps(x, x)).toEqual([]);
+    expect(progressOps(x, p({ quests: [A] }))).toEqual([]);
+  });
+  it("new records give one setQuests per day", () => {
+    const next = p({
+      quests: [A, rec("2026-11-10", 1, false), rec("2026-11-11", 0, false)],
+    });
+    const ops = progressOps(p({}), next);
+    expect(ops.filter((o) => o.t === "setQuests")).toHaveLength(2);
+  });
+  it("newly done gives completeQuest with kind", () => {
+    const done = { ...A, doneAt: 9 };
+    expect(progressOps(p({ quests: [A] }), p({ quests: [done] }))).toEqual([
+      { t: "completeQuest", day: A.day, slot: 0, kind: A.kind, at: 9 },
+    ]);
+  });
+  it("new achievements give unlockAchievement", () => {
+    const next = p({ achievements: { first_greenhouse: { at: 3, xp: 50 } } });
+    expect(progressOps(p({}), next)).toEqual([
+      { t: "unlockAchievement", id: "first_greenhouse", at: 3, xp: 50 },
+    ]);
+  });
+  it("compaction gives nothing", () => {
+    const prev = p({ quests: [A] });
+    const next = p({
+      quests: [],
+      archive: { xp: 25, doneQuests: 1, doneDays: [A.day] },
+    });
+    expect(progressOps(prev, next)).toEqual([]);
+  });
+  it("created and done in one diff gives setQuests then completeQuest", () => {
+    const done = { ...A, doneAt: 5 };
+    const ops = progressOps(p({}), p({ quests: [done] }));
+    expect(ops.map((o) => o.t)).toEqual(["setQuests", "completeQuest"]);
   });
 });

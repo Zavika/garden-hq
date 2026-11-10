@@ -1,5 +1,10 @@
 import {
   MAX_GREENHOUSES,
+  QUEST_KEEP_DAYS,
+  SKEW_MS,
+  addDays,
+  dayKey,
+  sanitizeProgress,
   type GreenhouseSave,
   type StoredLink,
   type SyncOp,
@@ -83,22 +88,73 @@ function parseCells(json: string): Record<string, string> {
   }
 }
 
+interface DbQuest {
+  day: string;
+  slot: number;
+  kind: string;
+  params: string;
+  baseline: number | null;
+  created_at: number;
+  expires_at: number;
+  done_at: number | null;
+}
+
+interface DbAchievement {
+  id: string;
+  unlocked_at: number;
+}
+
+function parseJson(json: string): unknown {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export async function readState(
   db: D1Database,
   account: AccountRow,
+  now: number,
 ): Promise<SyncStateResponse> {
-  const [assignRes, ghRes] = await db.batch([
-    db
-      .prepare(
-        "SELECT plot_id, crop_id FROM plot_assignments WHERE account_id = ?1",
-      )
-      .bind(account.id),
-    db
-      .prepare(
-        "SELECT plot_id, cells, last_watered_at, watering_interval_hours FROM greenhouses WHERE account_id = ?1",
-      )
-      .bind(account.id),
-  ]);
+  const cutoff = addDays(dayKey(now, account.tz), -QUEST_KEEP_DAYS);
+  const [assignRes, ghRes, questRes, achRes, archRes, daysRes] = await db.batch(
+    [
+      db
+        .prepare(
+          "SELECT plot_id, crop_id FROM plot_assignments WHERE account_id = ?1",
+        )
+        .bind(account.id),
+      db
+        .prepare(
+          "SELECT plot_id, cells, last_watered_at, watering_interval_hours FROM greenhouses WHERE account_id = ?1",
+        )
+        .bind(account.id),
+      db
+        .prepare(
+          "SELECT day, slot, kind, params, baseline, created_at, expires_at, done_at " +
+            "FROM quest_log WHERE account_id = ?1 AND day >= ?2 ORDER BY day, slot",
+        )
+        .bind(account.id, cutoff),
+      db
+        .prepare(
+          "SELECT id, unlocked_at FROM achievements WHERE account_id = ?1",
+        )
+        .bind(account.id),
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n, COALESCE(SUM(xp), 0) AS xp FROM quest_log " +
+            "WHERE account_id = ?1 AND day < ?2 AND done_at IS NOT NULL",
+        )
+        .bind(account.id, cutoff),
+      db
+        .prepare(
+          "SELECT DISTINCT day FROM quest_log WHERE account_id = ?1 AND day < ?2 " +
+            "AND done_at IS NOT NULL ORDER BY day DESC LIMIT 400",
+        )
+        .bind(account.id, cutoff),
+    ],
+  );
   const assignments: Record<string, string> = {};
   for (const r of (assignRes?.results ?? []) as DbAssignment[]) {
     assignments[r.plot_id] = r.crop_id;
@@ -111,6 +167,32 @@ export async function readState(
       wateringIntervalHours: r.watering_interval_hours,
     };
   }
+  const achievements: Record<string, { at: number }> = {};
+  for (const r of (achRes?.results ?? []) as DbAchievement[]) {
+    achievements[r.id] = { at: r.unlocked_at };
+  }
+  const arch = ((archRes?.results ?? []) as { n: number; xp: number }[])[0];
+  // sanitizeProgress drops malformed rows and re-derives xp from the data files.
+  const progress = sanitizeProgress({
+    quests: ((questRes?.results ?? []) as DbQuest[]).map((r) => ({
+      day: r.day,
+      slot: r.slot,
+      kind: r.kind,
+      params: parseJson(r.params),
+      baseline: r.baseline,
+      createdAt: r.created_at,
+      expiresAt: r.expires_at,
+      doneAt: r.done_at,
+    })),
+    achievements,
+    archive: {
+      xp: arch?.xp ?? 0,
+      doneQuests: arch?.n ?? 0,
+      doneDays: ((daysRes?.results ?? []) as { day: string }[])
+        .map((r) => r.day)
+        .reverse(),
+    },
+  });
   return {
     link: {
       name: account.mcName,
@@ -121,6 +203,7 @@ export async function readState(
     assignments,
     greenhouses,
     timeZone: account.tz,
+    progress,
     revision: account.revision,
   };
 }
@@ -202,6 +285,44 @@ function stmtFor(
           op.link.profileId,
           JSON.stringify(op.link.profiles),
         );
+    case "setQuests": {
+      // One multi-row INSERT (<= QUESTS_PER_DAY rows) keeps the op a single statement.
+      const params: (string | number | null)[] = [];
+      const values = op.quests.map((q, i) => {
+        params.push(
+          q.day,
+          q.slot,
+          q.kind,
+          JSON.stringify(q.params),
+          q.baseline,
+          q.createdAt,
+          q.expiresAt,
+          q.doneAt,
+          q.xp,
+        );
+        const b = 2 + i * 9;
+        const ph = Array.from({ length: 9 }, (_x, k) => `?${b + k}`);
+        return `(?1,${ph.join(",")})`;
+      });
+      return db
+        .prepare(
+          "INSERT OR IGNORE INTO quest_log (account_id, day, slot, kind, params, baseline, created_at, expires_at, done_at, xp) VALUES " +
+            values.join(","),
+        )
+        .bind(A, ...params);
+    }
+    case "completeQuest":
+      return db
+        .prepare(
+          "UPDATE quest_log SET done_at = ?4 WHERE account_id = ?1 AND day = ?2 AND slot = ?3 AND kind = ?5 AND done_at IS NULL",
+        )
+        .bind(A, op.day, op.slot, op.at, op.kind);
+    case "unlockAchievement":
+      return db
+        .prepare(
+          "INSERT OR IGNORE INTO achievements (account_id, id, unlocked_at, xp) VALUES (?1,?2,?3,?4)",
+        )
+        .bind(A, op.id, op.at, op.xp);
   }
 }
 
@@ -231,6 +352,53 @@ export async function applyOpsToDb(
   await db.batch(stmts);
 }
 
+/**
+ * Drops progress ops outside the accepted day window (QUEST_KEEP_DAYS back, one
+ * day ahead, in the account's zone). Timestamps beyond now + skew are clamped to
+ * `now` (a fast client clock must not cause a reject loop), not rejected.
+ * Other ops pass through untouched.
+ */
+export function filterProgressOps(
+  ops: readonly SyncOp[],
+  now: number,
+  timeZone: string,
+): { ops: SyncOp[]; rejected: number } {
+  const today = dayKey(now, timeZone);
+  const lo = addDays(today, -QUEST_KEEP_DAYS);
+  const hi = addDays(today, 1);
+  const limit = now + SKEW_MS;
+  const clamp = (t: number): number => (t > limit ? now : t);
+  const kept: SyncOp[] = [];
+  let rejected = 0;
+  for (const op of ops) {
+    switch (op.t) {
+      case "setQuests":
+        if (op.day >= lo && op.day <= hi) {
+          kept.push({
+            ...op,
+            quests: op.quests.map((q) => ({
+              ...q,
+              createdAt: clamp(q.createdAt),
+              doneAt: q.doneAt === null ? null : clamp(q.doneAt),
+            })),
+          });
+        } else rejected++;
+        break;
+      case "completeQuest":
+        if (op.day >= lo && op.day <= hi) {
+          kept.push({ ...op, at: clamp(op.at) });
+        } else rejected++;
+        break;
+      case "unlockAchievement":
+        kept.push({ ...op, at: clamp(op.at) });
+        break;
+      default:
+        kept.push(op);
+    }
+  }
+  return { ops: kept, rejected };
+}
+
 export async function deleteAccount(
   db: D1Database,
   accountId: string,
@@ -247,6 +415,10 @@ export async function deleteAccount(
       .prepare("DELETE FROM plot_assignments WHERE account_id = ?1")
       .bind(accountId),
     db.prepare("DELETE FROM greenhouses WHERE account_id = ?1").bind(accountId),
+    db.prepare("DELETE FROM quest_log WHERE account_id = ?1").bind(accountId),
+    db
+      .prepare("DELETE FROM achievements WHERE account_id = ?1")
+      .bind(accountId),
     db.prepare("DELETE FROM accounts WHERE id = ?1").bind(accountId),
   ]);
 }

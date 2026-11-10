@@ -10,7 +10,12 @@ import {
   secondsToNextUtcDay,
   utcDay,
 } from "../limits";
-import { applyOpsToDb, loadAccount, readState } from "../sync/db";
+import {
+  applyOpsToDb,
+  filterProgressOps,
+  loadAccount,
+  readState,
+} from "../sync/db";
 
 /** True when If-None-Match (a list, possibly weak `W/` validators) names `etag`. */
 function etagMatches(header: string | undefined, etag: string): boolean {
@@ -30,7 +35,7 @@ export function syncRoute(deps: AppDeps): Hono<{ Bindings: Env }> {
     c.header("ETag", etag);
     if (etagMatches(c.req.header("If-None-Match"), etag))
       return c.body(null, 304);
-    return c.json(await readState(c.env.DB, account));
+    return c.json(await readState(c.env.DB, account, deps.now()));
   });
 
   route.post("/sync", async (c) => {
@@ -39,15 +44,17 @@ export function syncRoute(deps: AppDeps): Hono<{ Bindings: Env }> {
     const parsed = parseOpsLenient(body.ops);
     if (!parsed.ok) throw new AppError("bad_request", parsed.error);
     const now = deps.now();
+    const filtered = filterProgressOps(parsed.ops, now, account.tz);
+    const rejected = parsed.rejected + filtered.rejected;
     const used = account.opsDay === utcDay(now) ? account.opsCount : 0;
-    if (used + parsed.ops.length > MAX_OPS_PER_ACCOUNT_PER_DAY) {
+    if (used + filtered.ops.length > MAX_OPS_PER_ACCOUNT_PER_DAY) {
       throw new AppError(
         "rate_limited",
         "Daily cloud save limit reached for this account — try again tomorrow.",
         secondsToNextUtcDay(now),
       );
     }
-    await applyOpsToDb(c.env.DB, account.id, parsed.ops, now);
+    await applyOpsToDb(c.env.DB, account.id, filtered.ops, now);
     // Re-read: another request may have bumped the revision in between.
     const fresh = await loadAccount(c.env.DB, account.id);
     if (fresh === null) {
@@ -55,10 +62,8 @@ export function syncRoute(deps: AppDeps): Hono<{ Bindings: Env }> {
     }
     c.header("Cache-Control", "no-store");
     c.header("ETag", `"${fresh.revision}"`);
-    const state = await readState(c.env.DB, fresh);
-    return c.json(
-      parsed.rejected > 0 ? { ...state, rejected: parsed.rejected } : state,
-    );
+    const state = await readState(c.env.DB, fresh, now);
+    return c.json(rejected > 0 ? { ...state, rejected } : state);
   });
 
   return route;

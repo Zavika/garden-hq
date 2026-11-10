@@ -29,7 +29,7 @@ pnpm --filter @garden-hq/worker exec wrangler d1 migrations apply DB --local
 pnpm --filter @garden-hq/worker exec wrangler d1 migrations apply DB --remote
 ```
 
-Migrations: `0001_init.sql` (accounts, plot_assignments, greenhouses) and `0002_ops_budget.sql` (per-account daily write counters `ops_day` / `ops_count`, and the `account_creations` log with an index on `created_at`). `0003_alerts.sql` adds `alert_settings`, `garden_snapshot` and `alert_log`. They are applied to the LOCAL database only. The remote database gets them from the "Apply D1 migrations" step in CI (deploy job, before "Deploy worker") on the first deploy from `main`.
+Migrations: `0001_init.sql` (accounts, plot_assignments, greenhouses) and `0002_ops_budget.sql` (per-account daily write counters `ops_day` / `ops_count`, and the `account_creations` log with an index on `created_at`). `0003_alerts.sql` adds `alert_settings`, `garden_snapshot` and `alert_log`. `0004_progress.sql` adds `quest_log` and `achievements` (gamification progress). They are applied to the LOCAL database only. The remote database gets them from the "Apply D1 migrations" step in CI (deploy job, before "Deploy worker") on the first deploy from `main`.
 
 **OWNER ACTION: the `CLOUDFLARE_API_TOKEN` GitHub secret must include the `D1 -> Edit` permission, otherwise the migration step fails and the deploy stops.**
 

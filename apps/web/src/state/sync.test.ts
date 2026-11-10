@@ -3,8 +3,10 @@ import {
   EMPTY_PROGRESS,
   EMPTY_STORED_DATA,
   MAX_OPS_PER_REQUEST,
+  questXp,
   seedOps,
   type ProgressData,
+  type QuestRecord,
   type StoredData,
   type SyncOp,
   type SyncStateResponse,
@@ -995,29 +997,267 @@ describe("SyncEngine", () => {
     });
   });
 
-  describe("local-only progress", () => {
+  describe("progress sync", () => {
     const PROGRESS: ProgressData = {
       ...EMPTY_PROGRESS,
       archive: { xp: 70, doneQuests: 3, doneDays: ["2026-01-01"] },
     };
-
-    it("survives a pull whose server state lacks progress", async () => {
-      const { engine, base, fake } = await signedInEngine();
-      base.setProgress(PROGRESS);
-      fake.setServer({ ...EMPTY_STORED_DATA, timeZone: "UTC" });
-      await engine.flush();
-      expect(base.getSnapshot().timeZone).toBe("UTC");
-      expect(base.getSnapshot().progress).toEqual(PROGRESS);
+    const quest = (
+      slot: number,
+      over: Partial<QuestRecord> = {},
+    ): QuestRecord => ({
+      day: "2026-11-10",
+      slot,
+      kind: "serve_visitors",
+      params: { target: 3 },
+      baseline: 0,
+      createdAt: 100,
+      expiresAt: 200,
+      doneAt: null,
+      xp: questXp(over.kind ?? "serve_visitors"),
+      ...over,
+    });
+    const withProgress = (p: Partial<ProgressData>): ProgressData => ({
+      ...EMPTY_PROGRESS,
+      ...p,
     });
 
-    it("survives joinWithCode", async () => {
+    it("a pull replaces the local archive with the server's", async () => {
+      const { engine, base, fake } = await signedInEngine();
+      base.setProgress(PROGRESS);
+      const serverProgress: ProgressData = {
+        ...EMPTY_PROGRESS,
+        archive: { xp: 500, doneQuests: 9, doneDays: ["2026-02-02"] },
+      };
+      fake.setServer({
+        ...EMPTY_STORED_DATA,
+        timeZone: "UTC",
+        progress: serverProgress,
+      });
+      await engine.flush();
+      expect(base.getSnapshot().timeZone).toBe("UTC");
+      expect(base.getSnapshot().progress).toEqual(serverProgress);
+    });
+
+    it("a join adopts the server archive", async () => {
+      const serverProgress: ProgressData = {
+        ...EMPTY_PROGRESS,
+        archive: { xp: 500, doneQuests: 9, doneDays: ["2026-02-02"] },
+      };
       const { engine, base } = setup({
-        server: { ...EMPTY_STORED_DATA, assignments: { beginner_1: "carrot" } },
+        server: { ...EMPTY_STORED_DATA, progress: serverProgress },
         local: { progress: PROGRESS },
       });
       await engine.joinWithCode(GROUPED);
-      expect(base.getSnapshot().assignments).toEqual({ beginner_1: "carrot" });
+      expect(base.getSnapshot().progress.archive).toEqual(
+        serverProgress.archive,
+      );
+    });
+
+    it("cloud save off keeps the local archive", () => {
+      const { base, engine } = setup();
+      engine.storage.setProgress(PROGRESS);
       expect(base.getSnapshot().progress).toEqual(PROGRESS);
+    });
+
+    it("emits setQuests, completeQuest and unlockAchievement", async () => {
+      const { engine, backing } = await signedInEngine();
+      const q = quest(0);
+      engine.storage.setProgress(withProgress({ quests: [q] }));
+      engine.storage.setProgress(
+        withProgress({ quests: [{ ...q, doneAt: 150 }] }),
+      );
+      engine.storage.setProgress(
+        withProgress({
+          quests: [{ ...q, doneAt: 150 }],
+          achievements: { first_greenhouse: { at: 5, xp: 50 } },
+        }),
+      );
+      const types = storedPending(backing).map((o) => o.t);
+      expect(types).toEqual([
+        "setQuests",
+        "completeQuest",
+        "unlockAchievement",
+      ]);
+    });
+
+    it("enqueues nothing for the same reference, compaction, or cloud off", async () => {
+      const { engine, base, backing } = await signedInEngine();
+      engine.storage.setProgress(base.getSnapshot().progress);
+      expect(storedPending(backing)).toEqual([]);
+      engine.storage.setProgress({
+        ...base.getSnapshot().progress,
+        archive: { xp: 5, doneQuests: 1, doneDays: ["2026-01-01"] },
+      });
+      expect(storedPending(backing)).toEqual([]);
+
+      const off = setup();
+      off.engine.storage.setProgress(withProgress({ quests: [quest(0)] }));
+      expect(off.base.getSnapshot().progress.quests).toHaveLength(1);
+      expect(off.engine.getSnapshot().pending).toBe(0);
+    });
+
+    it("enqueues nothing on start with unchanged progress", async () => {
+      const { engine, fake } = await signedInEngine({
+        local: { progress: withProgress({ quests: [quest(0)] }) },
+      });
+      const stop = engine.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fake.api.postSync).not.toHaveBeenCalled();
+      expect(engine.getSnapshot().pending).toBe(0);
+      stop();
+    });
+
+    it("adopts server quests and ignores conflicting pending ops", async () => {
+      const { engine, base, fake } = await signedInEngine();
+      const mine = quest(0);
+      engine.storage.setProgress(withProgress({ quests: [mine] }));
+      const theirs = quest(0, { kind: "unlock_plot" });
+      const extra = quest(1);
+      fake.setServer({
+        ...EMPTY_STORED_DATA,
+        progress: withProgress({ quests: [theirs, extra] }),
+      });
+      // Queued ops would normally post; rebase them on a fresh pull instead.
+      fake.api.postSync.mockImplementationOnce(async () => {
+        throw new ApiError("network", 0, "offline");
+      });
+      await engine.flush();
+      await engine.flush();
+      const quests = base.getSnapshot().progress.quests;
+      expect(quests.find((x) => x.slot === 0)?.kind).toBe("unlock_plot");
+      expect(quests.find((x) => x.slot === 1)).toBeDefined();
+    });
+
+    it("mismatching completeQuest does not complete the server record", async () => {
+      const { engine, base, fake } = await signedInEngine();
+      const mine = quest(0);
+      engine.storage.setProgress(withProgress({ quests: [mine] }));
+      engine.storage.setProgress(
+        withProgress({ quests: [{ ...mine, doneAt: 150 }] }),
+      );
+      fake.setServer({
+        ...EMPTY_STORED_DATA,
+        progress: withProgress({ quests: [quest(0, { kind: "unlock_plot" })] }),
+      });
+      fake.api.postSync.mockImplementationOnce(async () => {
+        throw new ApiError("network", 0, "offline");
+      });
+      await engine.flush();
+      await engine.flush();
+      expect(base.getSnapshot().progress.quests[0]?.doneAt).toBeNull();
+    });
+
+    it("join uploads local progress, server wins conflicts", async () => {
+      const done = quest(0, { doneAt: 150 });
+      const { engine, base, fake } = setup({
+        server: {
+          ...EMPTY_STORED_DATA,
+          progress: withProgress({ quests: [quest(1)] }),
+        },
+        local: {
+          progress: withProgress({
+            quests: [done, quest(1, { kind: "unlock_plot" })],
+            achievements: { first_greenhouse: { at: 5, xp: 50 } },
+          }),
+        },
+      });
+      await engine.joinWithCode(GROUPED);
+      const server = fake.server().progress;
+      expect(
+        server.quests.map((x) => `${x.slot}:${x.kind}:${x.doneAt}`),
+      ).toEqual(["1:serve_visitors:null", "0:serve_visitors:150"]);
+      expect(server.achievements.first_greenhouse).toBeDefined();
+      expect(base.getSnapshot().progress.quests).toHaveLength(2);
+      expect(engine.getSnapshot().summary).toEqual({ added: 2, kept: 1 });
+    });
+
+    describe("one-time seed for existing cloud-save users", () => {
+      const done = (): ProgressData =>
+        withProgress({
+          quests: [quest(0, { doneAt: 150 })],
+          achievements: { first_greenhouse: { at: 5, xp: 50 } },
+        });
+      const legacy = (progress: ProgressData) => {
+        const backing = fakeBacking();
+        backing.setItem(KEY, JSON.stringify({ code: CODE, pending: [] }));
+        return setup({ backing, local: { link: LINK, progress } });
+      };
+      const flag = (b: ReturnType<typeof fakeBacking>): unknown =>
+        (JSON.parse(b.data[KEY] ?? "{}") as { progressSeeded?: boolean })
+          .progressSeeded;
+
+      it("uploads local progress once and sets the flag", async () => {
+        const s = legacy(done());
+        await s.engine.flush();
+        const sent = s.api.postSync.mock.calls.flatMap((c) => c[1]);
+        expect(sent.map((o) => o.t).sort()).toEqual([
+          "completeQuest",
+          "setQuests",
+          "unlockAchievement",
+        ]);
+        expect(flag(s.backing as ReturnType<typeof fakeBacking>)).toBe(true);
+        expect(s.fake.server().progress.quests).toHaveLength(1);
+        s.api.postSync.mockClear();
+        await s.engine.flush();
+        expect(s.api.postSync).not.toHaveBeenCalled();
+      });
+
+      it("an empty-progress server does not wipe local progress on the first exchange", async () => {
+        const s = legacy(done());
+        await s.engine.flush();
+        expect(s.base.getSnapshot().progress.quests).toHaveLength(1);
+        expect(Object.keys(s.base.getSnapshot().progress.achievements)).toEqual(
+          ["first_greenhouse"],
+        );
+      });
+
+      it("enqueues nothing when local progress is empty", async () => {
+        const s = legacy(EMPTY_PROGRESS);
+        await s.engine.flush();
+        expect(s.api.postSync).not.toHaveBeenCalled();
+        expect(s.engine.getSnapshot().pending).toBe(0);
+      });
+
+      it("does not re-seed once the flag is set", async () => {
+        const backing = fakeBacking();
+        backing.setItem(
+          KEY,
+          JSON.stringify({ code: CODE, pending: [], progressSeeded: true }),
+        );
+        const s = setup({
+          backing,
+          local: { link: LINK, progress: done() },
+        });
+        await s.engine.flush();
+        expect(s.api.postSync).not.toHaveBeenCalled();
+      });
+    });
+
+    it("join summary subtracts ops the server rejected", async () => {
+      const { engine, fake } = setup({
+        server: EMPTY_STORED_DATA,
+        local: { progress: withProgress({ quests: [quest(0), quest(1)] }) },
+      });
+      const post = fake.api.postSync.getMockImplementation();
+      fake.api.postSync.mockImplementation(async (code, ops) => {
+        const r = await post?.(code, ops);
+        if (r === undefined) throw new Error("no impl");
+        return { ...r, state: { ...r.state, rejected: 1 } };
+      });
+      await engine.joinWithCode(GROUPED);
+      expect(engine.getSnapshot().summary?.added).toBe(1);
+    });
+
+    it("join summary counts quests inside one setQuests op", async () => {
+      const { engine } = setup({
+        server: EMPTY_STORED_DATA,
+        local: {
+          progress: withProgress({ quests: [quest(0), quest(1), quest(2)] }),
+        },
+      });
+      await engine.joinWithCode(GROUPED);
+      expect(engine.getSnapshot().summary).toEqual({ added: 3, kept: 0 });
     });
   });
 });

@@ -126,5 +126,12 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Balance numbers are guesses** - quest XP and targets (`data/quests.json`), the Player level curve (`data/player-levels.json`) and achievement XP (`data/achievements.json`) are proposals, not game facts.
 - **`discovered_greenhouse_crops` may contain non-mutation ids** - this would affect the mutation-count quests and the 40-mutation achievement tier (the 40 comes from `data/mutations.json`).
 - **`dayKey` with a non-zero `resetHour`** - the reset shift is a fixed number of hours, so on a DST-change day the rollover would be an hour off. `resetHour` is 0 today, so this is latent.
-- **Progress is local-only until milestone B** - quests, XP, streak and achievements live in localStorage; with Cloud save on they are preserved through sync but not yet uploaded.
+- **Progress syncs through Cloud save (Phase 4B)** - quests, achievements and the derived archive are stored in D1 (`quest_log`, `achievements`, migration 0004) via first-write-wins ops; the server accepts days in [today - `keepDays`, today + 1] in the account time zone.
 - **`contest_crop` timing** - see "Contest entries (Phase 4)": completion depends on when Hypixel writes `jacobs_contest.contests` entries.
+
+## Progress cloud save (Phase 4B, 2026-11-10)
+
+- **Archive is not uploadable** - the server computes `archive` for rows older than `keepDays`; a local archive (only exists after 14+ days of local-only use) is replaced on first pull/join, so that older history is lost.
+- **Cross-device quest race** - first `setQuests` for a day wins; a queued `completeQuest` only applies when the stored kind matches, so it cannot complete another device's different quest.
+- **D1 statement count** - the sync pull is a 6-statement batch; each op is one statement (setQuests is one multi-row INSERT). Real D1 behaviour for multi-row VALUES with a reused `?1` is only tested on the node:sqlite stand-in.
+- **Time zone change in the same POST** - progress ops in that batch are day-checked against the previously stored time zone; a rejected op is retried by the client.

@@ -2,7 +2,6 @@ import {
   applyOp,
   CELL_KEY_RE,
   DEFAULT_TIME_ZONE,
-  EMPTY_PROGRESS,
   EMPTY_STORED_DATA,
   getPlot,
   isPlaceableId,
@@ -26,12 +25,7 @@ export {
   type StoredLink,
 };
 
-/** Cloud-synced data plus device-local gamification progress. */
-export interface StoredData extends SyncedData {
-  progress: ProgressData;
-}
-
-const EMPTY: StoredData = { ...EMPTY_STORED_DATA, progress: EMPTY_PROGRESS };
+export type StoredData = SyncedData;
 
 const STORAGE_KEY = "garden-hq:v1";
 
@@ -54,7 +48,7 @@ export interface GardenStorage {
   markGreenhouseWatered(plotId: string, at: number): void;
   setWateringInterval(plotId: string, hours: number | null): void;
   setTimeZone(timeZone: string): void;
-  /** Local-only (not synced); no sync op. */
+  /** Replaces progress; the sync engine wrapper enqueues the diff. */
   setProgress(next: ProgressData): void;
   clearAll(): void;
   /** Swaps in sanitized data without any op side effects (sync engine). */
@@ -136,7 +130,7 @@ function parseGreenhouses(v: unknown): Record<string, GreenhouseSave> {
 }
 
 export function sanitize(raw: unknown): StoredData {
-  if (typeof raw !== "object" || raw === null) return EMPTY;
+  if (typeof raw !== "object" || raw === null) return EMPTY_STORED_DATA;
   const d = raw as Record<string, unknown>;
   return {
     link: parseLink(d.link),
@@ -148,13 +142,13 @@ export function sanitize(raw: unknown): StoredData {
 }
 
 function load(backing: Backing | null): StoredData {
-  if (backing === null) return EMPTY;
+  if (backing === null) return EMPTY_STORED_DATA;
   try {
     const raw = backing.getItem(STORAGE_KEY);
-    if (raw === null) return EMPTY;
+    if (raw === null) return EMPTY_STORED_DATA;
     return sanitize(JSON.parse(raw));
   } catch {
-    return EMPTY;
+    return EMPTY_STORED_DATA;
   }
 }
 
@@ -206,7 +200,7 @@ export function createGardenStorage(backing: Backing | null): GardenStorage {
     setProgress: (next) => {
       if (next !== data.progress) commit({ ...data, progress: next });
     },
-    clearAll: () => commit({ ...EMPTY }),
+    clearAll: () => commit({ ...EMPTY_STORED_DATA }),
     replaceAll: (next) => commit(sanitize(next)),
   };
 }
