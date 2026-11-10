@@ -5,7 +5,7 @@ import { ALERT_LOG_RETENTION_MS, INACTIVE_ACCOUNT_MS } from "../limits";
 import { applyOpsToDb, createAccount, deleteAccount } from "../sync/db";
 import {
   claimStmt,
-  countWebhooks,
+  countAlertingAccounts,
   loadAccountData,
   loadAlertSettings,
   loadDueAccounts,
@@ -20,6 +20,7 @@ import {
   setNextSyncStmt,
   verifyWebhookStmt,
 } from "./db";
+import { upsertSubscription } from "./push";
 
 const NOW = Date.UTC(2026, 9, 29, 12, 0, 0);
 const MIN = 60_000;
@@ -84,9 +85,10 @@ describe("alert settings", () => {
     expect(await loadAlertSettings(db, "a")).toEqual({
       webhook: HOOK,
       webhookOk: null,
+      pushOk: null,
       rules: null,
     });
-    expect(await countWebhooks(db)).toBe(1);
+    expect(await countAlertingAccounts(db)).toBe(1);
   });
   it("verifying marks it ok and seeds default rules only once", async () => {
     const db = makeD1();
@@ -134,7 +136,7 @@ describe("alert settings", () => {
       saveSnapshotStmt(db, "a", NOW, GARDEN),
       claimStmt(db, "a", "contest_soon", "k", NOW),
     ]);
-    await removeAlertSettings(db, "a");
+    await removeAlertSettings(db, "a", NOW);
     for (const t of ["alert_settings", "garden_snapshot", "alert_log"]) {
       expect(
         (
@@ -286,8 +288,23 @@ describe("deleteAccount", () => {
       saveSnapshotStmt(db, "a", NOW, GARDEN),
       claimStmt(db, "a", "t", "k", NOW),
     ]);
+    await upsertSubscription(
+      db,
+      "a",
+      {
+        endpoint: "https://fcm.googleapis.com/fcm/send/1",
+        p256dh: "p",
+        auth: "a",
+      },
+      NOW,
+    );
     await deleteAccount(db, "a");
-    for (const t of ["alert_settings", "garden_snapshot", "alert_log"]) {
+    for (const t of [
+      "alert_settings",
+      "garden_snapshot",
+      "alert_log",
+      "push_subscriptions",
+    ]) {
       expect(
         (
           await db

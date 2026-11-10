@@ -48,6 +48,13 @@ const put = (
 ) =>
   h.request(path, { method: "PUT", headers: auth, body: JSON.stringify(body) });
 
+const NO_PUSH = {
+  available: false,
+  publicKey: null,
+  devices: 0,
+  pushOk: null,
+};
+
 describe("auth", () => {
   it.each([
     ["GET", "/api/alerts"],
@@ -74,6 +81,7 @@ describe("GET /api/alerts", () => {
       webhookLast4: null,
       webhookOk: null,
       rules: null,
+      push: NO_PUSH,
     });
   });
 });
@@ -90,6 +98,7 @@ describe("PUT /api/alerts/webhook", () => {
       webhookLast4: "-123",
       webhookOk: null,
       rules: null,
+      push: NO_PUSH,
     });
     expect(text).not.toContain("abcDEF");
     expect(
@@ -133,6 +142,40 @@ describe("PUT /api/alerts/webhook", () => {
     ).toBe(200);
     expect(
       (await put(h, auth, "/api/alerts/webhook", { url: `${HOOK}x` })).status,
+    ).toBe(200);
+  });
+});
+
+describe("capacity and push", () => {
+  it("lets an account that already has a push subscription add a webhook when full", async () => {
+    const h = harness();
+    const auth = await signUp(h);
+    const row = await h.env.DB.prepare("SELECT id FROM accounts").first<{
+      id: string;
+    }>();
+    for (let i = 0; i < MAX_ALERTING_ACCOUNTS; i++) {
+      await createAccount(h.env.DB, {
+        id: `fill${i}`,
+        codeHash: `fill-hash-${i}`,
+        link: LINK,
+        now: h.clock.now(),
+      });
+      await h.env.DB.prepare(
+        "INSERT INTO alert_settings (account_id, discord_webhook, updated_at) VALUES (?1, ?2, 0)",
+      )
+        .bind(`fill${i}`, HOOK)
+        .run();
+    }
+    expect(
+      (await put(h, auth, "/api/alerts/webhook", { url: HOOK })).status,
+    ).toBe(429);
+    await h.env.DB.prepare(
+      "INSERT INTO push_subscriptions (account_id, endpoint, p256dh, auth, created_at) VALUES (?1, 'https://fcm.googleapis.com/x', 'p', 'a', 0)",
+    )
+      .bind(row?.id ?? "")
+      .run();
+    expect(
+      (await put(h, auth, "/api/alerts/webhook", { url: HOOK })).status,
     ).toBe(200);
   });
 });
@@ -185,6 +228,7 @@ describe("POST /api/alerts/test", () => {
       test: "failed",
       webhookOk: null,
       rules: null,
+      push: NO_PUSH,
     });
   });
 });
@@ -263,6 +307,7 @@ describe("DELETE /api/alerts/webhook", () => {
       webhookLast4: null,
       webhookOk: null,
       rules: null,
+      push: NO_PUSH,
     });
   });
 });

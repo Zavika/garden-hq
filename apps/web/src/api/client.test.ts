@@ -320,3 +320,74 @@ describe("alerts client", () => {
     await expect(c.deleteWebhook("CODE")).resolves.toBeUndefined();
   });
 });
+
+describe("push client", () => {
+  const sub = {
+    endpoint: "https://push.example/e",
+    keys: { p256dh: "p", auth: "a" },
+  };
+
+  it("PUTs the subscription and returns the state", async () => {
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
+    const c = createApiClient(
+      (async (input: RequestInfo | URL, init?: RequestInit) => {
+        calls.push({ url: String(input), init });
+        return new Response(JSON.stringify({ push: { devices: 1 } }), {
+          status: 200,
+        });
+      }) as typeof fetch,
+      "https://api.test",
+    );
+    await expect(c.putPush("CODE", sub)).resolves.toEqual({
+      push: { devices: 1 },
+    });
+    expect(calls[0]?.init?.method).toBe("PUT");
+    expect(calls[0]?.url).toBe("https://api.test/api/alerts/push");
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
+      subscription: sub,
+    });
+  });
+
+  it("deletePush sends the endpoint and accepts a 204", async () => {
+    const calls: { init: RequestInit | undefined }[] = [];
+    const c = createApiClient(
+      (async (_i: RequestInfo | URL, init?: RequestInit) => {
+        calls.push({ init });
+        return new Response(null, { status: 204 });
+      }) as typeof fetch,
+      "https://api.test",
+    );
+    await expect(c.deletePush("CODE", sub.endpoint)).resolves.toBeUndefined();
+    expect(calls[0]?.init?.method).toBe("DELETE");
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
+      endpoint: sub.endpoint,
+    });
+  });
+
+  it("deletePush surfaces an error status", async () => {
+    const c = createApiClient(
+      (async () =>
+        new Response(JSON.stringify({ error: { code: "unauthorized" } }), {
+          status: 401,
+        })) as typeof fetch,
+      "https://api.test",
+    );
+    await expect(c.deletePush("CODE", sub.endpoint)).rejects.toBeInstanceOf(
+      ApiError,
+    );
+  });
+
+  it("testPush POSTs and returns the outcome", async () => {
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
+    const c = createApiClient(
+      (async (input: RequestInfo | URL, init?: RequestInit) => {
+        calls.push({ url: String(input), init });
+        return new Response(JSON.stringify({ test: "sent" }), { status: 200 });
+      }) as typeof fetch,
+      "https://api.test",
+    );
+    await expect(c.testPush("CODE")).resolves.toMatchObject({ test: "sent" });
+    expect(calls[0]?.init?.method).toBe("POST");
+    expect(calls[0]?.url).toBe("https://api.test/api/alerts/push/test");
+  });
+});

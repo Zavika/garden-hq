@@ -16,4 +16,10 @@ export interface Env {
   RATE_LIMITER?: RateLimiterBinding;
   /** Stricter limiter for requests presenting a sync code; KV counter used when absent (dev only). */
   CODE_LIMITER?: RateLimiterBinding;
+  /** Secret — base64url 65-byte VAPID public point (Web Push). */
+  VAPID_PUBLIC_KEY?: string;
+  /** Secret — base64url 32-byte VAPID private scalar (Web Push). */
+  VAPID_PRIVATE_KEY?: string;
+  /** Plain var — https: URL (or mailto:) identifying the sender; defaults to WEB_ORIGIN. */
+  VAPID_SUBJECT?: string;
 }

@@ -444,6 +444,9 @@ export async function deleteAccount(
       .prepare("DELETE FROM garden_snapshot WHERE account_id = ?1")
       .bind(accountId),
     db
+      .prepare("DELETE FROM push_subscriptions WHERE account_id = ?1")
+      .bind(accountId),
+    db
       .prepare("DELETE FROM alert_settings WHERE account_id = ?1")
       .bind(accountId),
     db

@@ -1,3 +1,6 @@
 # Copy to .dev.vars (gitignored) for `wrangler dev`.
 HYPIXEL_API_KEY=your-dev-key-from-developer.hypixel.net
 ENVIRONMENT=dev
+# VAPID_PUBLIC_KEY=
+# VAPID_PRIVATE_KEY=
+# VAPID_SUBJECT=https://your-site.example

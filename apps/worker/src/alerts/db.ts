@@ -18,12 +18,15 @@ export interface AlertSettingsRow {
   webhook: string | null;
   /** null = never tested. */
   webhookOk: boolean | null;
+  /** null = never tested; true = a test push went through. */
+  pushOk: boolean | null;
   rules: AlertRules | null;
 }
 
 interface DbSettings {
   discord_webhook: string | null;
   webhook_ok: number | null;
+  push_ok: number | null;
   rules: string | null;
 }
 
@@ -43,7 +46,7 @@ export async function loadAlertSettings(
 ): Promise<AlertSettingsRow | null> {
   const row = await db
     .prepare(
-      "SELECT discord_webhook, webhook_ok, rules FROM alert_settings WHERE account_id = ?1",
+      "SELECT discord_webhook, webhook_ok, push_ok, rules FROM alert_settings WHERE account_id = ?1",
     )
     .bind(accountId)
     .first<DbSettings>();
@@ -51,14 +54,17 @@ export async function loadAlertSettings(
   return {
     webhook: row.discord_webhook,
     webhookOk: row.webhook_ok === null ? null : row.webhook_ok === 1,
+    pushOk: row.push_ok === null ? null : row.push_ok === 1,
     rules: parseStoredRules(row.rules),
   };
 }
 
-export async function countWebhooks(db: D1Database): Promise<number> {
+/** Accounts with any alert channel: a webhook or at least one push subscription. */
+export async function countAlertingAccounts(db: D1Database): Promise<number> {
   const row = await db
     .prepare(
-      "SELECT COUNT(*) AS n FROM alert_settings WHERE discord_webhook IS NOT NULL",
+      "SELECT COUNT(*) AS n FROM alert_settings s WHERE s.discord_webhook IS NOT NULL " +
+        "OR EXISTS (SELECT 1 FROM push_subscriptions p WHERE p.account_id = s.account_id)",
     )
     .first<{ n: number }>();
   return row?.n ?? 0;
@@ -137,24 +143,41 @@ export async function saveRules(
   ]);
 }
 
+/**
+ * Webhook removal. Push survives it: when the account still has subscriptions the
+ * webhook is cleared but the row, rules, snapshot and log stay; otherwise everything goes.
+ */
 export async function removeAlertSettings(
   db: D1Database,
   accountId: string,
+  now: number,
 ): Promise<void> {
+  const noSubs =
+    "NOT EXISTS (SELECT 1 FROM push_subscriptions p WHERE p.account_id = ?1)";
   await db.batch([
-    db.prepare("DELETE FROM alert_log WHERE account_id = ?1").bind(accountId),
     db
-      .prepare("DELETE FROM garden_snapshot WHERE account_id = ?1")
+      .prepare(
+        `UPDATE alert_settings SET discord_webhook = NULL, webhook_ok = NULL, updated_at = ?2 WHERE account_id = ?1 AND NOT ${noSubs}`,
+      )
+      .bind(accountId, now),
+    db
+      .prepare(`DELETE FROM alert_log WHERE account_id = ?1 AND ${noSubs}`)
       .bind(accountId),
     db
-      .prepare("DELETE FROM alert_settings WHERE account_id = ?1")
+      .prepare(
+        `DELETE FROM garden_snapshot WHERE account_id = ?1 AND ${noSubs}`,
+      )
+      .bind(accountId),
+    db
+      .prepare(`DELETE FROM alert_settings WHERE account_id = ?1 AND ${noSubs}`)
       .bind(accountId),
   ]);
 }
 
 export interface DueAccount {
   accountId: string;
-  webhook: string;
+  /** null for a push-only account. */
+  webhook: string | null;
   rules: string | null;
   profileId: string;
   tz: string;
@@ -164,7 +187,7 @@ export interface DueAccount {
 
 interface DbDue {
   account_id: string;
-  discord_webhook: string;
+  discord_webhook: string | null;
   rules: string | null;
   profile_id: string;
   tz: string;
@@ -185,12 +208,13 @@ export async function loadDueAccounts(
 ): Promise<DueAccount[]> {
   const res = await db
     .prepare(
-      "SELECT s.account_id, s.discord_webhook, s.rules, a.profile_id, a.tz, " +
+      "SELECT s.account_id, CASE WHEN s.webhook_ok = 1 THEN s.discord_webhook END AS discord_webhook, s.rules, a.profile_id, a.tz, " +
         "g.json AS snapshot_json, g.fetched_at AS snapshot_fetched_at " +
         "FROM alert_settings s " +
         "JOIN accounts a ON a.id = s.account_id " +
         "LEFT JOIN garden_snapshot g ON g.account_id = s.account_id " +
-        "WHERE s.webhook_ok = 1 AND s.discord_webhook IS NOT NULL " +
+        "WHERE ((s.webhook_ok = 1 AND s.discord_webhook IS NOT NULL) " +
+        "OR (s.push_ok = 1 AND EXISTS (SELECT 1 FROM push_subscriptions p WHERE p.account_id = s.account_id))) " +
         "AND s.rules LIKE '%\"enabled\":true%' " +
         "AND s.next_sync_at <= ?1 AND a.last_seen_at > ?2 " +
         "ORDER BY s.next_sync_at ASC, s.account_id ASC LIMIT ?3",

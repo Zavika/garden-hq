@@ -7,7 +7,8 @@ import {
   type AlertType,
 } from "@garden-hq/core";
 import { useEffect, useState } from "react";
-import { api, ApiError, type AlertsApi } from "../api/client";
+import { api, ApiError, type AlertsApi, type PushApi } from "../api/client";
+import { PushSection } from "./PushSection";
 import { useSyncSnapshot } from "../state/SyncProvider";
 
 const LABELS: Record<
@@ -118,12 +119,18 @@ function RuleRow({
   );
 }
 
-export function AlertsSection({ client = api }: { client?: AlertsApi }) {
+export function AlertsSection({
+  client = api,
+  pushClient = api,
+}: {
+  client?: AlertsApi;
+  pushClient?: PushApi;
+}) {
   const { code } = useSyncSnapshot();
   if (code === null) {
     return (
       <section>
-        <h2>Discord alerts</h2>
+        <h2>Alerts</h2>
         <p className="muted">
           Turn on Cloud save to get Discord alerts: the server needs your data
           to watch your Garden.
@@ -131,10 +138,25 @@ export function AlertsSection({ client = api }: { client?: AlertsApi }) {
       </section>
     );
   }
-  return <AlertsBody key={code} code={code} client={client} />;
+  return (
+    <AlertsBody
+      key={code}
+      code={code}
+      client={client}
+      pushClient={pushClient}
+    />
+  );
 }
 
-function AlertsBody({ code, client }: { code: string; client: AlertsApi }) {
+function AlertsBody({
+  code,
+  client,
+  pushClient,
+}: {
+  code: string;
+  client: AlertsApi;
+  pushClient: PushApi;
+}) {
   const [state, setState] = useState<AlertsStateResponse | null>(null);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -189,23 +211,33 @@ function AlertsBody({ code, client }: { code: string; client: AlertsApi }) {
   const remove = () =>
     run(async () => {
       await client.deleteWebhook(code);
-      setState({
+      setState((prev) => ({
         hasWebhook: false,
         webhookLast4: null,
         webhookOk: null,
-        rules: null,
-      });
+        rules: prev?.push.devices ? prev.rules : null,
+        push: prev?.push ?? {
+          available: false,
+          publicKey: null,
+          devices: 0,
+          pushOk: null,
+        },
+      }));
       setConfirming(false);
     });
 
   const rules = state?.rules ?? null;
+  const rulesUnlocked =
+    state !== null && (state.webhookOk === true || state.push.pushOk === true);
 
   return (
     <section>
-      <h2>Discord alerts</h2>
+      <h2>Alerts</h2>
       {state === null && message === null ? (
         <p className="muted">Loading…</p>
       ) : null}
+
+      {state !== null ? <h3>Discord</h3> : null}
 
       {state !== null && !state.hasWebhook ? (
         <>
@@ -248,17 +280,6 @@ function AlertsBody({ code, client }: { code: string; client: AlertsApi }) {
           <button type="button" disabled={busy} onClick={() => void sendTest()}>
             Send test message
           </button>
-          {state.webhookOk === true && rules !== null
-            ? ALERT_TYPES.map((type) => (
-                <RuleRow
-                  key={ruleKey(type, rules)}
-                  type={type}
-                  rules={rules}
-                  busy={busy}
-                  onChange={(patch) => void changeRule(type, patch)}
-                />
-              ))
-            : null}
           {confirming ? (
             <>
               <p>Remove the webhook and stop all Discord alerts?</p>
@@ -283,6 +304,30 @@ function AlertsBody({ code, client }: { code: string; client: AlertsApi }) {
             </button>
           )}
         </>
+      ) : null}
+
+      {state !== null ? (
+        <PushSection
+          code={code}
+          push={state.push}
+          client={pushClient}
+          onState={setState}
+        />
+      ) : null}
+
+      {state !== null && rulesUnlocked && rules !== null ? (
+        <div className="alert-rules">
+          <h3>Alert rules</h3>
+          {ALERT_TYPES.map((type) => (
+            <RuleRow
+              key={ruleKey(type, rules)}
+              type={type}
+              rules={rules}
+              busy={busy}
+              onChange={(patch) => void changeRule(type, patch)}
+            />
+          ))}
+        </div>
       ) : null}
 
       {message !== null ? <p role="status">{message}</p> : null}

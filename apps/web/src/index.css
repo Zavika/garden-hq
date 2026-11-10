@@ -867,3 +867,14 @@ label {
   color: var(--muted);
   font-size: 0.75rem;
 }
+
+.push-section,
+.alert-rules {
+  margin-top: 1rem;
+}
+
+.push-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

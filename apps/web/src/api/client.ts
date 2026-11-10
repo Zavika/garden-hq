@@ -8,6 +8,7 @@ import type {
   LinkResponse,
   MayorResponse,
   MemberResponse,
+  PushTestResponse,
   AccountCreateResponse,
   StoredLink,
   SyncOp,
@@ -273,6 +274,28 @@ export function createApiClient(
       request<AlertTestResponse>("POST", "/api/alerts/test", {
         headers: bearer(code),
       }),
+    putPush: (
+      code: string,
+      subscription: {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+      },
+    ) =>
+      request<AlertsStateResponse>("PUT", "/api/alerts/push", {
+        headers: bearer(code),
+        body: { subscription },
+      }),
+    deletePush: async (code: string, endpoint: string): Promise<void> => {
+      const res = await send("DELETE", "/api/alerts/push", {
+        headers: bearer(code),
+        body: { endpoint },
+      });
+      if (!res.ok) throw await toApiError(res);
+    },
+    testPush: (code: string) =>
+      request<PushTestResponse>("POST", "/api/alerts/push/test", {
+        headers: bearer(code),
+      }),
     putRules: (code: string, rules: Record<string, Record<string, unknown>>) =>
       request<AlertsStateResponse>("PUT", "/api/alerts/rules", {
         headers: bearer(code),
@@ -289,6 +312,11 @@ export type SyncApi = Pick<
 export type AlertsApi = Pick<
   ReturnType<typeof createApiClient>,
   "getAlerts" | "putWebhook" | "deleteWebhook" | "testWebhook" | "putRules"
+>;
+
+export type PushApi = Pick<
+  ReturnType<typeof createApiClient>,
+  "getAlerts" | "putPush" | "deletePush" | "testPush"
 >;
 
 export const api = createApiClient();

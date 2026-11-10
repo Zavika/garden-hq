@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALERT_BOUNDS,
   alertParam,
+  alertText,
   defaultAlertRules,
   deriveAlerts,
   nextSyncAt,
@@ -514,5 +515,42 @@ describe("streak_risk", () => {
       ).filter((c) => c.type === "streak_risk").length;
     expect(at(2)).toBe(0);
     expect(at(3)).toBe(1);
+  });
+});
+
+describe("alertText", () => {
+  const base = {
+    type: "contest_soon" as const,
+    key: "k",
+    title: "T",
+    detail: "D",
+    dueAt: null,
+  };
+  it("carries title, detail and how stale the data is", () => {
+    expect(alertText(base, 1_000_000, 1_000_000 + 3 * 60_000)).toEqual({
+      title: "T",
+      detail: "D",
+      footer: "Last synced 3 min ago · Garden HQ",
+    });
+  });
+  it("rounds minutes and never goes negative", () => {
+    expect(alertText(base, 0, 89_000).footer).toBe(
+      "Last synced 1 min ago · Garden HQ",
+    );
+    expect(alertText(base, 0, 91_000).footer).toBe(
+      "Last synced 2 min ago · Garden HQ",
+    );
+    expect(alertText(base, 500_000, 0).footer).toBe(
+      "Last synced 0 min ago · Garden HQ",
+    );
+  });
+  it("truncates the title to 256 and the detail to 2000", () => {
+    const t = alertText(
+      { ...base, title: "x".repeat(300), detail: "y".repeat(2500) },
+      0,
+      0,
+    );
+    expect(t.title).toHaveLength(256);
+    expect(t.detail).toHaveLength(2000);
   });
 });

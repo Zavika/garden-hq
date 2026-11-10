@@ -1,4 +1,4 @@
-import type { AlertCandidate } from "@garden-hq/core";
+import { alertText, type AlertCandidate } from "@garden-hq/core";
 import { discardBody } from "../http";
 import { logUpstream } from "../log";
 
@@ -35,11 +35,11 @@ export function alertEmbed(
   syncedAt: number,
   now: number,
 ): DiscordEmbed {
-  const minutes = Math.max(0, Math.round((now - syncedAt) / 60_000));
+  const text = alertText(candidate, syncedAt, now);
   return {
-    title: candidate.title.slice(0, 256),
-    description: candidate.detail.slice(0, 2000),
-    footer: { text: `Last synced ${minutes} min ago · Garden HQ` },
+    title: text.title,
+    description: text.detail,
+    footer: { text: text.footer },
   };
 }
 

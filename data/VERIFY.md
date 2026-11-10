@@ -114,6 +114,11 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Hypixel `last_save` freshness** — `composter_data.last_save` drives the fuel forecast; whether it advances while the player is offline from SkyBlock is unverified (spec "Open verification items").
 - **Snapshot reuse** — a stored garden under 5 minutes old is reused, so in the 5-minute fast mode visitor alerts can lag up to ~10 minutes. Accepted for the free plan's Hypixel call budget.
 
+## Web push cron (Phase 5E, 2026-11-10)
+
+- **Push cap vs capacity** - `MAX_PUSH_SENDS_PER_RUN` (12) is below 8 alerting accounts x 3 devices = 24 pushes in a contest surge. Push-only accounts past the cap are delayed one tick (5 min), so a 5-minute-lead contest alert can arrive late. On accounts with a webhook, a capped device loses the alert. The cap is a CPU guess (about 0.2-0.4 ms per push estimated, 12 pushes about 3-5 ms of the 10 ms free limit); measure `cpuTime` with `wrangler tail` after deploy before raising it.
+- **401/403 from a push service** - treated as rejected, not dead, so devices left over from a VAPID key rotation are never auto-removed; users must turn push off and on again.
+
 ## Contest entries (Phase 4)
 
 - `member.jacobs_contest.contests` is keyed `"<sbYear>:<month>_<day>:<CROP_ID>"` with `{ collected, ... }`; the key format was seen on one real profile.
@@ -196,3 +201,25 @@ Verified 2026-11-10 against the live `https://api.hypixel.net/v2/skyblock/bazaar
 ## Bazaar route CPU, measured on production (2026-11-10, after Phase 5C)
 
 `wrangler tail` while requesting `GET /api/bazaar` three times: **cold cache 11 ms CPU** (163 ms wall, upstream fetch 8 ms), then **3 ms** and **0 ms** from the KV cache (6-7 ms wall). The request outcome was `ok` (no resource-limit error), but 11 ms is above the 10 ms free-plan CPU limit, so an occasional cold request can be at risk. The cold path runs once per 10 minutes at most (KV TTL). If errors (Worker exceeded resource limits / 1102) ever show up for `/api/bazaar`, options in order: shrink the wanted-product list, move the fetch to the cron (which already tolerates longer runs), or fetch the public endpoint (CORS `*`) directly from the browser.
+
+## Web push storage (Phase 5E, 2026-11-10)
+
+- **Endpoint allowlist:** push endpoints are only accepted for `fcm.googleapis.com`, `push.services.mozilla.com`, `push.apple.com` and `notify.windows.com` (exact or subdomain). VERIFY: these cover Chrome/Edge/Opera/Brave (FCM), Firefox, Safari/iOS home-screen apps (`web.push.apple.com`) and Windows (WNS); a browser using another push service would be rejected at subscribe time.
+- **Key sizes:** `p256dh` must decode to 65 bytes starting 0x04 (uncompressed P-256 point) and `auth` to 16 bytes (RFC 8291 / Push API). Keys are stored as the base64url strings the browser sends.
+- **Device cap:** 3 subscriptions per account, newest kept. Re-subscribing an existing endpoint refreshes its `created_at`.
+- **Orphan rows:** a push-only account whose subscription is deleted by the cron on 404/410 (via `deleteSubscriptionStmt`) keeps an empty `alert_settings` row (not counted, not due) until the account is deleted; the user-facing `deleteSubscription` cleans it up.
+
+## Web push (Phase 5E)
+
+Manual device checklist (cannot be unit tested; do on real hardware):
+
+- iPhone: Safari, Share, Add to Home Screen, open from the icon (not Safari), Settings, Push, Turn on push on this device, allow, press Send test notification: it arrives. In Safari (not installed) the section must say "Add to Home Screen first".
+- Android Chrome and desktop Chrome/Firefox: same flow; the test notification arrives and tapping it focuses the app.
+- With an update waiting (update toast showing), the push section must say "Reload to update first" instead of offering Turn on.
+- Revoke the permission in browser/system settings and reopen Settings: the UI shows the blocked message.
+- Turn off: the server device count in Settings drops.
+- Lower a threshold (for example a 120 minute contest lead) and confirm a real alert arrives once on every enrolled device.
+- 410 cleanup: uninstall the PWA, send a test from another device: the dead device is removed.
+- VERIFY: iOS delivery with the app closed and notification tap navigation (`WindowClient.navigate` support differs by browser; on failure the window is only focused).
+
+Owner setup checklist: run `pnpm vapid:generate`; `wrangler secret put VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`; optionally add `VAPID_SUBJECT = "https://..."` under `[vars]` in `apps/worker/wrangler.toml` (defaults to `WEB_ORIGIN`); check `GET /api/alerts` shows `push.available: true`. Details in `apps/worker/README.md` ("Web push setup").

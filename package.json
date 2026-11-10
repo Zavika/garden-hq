@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "sprites:check": "pnpm --filter @garden-hq/web sprites:check",
     "format": "prettier --check .",
-    "format:write": "prettier --write ."
+    "format:write": "prettier --write .",
+    "vapid:generate": "pnpm --filter @garden-hq/worker vapid:generate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -72,8 +72,21 @@ export interface AlertsStateResponse {
   webhookOk: boolean | null;
   /** null until the first successful test message. */
   rules: AlertRules | null;
+  push: {
+    /** false until the server has VAPID keys configured. */
+    available: boolean;
+    /** VAPID public key (base64url) for subscribing; null when unavailable. */
+    publicKey: string | null;
+    /** Number of subscribed devices (0-3). */
+    devices: number;
+    /** null until a test push was sent; true once one went through. */
+    pushOk: boolean | null;
+  };
 }
 
 export interface AlertTestResponse extends AlertsStateResponse {
   test: "sent" | "failed" | "dead";
 }
+
+/** POST /api/alerts/push/test: "dead" means every device was gone and has been removed. */
+export type PushTestResponse = AlertTestResponse;

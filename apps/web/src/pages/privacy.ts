@@ -37,6 +37,10 @@ export const SERVER_TABLES: readonly StoredTable[] = [
     what: "Your Discord webhook URL and which alerts are on. The webhook URL is never shown again (only its last 4 characters) and is never logged.",
   },
   {
+    table: "push_subscriptions",
+    what: "Your browser's push address and keys, stored so we can send alerts to your device. Deleted when you turn push off, when the push service says the address is gone, or when you delete your cloud data.",
+  },
+  {
     table: "alert_log",
     what: "Which alerts were already sent, so none repeats.",
   },
@@ -81,6 +85,10 @@ export const RECIPIENTS: readonly { name: string; what: string }[] = [
   {
     name: "Discord",
     what: "Receives alert text at the webhook you provide.",
+  },
+  {
+    name: "Push services (Google, Mozilla, Apple, Microsoft)",
+    what: "Receive your alert text, encrypted, to deliver it to your device.",
   },
   {
     name: "Cloudflare",

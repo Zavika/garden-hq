@@ -14,6 +14,7 @@ const EMPTY: AlertsStateResponse = {
   webhookLast4: null,
   webhookOk: null,
   rules: null,
+  push: { available: false, publicKey: null, devices: 0, pushOk: null },
 };
 const UNTESTED: AlertsStateResponse = {
   ...EMPTY,
@@ -235,6 +236,40 @@ describe("AlertsSection", () => {
     expect(
       await screen.findByText(/enter a whole number from 1 to 12/i),
     ).toBeInTheDocument();
+  });
+
+  it("shows the rules editor with push only (no webhook)", async () => {
+    const PUSH_ONLY: AlertsStateResponse = {
+      ...EMPTY,
+      rules: defaultAlertRules(true),
+      push: { available: true, publicKey: "AQID", devices: 1, pushOk: true },
+    };
+    const c = client({ getAlerts: vi.fn(() => Promise.resolve(PUSH_ONLY)) });
+    renderAlerts(c, { code: CODE });
+    expect(await screen.findAllByRole("checkbox")).toHaveLength(6);
+    expect(
+      screen.getByRole("heading", { name: "Push notifications" }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the rules editor when neither channel is verified", async () => {
+    const c = client({
+      getAlerts: vi.fn(() =>
+        Promise.resolve({
+          ...EMPTY,
+          rules: defaultAlertRules(true),
+          push: {
+            available: true,
+            publicKey: "AQID",
+            devices: 1,
+            pushOk: null,
+          },
+        }),
+      ),
+    });
+    renderAlerts(c, { code: CODE });
+    await screen.findByRole("heading", { name: "Push notifications" });
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("removing the webhook asks for confirmation first", async () => {

@@ -39,6 +39,10 @@ export function secondsToNextUtcDay(now: number): number {
  * Follow-up: derive contest/greenhouse alerts from a stale snapshot.
  */
 export const MAX_ALERTING_ACCOUNTS = 8;
+/** Devices per account that can receive web push; the oldest is dropped when a 4th is added. */
+export const MAX_PUSH_DEVICES = 3;
+/** Push sends (each one encrypts and signs) allowed in one cron run; the rest are retried next run. */
+export const MAX_PUSH_SENDS_PER_RUN = 12;
 export const CRON_BATCH = 10;
 export const MAX_HYPIXEL_CALLS_PER_RUN = 8;
 /** Of the 50 allowed; the rest is headroom for retries and releases. */

@@ -1,4 +1,5 @@
 import {
+  alertText,
   completeQuest,
   dayKey,
   deriveAlerts,
@@ -49,12 +50,25 @@ import {
   HYPIXEL_ATTEMPT_RESERVE,
   MAX_DISCORD_RETRY_MS,
   MAX_HYPIXEL_CALLS_PER_RUN,
+  MAX_PUSH_SENDS_PER_RUN,
   SNAPSHOT_REUSE_MS,
   SUBREQUEST_BUDGET,
   utcDay,
 } from "./limits";
 import { logError } from "./log";
 import { alertEmbed, sendDiscord } from "./notify/discord";
+import {
+  pushPayload,
+  sendPush,
+  vapidFromEnv,
+  type VapidKeys,
+} from "./notify/webpush";
+import {
+  deleteSubscriptionStmt,
+  loadSubscriptionsFor,
+  resetPushOkIfNoSubsStmt,
+  type PushSubscriptionRow,
+} from "./alerts/push";
 import { applyOpsToDb, readProgress } from "./sync/db";
 
 export interface CronDeps {
@@ -72,6 +86,7 @@ export interface RunSummary {
   processed: number;
   hypixelCalls: number;
   sent: number;
+  pushSent: number;
   subrequests: number;
   stoppedBecause: StoppedBecause;
 }
@@ -101,6 +116,11 @@ interface RunContext {
   contests: Contest[];
   data: Map<string, StoredPlayerData>;
   summary: RunSummary;
+  /** null: push is not configured and is skipped entirely. */
+  vapid: VapidKeys | null;
+  subs: Map<string, PushSubscriptionRow[]>;
+  /** Push sends attempted this run, capped by MAX_PUSH_SENDS_PER_RUN. */
+  pushAttempts: number;
 }
 
 async function loadContests(
@@ -157,6 +177,14 @@ async function fetchGarden(
   }
 }
 
+/**
+ * Sends each won candidate over Discord and every device. Per candidate: kept
+ * (delivered) when any channel sent; released and rescheduled when some channel
+ * said retry and none sent; kept when everything was dead/rejected (a re-added
+ * webhook must not replay stale alerts). A channel that returns retry is not
+ * tried again for later candidates in this run, but the other channel still is.
+ * Sends are counted by countingFetch, so they are not charged a second time here.
+ */
 async function deliver(
   ctx: RunContext,
   account: DueAccount,
@@ -165,37 +193,97 @@ async function deliver(
 ): Promise<void> {
   const db = ctx.env.DB;
   const release: AlertCandidate[] = [];
-  let stop: "retry" | "dead" | null = null;
+  const subs =
+    ctx.vapid === null ? [] : (ctx.subs.get(account.accountId) ?? []);
+  let discord: "ok" | "retry" | "dead" = "ok";
+  let pushRetry = false;
+  const deadEndpoints = new Set<string>();
+  let rescheduled = false;
   let retryAfterMs = CRON_ERROR_RETRY_MS;
+  const noteRetry = (seconds: number | null): void => {
+    rescheduled = true;
+    if (seconds !== null) {
+      retryAfterMs = Math.min(
+        Math.max(retryAfterMs, seconds * 1000),
+        MAX_DISCORD_RETRY_MS,
+      );
+    }
+  };
 
   for (const candidate of won) {
-    if (stop === "retry") {
-      release.push(candidate);
-      continue;
-    }
-    if (stop === "dead") continue; // claims are kept: a re-added webhook must not replay stale alerts
-    const result = await sendDiscord(
-      ctx.fetchFn,
-      account.webhook,
-      alertEmbed(candidate, syncedAt, ctx.now),
-    );
-    if (result.kind === "sent") {
-      ctx.summary.sent++;
-    } else if (result.kind === "retry") {
-      stop = "retry";
-      release.push(candidate);
-      if (result.retryAfterSeconds !== null) {
-        retryAfterMs = Math.min(
-          Math.max(retryAfterMs, result.retryAfterSeconds * 1000),
-          MAX_DISCORD_RETRY_MS,
+    let sent = false;
+    let retry = false;
+
+    if (account.webhook !== null) {
+      if (discord === "retry") {
+        retry = true;
+      } else if (discord === "ok") {
+        const result = await sendDiscord(
+          ctx.fetchFn,
+          account.webhook,
+          alertEmbed(candidate, syncedAt, ctx.now),
         );
+        if (result.kind === "sent") {
+          sent = true;
+          ctx.summary.sent++;
+        } else if (result.kind === "retry") {
+          discord = "retry";
+          retry = true;
+          noteRetry(result.retryAfterSeconds);
+        } else if (result.kind === "dead") {
+          discord = "dead";
+          logError("webhook_dead");
+        } else {
+          logError("discord_rejected", { status: result.status });
+        }
       }
-    } else if (result.kind === "dead") {
-      stop = "dead";
-      logError("webhook_dead");
-    } else {
-      logError("discord_rejected", { status: result.status });
     }
+
+    const live = subs.filter((s) => !deadEndpoints.has(s.endpoint));
+    if (ctx.vapid !== null && live.length > 0) {
+      if (pushRetry) {
+        retry = true;
+      } else {
+        const payload = pushPayload(
+          alertText(candidate, syncedAt, ctx.now),
+          `${candidate.type}:${candidate.key}`,
+        );
+        let candidateRetry = false;
+        for (const sub of live) {
+          if (ctx.pushAttempts >= MAX_PUSH_SENDS_PER_RUN) {
+            candidateRetry = true;
+            noteRetry(null);
+            break;
+          }
+          ctx.pushAttempts++;
+          const result = await sendPush(
+            ctx.fetchFn,
+            sub,
+            payload,
+            ctx.vapid,
+            ctx.now,
+          );
+          if (result.kind === "sent") {
+            sent = true;
+            ctx.summary.pushSent++;
+          } else if (result.kind === "retry") {
+            candidateRetry = true;
+            noteRetry(result.retryAfterSeconds);
+          } else if (result.kind === "dead") {
+            deadEndpoints.add(sub.endpoint);
+            logError("push_subscription_dead");
+          } else {
+            logError("push_rejected", { status: result.status });
+          }
+        }
+        if (candidateRetry) {
+          pushRetry = true;
+          retry = true;
+        }
+      }
+    }
+
+    if (!sent && retry) release.push(candidate);
   }
 
   // Claim-first dedupe: if this batch fails, released claims stay held and those
@@ -203,11 +291,20 @@ async function deliver(
   const stmts = release.map((c) =>
     releaseClaimStmt(db, account.accountId, c.type, c.key),
   );
-  if (stop === "retry") {
+  if (rescheduled && release.length > 0) {
     stmts.push(setNextSyncStmt(db, account.accountId, ctx.now + retryAfterMs));
   }
-  if (stop === "dead") {
+  if (discord === "dead") {
     stmts.push(markWebhookDeadStmt(db, account.accountId, ctx.now));
+  }
+  // Cheap statements in the same batch (not the user-facing deleteSubscription,
+  // which also purges settings/snapshot/log and costs five statements per
+  // device). Resetting push_ok means a later re-subscribe must verify again.
+  if (deadEndpoints.size > 0) {
+    for (const endpoint of deadEndpoints) {
+      stmts.push(deleteSubscriptionStmt(db, account.accountId, endpoint));
+    }
+    stmts.push(resetPushOkIfNoSubsStmt(db, account.accountId));
   }
   if (stmts.length > 0) {
     await db.batch(stmts);
@@ -308,11 +405,27 @@ async function processAccount(
     return;
   }
 
+  // No verified webhook and no usable device (or push is not configured): park.
+  const subs =
+    ctx.vapid === null ? [] : (ctx.subs.get(account.accountId) ?? []);
+  if (account.webhook === null && subs.length === 0) {
+    await setNextSync(ctx, account.accountId, now + PARK_MS);
+    return;
+  }
+  const sends = (account.webhook === null ? 0 : 1) + subs.length;
+
   // Streak-only accounts cannot alert before the lead window opens: skip them
   // (no Hypixel call, no quest reads) until then, then use the normal cadence.
   const wakeAt = streakOnlyWakeAt(rules, now, nextResetMs(now, account.tz));
   if (wakeAt !== null) {
     await setNextSync(ctx, account.accountId, wakeAt);
+    return;
+  }
+
+  // Push-only and the run's push cap is spent: anything claimed now would only be
+  // released again. Leave next_sync_at alone so the account stays due and goes
+  // first next run, without a Hypixel call or claims.
+  if (account.webhook === null && ctx.pushAttempts >= MAX_PUSH_SENDS_PER_RUN) {
     return;
   }
 
@@ -351,12 +464,19 @@ async function processAccount(
   };
 
   const candidates = deriveAlerts(input);
-  // Worst case for n candidates: snapshot + next_sync + n claims (2n+2 with the
-  // batch), then up to n sends/releases plus one reschedule (n+1) => 3n+3; the
-  // fetched path adds one more for a final reschedule, so reserve 3n+4.
+  // Worst case for n candidates and `sends` destinations (webhook + devices):
+  // snapshot + next_sync + n claims (n+2 statements), then up to n*sends sends
+  // and n releases, plus one reschedule (n*sends + n + 1). With sends = 1 that is
+  // the old 3n+3; the fetched path adds one more, so the base is
+  // MIN_ACCOUNT_COST + 2 + n*(2 + sends) (= 3n+4 for a lone webhook). The same
+  // batch can also carry markWebhookDead (1) and, for dead devices, up to
+  // subs.length deletes plus the push_ok reset; they can all arrive on the last
+  // candidate, after every send was spent, so reserve + sends + 1 on top.
   const affordable =
     candidates.length === 0 ||
-    budget.canAfford(MIN_ACCOUNT_COST + 2 + candidates.length * 3);
+    budget.canAfford(
+      MIN_ACCOUNT_COST + 2 + candidates.length * (2 + sends) + sends + 1,
+    );
   const claims = affordable ? candidates : [];
   if (!affordable) summary.stoppedBecause = "budget";
   // Out of budget: leave the account due so the next run sends the alerts.
@@ -404,9 +524,11 @@ export async function runSync(env: Env, deps: CronDeps): Promise<RunSummary> {
     processed: 0,
     hypixelCalls: 0,
     sent: 0,
+    pushSent: 0,
     subrequests: 0,
     stoppedBecause: "done",
   };
+  const vapid = vapidFromEnv(env);
 
   const due = await loadDueAccounts(env.DB, now, CRON_BATCH);
   budget.charge(1);
@@ -418,6 +540,15 @@ export async function runSync(env: Env, deps: CronDeps): Promise<RunSummary> {
       due.map((a) => a.accountId),
     );
     budget.charge(2);
+    // One statement for every due account; skipped entirely without VAPID keys.
+    let subs = new Map<string, PushSubscriptionRow[]>();
+    if (vapid !== null) {
+      subs = await loadSubscriptionsFor(
+        env.DB,
+        due.map((a) => a.accountId),
+      );
+      budget.charge(1);
+    }
     const contests = await loadContests(env, {
       fetchFn,
       now: deps.now,
@@ -432,6 +563,9 @@ export async function runSync(env: Env, deps: CronDeps): Promise<RunSummary> {
       contests,
       data,
       summary,
+      vapid,
+      subs,
+      pushAttempts: 0,
     };
 
     for (const account of due) {

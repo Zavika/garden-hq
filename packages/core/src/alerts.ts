@@ -133,6 +133,20 @@ export interface AlertCandidate {
   dueAt: number | null;
 }
 
+/** The one alert text both channels (Discord embed, web push) are built from. */
+export function alertText(
+  candidate: AlertCandidate,
+  syncedAt: number,
+  now: number,
+): { title: string; detail: string; footer: string } {
+  const minutes = Math.max(0, Math.round((now - syncedAt) / 60_000));
+  return {
+    title: candidate.title.slice(0, 256),
+    detail: candidate.detail.slice(0, 2000),
+    footer: `Last synced ${minutes} min ago · Garden HQ`,
+  };
+}
+
 export interface AlertInput extends PlannerInput {
   rules: AlertRules;
   streak?: StreakInfo;
