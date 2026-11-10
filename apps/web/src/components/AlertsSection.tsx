@@ -31,6 +31,11 @@ const LABELS: Record<
     label: "Greenhouse needs water",
     hint: "Set a watering interval on the Greenhouse screen first.",
   },
+  streak_risk: {
+    label: "Streak about to break",
+    unit: "hours before the daily reset",
+    hint: "Off by default. Needs Cloud save so the server knows your quests. Quests done in-game are checked before alerting.",
+  },
 };
 
 function describeError(e: unknown): string {

@@ -161,6 +161,7 @@ describe("loadDueAccounts", () => {
     expect(due[0]).toMatchObject({
       webhook: HOOK,
       profileId: LINK.profileId,
+      tz: "Europe/Warsaw",
       snapshotJson: null,
       snapshotFetchedAt: null,
     });

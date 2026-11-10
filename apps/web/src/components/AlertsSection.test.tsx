@@ -103,7 +103,7 @@ describe("AlertsSection", () => {
       screen.getByRole("button", { name: /send test message/i }),
     );
     expect(c.testWebhook).toHaveBeenCalledWith(CODE);
-    expect(await screen.findAllByRole("checkbox")).toHaveLength(5);
+    expect(await screen.findAllByRole("checkbox")).toHaveLength(6);
   });
 
   it("reports a dead webhook and a failed test distinctly", async () => {
@@ -182,6 +182,58 @@ describe("AlertsSection", () => {
     expect(c.putRules).not.toHaveBeenCalled();
     expect(
       await screen.findByText(/enter a whole number from 5 to 120/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the streak row, off by default, with its unit and hint", async () => {
+    const c = client({ getAlerts: vi.fn(() => Promise.resolve(VERIFIED)) });
+    renderAlerts(c, { code: CODE });
+    const box = await screen.findByRole("checkbox", {
+      name: /streak about to break/i,
+    });
+    expect(box).not.toBeChecked();
+    expect(
+      screen.getByText(/hours before the daily reset/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Off by default. Needs Cloud save so the server knows your quests. Quests done in-game are checked before alerting.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("enabling the streak alert and editing hours saves through putRules", async () => {
+    const c = client({ getAlerts: vi.fn(() => Promise.resolve(VERIFIED)) });
+    renderAlerts(c, { code: CODE });
+    await userEvent.click(
+      await screen.findByRole("checkbox", { name: /streak about to break/i }),
+    );
+    expect(c.putRules).toHaveBeenCalledWith(CODE, {
+      streak_risk: { enabled: true },
+    });
+    const hours = await screen.findByLabelText(
+      /streak.*hours before the daily reset/i,
+    );
+    await userEvent.clear(hours);
+    await userEvent.type(hours, "5");
+    await userEvent.tab();
+    expect(c.putRules).toHaveBeenCalledWith(CODE, {
+      streak_risk: { leadHours: 5 },
+    });
+  });
+
+  it("does not send an out-of-range streak lead", async () => {
+    const c = client({ getAlerts: vi.fn(() => Promise.resolve(VERIFIED)) });
+    renderAlerts(c, { code: CODE });
+    const hours = await screen.findByLabelText(
+      /streak.*hours before the daily reset/i,
+    );
+    await userEvent.clear(hours);
+    await userEvent.type(hours, "13");
+    await userEvent.tab();
+    expect(c.putRules).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText(/enter a whole number from 1 to 12/i),
     ).toBeInTheDocument();
   });
 

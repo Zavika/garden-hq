@@ -16,14 +16,16 @@ export const ALERT_TYPES = [
   "composter_fuel_low",
   "visitors_waiting",
   "greenhouse_water",
+  "streak_risk",
 ] as const;
 export type AlertType = (typeof ALERT_TYPES)[number];
-export type AlertParam = "leadMinutes" | "threshold";
+export type AlertParam = "leadMinutes" | "threshold" | "leadHours";
 
 export interface AlertRule {
   enabled: boolean;
   leadMinutes?: number;
   threshold?: number;
+  leadHours?: number;
 }
 export type AlertRules = Record<AlertType, AlertRule>;
 
@@ -36,10 +38,12 @@ interface AlertData {
     soonMinutes: number;
     soonHorizonMinutes: number;
   };
+  streak: { minStreak: number };
 }
 const DATA = alertData as AlertData;
 
 const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
 
 export const ALERT_BOUNDS: Record<AlertParam, { min: number; max: number }> =
   DATA.bounds;
@@ -131,6 +135,46 @@ export interface AlertCandidate {
 
 export interface AlertInput extends PlannerInput {
   rules: AlertRules;
+  streak?: StreakInfo;
+}
+
+export interface StreakInfo {
+  /** Quest day key (dayKey(now, tz)). */
+  day: string;
+  streak: number;
+  doneToday: boolean;
+  /** Epoch ms of the next quest reset. */
+  resetAt: number;
+}
+
+export function streakWindowStart(rules: AlertRules, resetAt: number): number {
+  return resetAt - streakLeadHours(rules) * HOUR;
+}
+
+function streakLeadHours(rules: AlertRules): number {
+  return (
+    rules.streak_risk.leadHours ??
+    DATA.rules.streak_risk.leadHours ??
+    ALERT_BOUNDS.leadHours.min
+  );
+}
+
+/** True when the streak is worth warning about and the player has not secured it today. */
+function streakAtRisk(input: AlertInput): input is AlertInput & {
+  streak: StreakInfo;
+} {
+  const { rules, streak } = input;
+  return (
+    rules.streak_risk.enabled &&
+    streak !== undefined &&
+    !streak.doneToday &&
+    streak.streak >= DATA.streak.minStreak
+  );
+}
+
+function formatRemaining(ms: number): string {
+  const minutes = Math.max(1, Math.ceil(ms / MINUTE));
+  return minutes >= 60 ? `${Math.ceil(minutes / 60)} h` : `${minutes} min`;
 }
 
 function minutesUntil(at: number, now: number): number {
@@ -230,6 +274,21 @@ export function deriveAlerts(input: AlertInput): AlertCandidate[] {
     }
   }
 
+  if (streakAtRisk(input)) {
+    const { streak } = input;
+    const remaining = streak.resetAt - now;
+    if (remaining > 0 && remaining <= streakLeadHours(rules) * HOUR) {
+      out.push({
+        type: "streak_risk",
+        key: `streak:${streak.day}`,
+        title: `Your ${streak.streak}-day streak ends in ${formatRemaining(remaining)}. One quest keeps it alive.`,
+        detail:
+          "Complete any daily quest before the reset to keep your streak.",
+        dueAt: streak.resetAt,
+      });
+    }
+  }
+
   return out;
 }
 
@@ -237,7 +296,9 @@ export function deriveAlerts(input: AlertInput): AlertCandidate[] {
  * When the cron should look at this account again: the baseline, or the short
  * interval when an alert is due to fire within the horizon. Only events whose
  * rule is on count, and only ones still in the future (an alert that is already
- * due has been claimed this run).
+ * due has been claimed this run). streak_risk needs no special wake-up: the
+ * baseline cadence is shorter than the smallest lead window (1 h), so an
+ * opted-in account is always synced inside its window.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for the public signature (see doc comment)
 export function nextSyncAt(input: AlertInput, _fetchedAt: number): number {

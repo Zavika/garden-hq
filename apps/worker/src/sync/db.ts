@@ -5,6 +5,7 @@ import {
   addDays,
   dayKey,
   sanitizeProgress,
+  type ProgressData,
   type GreenhouseSave,
   type StoredLink,
   type SyncOp,
@@ -112,68 +113,49 @@ function parseJson(json: string): unknown {
   }
 }
 
-export async function readState(
+function progressStmts(
   db: D1Database,
-  account: AccountRow,
-  now: number,
-): Promise<SyncStateResponse> {
-  const cutoff = addDays(dayKey(now, account.tz), -QUEST_KEEP_DAYS);
-  const [assignRes, ghRes, questRes, achRes, archRes, daysRes] = await db.batch(
-    [
-      db
-        .prepare(
-          "SELECT plot_id, crop_id FROM plot_assignments WHERE account_id = ?1",
-        )
-        .bind(account.id),
-      db
-        .prepare(
-          "SELECT plot_id, cells, last_watered_at, watering_interval_hours FROM greenhouses WHERE account_id = ?1",
-        )
-        .bind(account.id),
-      db
-        .prepare(
-          "SELECT day, slot, kind, params, baseline, created_at, expires_at, done_at " +
-            "FROM quest_log WHERE account_id = ?1 AND day >= ?2 ORDER BY day, slot",
-        )
-        .bind(account.id, cutoff),
-      db
-        .prepare(
-          "SELECT id, unlocked_at FROM achievements WHERE account_id = ?1",
-        )
-        .bind(account.id),
-      db
-        .prepare(
-          "SELECT COUNT(*) AS n, COALESCE(SUM(xp), 0) AS xp FROM quest_log " +
-            "WHERE account_id = ?1 AND day < ?2 AND done_at IS NOT NULL",
-        )
-        .bind(account.id, cutoff),
-      db
-        .prepare(
-          "SELECT DISTINCT day FROM quest_log WHERE account_id = ?1 AND day < ?2 " +
-            "AND done_at IS NOT NULL ORDER BY day DESC LIMIT 400",
-        )
-        .bind(account.id, cutoff),
-    ],
-  );
-  const assignments: Record<string, string> = {};
-  for (const r of (assignRes?.results ?? []) as DbAssignment[]) {
-    assignments[r.plot_id] = r.crop_id;
-  }
-  const greenhouses: Record<string, GreenhouseSave> = {};
-  for (const r of (ghRes?.results ?? []) as DbGreenhouse[]) {
-    greenhouses[r.plot_id] = {
-      cells: parseCells(r.cells),
-      lastWateredAt: r.last_watered_at,
-      wateringIntervalHours: r.watering_interval_hours,
-    };
-  }
+  accountId: string,
+  cutoff: string,
+): D1PreparedStatement[] {
+  return [
+    db
+      .prepare(
+        "SELECT day, slot, kind, params, baseline, created_at, expires_at, done_at " +
+          "FROM quest_log WHERE account_id = ?1 AND day >= ?2 ORDER BY day, slot",
+      )
+      .bind(accountId, cutoff),
+    db
+      .prepare("SELECT id, unlocked_at FROM achievements WHERE account_id = ?1")
+      .bind(accountId),
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n, COALESCE(SUM(xp), 0) AS xp FROM quest_log " +
+          "WHERE account_id = ?1 AND day < ?2 AND done_at IS NOT NULL",
+      )
+      .bind(accountId, cutoff),
+    db
+      .prepare(
+        "SELECT DISTINCT day FROM quest_log WHERE account_id = ?1 AND day < ?2 " +
+          "AND done_at IS NOT NULL ORDER BY day DESC LIMIT 400",
+      )
+      .bind(accountId, cutoff),
+  ];
+}
+
+function buildProgress(
+  questRes: D1Result | undefined,
+  achRes: D1Result | undefined,
+  archRes: D1Result | undefined,
+  daysRes: D1Result | undefined,
+): ProgressData {
   const achievements: Record<string, { at: number }> = {};
   for (const r of (achRes?.results ?? []) as DbAchievement[]) {
     achievements[r.id] = { at: r.unlocked_at };
   }
   const arch = ((archRes?.results ?? []) as { n: number; xp: number }[])[0];
   // sanitizeProgress drops malformed rows and re-derives xp from the data files.
-  const progress = sanitizeProgress({
+  return sanitizeProgress({
     quests: ((questRes?.results ?? []) as DbQuest[]).map((r) => ({
       day: r.day,
       slot: r.slot,
@@ -193,6 +175,59 @@ export async function readState(
         .reverse(),
     },
   });
+}
+
+/** Quests in the keep window, achievements and the archive, in one 4-statement batch. */
+export async function readProgress(
+  db: D1Database,
+  accountId: string,
+  tz: string,
+  now: number,
+): Promise<ProgressData> {
+  const cutoff = addDays(dayKey(now, tz), -QUEST_KEEP_DAYS);
+  const [questRes, achRes, archRes, daysRes] = await db.batch(
+    progressStmts(db, accountId, cutoff),
+  );
+  return buildProgress(questRes, achRes, archRes, daysRes);
+}
+
+export async function readState(
+  db: D1Database,
+  account: AccountRow,
+  now: number,
+): Promise<SyncStateResponse> {
+  const cutoff = addDays(dayKey(now, account.tz), -QUEST_KEEP_DAYS);
+  const [assignRes, ghRes, ...progressRes] = await db.batch([
+    db
+      .prepare(
+        "SELECT plot_id, crop_id FROM plot_assignments WHERE account_id = ?1",
+      )
+      .bind(account.id),
+    db
+      .prepare(
+        "SELECT plot_id, cells, last_watered_at, watering_interval_hours FROM greenhouses WHERE account_id = ?1",
+      )
+      .bind(account.id),
+    ...progressStmts(db, account.id, cutoff),
+  ]);
+  const assignments: Record<string, string> = {};
+  for (const r of (assignRes?.results ?? []) as DbAssignment[]) {
+    assignments[r.plot_id] = r.crop_id;
+  }
+  const greenhouses: Record<string, GreenhouseSave> = {};
+  for (const r of (ghRes?.results ?? []) as DbGreenhouse[]) {
+    greenhouses[r.plot_id] = {
+      cells: parseCells(r.cells),
+      lastWateredAt: r.last_watered_at,
+      wateringIntervalHours: r.watering_interval_hours,
+    };
+  }
+  const progress = buildProgress(
+    progressRes[0],
+    progressRes[1],
+    progressRes[2],
+    progressRes[3],
+  );
   return {
     link: {
       name: account.mcName,

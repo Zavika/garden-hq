@@ -5,9 +5,11 @@ import {
   defaultAlertRules,
   deriveAlerts,
   nextSyncAt,
+  streakWindowStart,
   parseAlertRules,
   type AlertInput,
   type AlertRules,
+  type StreakInfo,
 } from "./alerts";
 import { fuelPerHour, organicMatterPerHour } from "./composter";
 import type { ComposterState, GardenState } from "./types";
@@ -336,5 +338,148 @@ describe("nextSyncAt", () => {
       contests: [{ startsAt: NOW + 15 * MIN, crops: ["wheat"] }],
     });
     expect(nextSyncAt(i, NOW)).toBe(NOW + 15 * MIN);
+  });
+});
+
+function streakRules(leadHours = 3): AlertRules {
+  const rules = allOn();
+  rules.streak_risk = { enabled: true, leadHours };
+  return rules;
+}
+function streakInfo(over: Partial<StreakInfo> = {}): StreakInfo {
+  return {
+    day: "2026-11-10",
+    streak: 6,
+    doneToday: false,
+    resetAt: NOW + 2 * HOUR,
+    ...over,
+  };
+}
+
+describe("streak_risk", () => {
+  const base = defaultAlertRules(true);
+  it("is off by default with a 3 hour lead, even after a test", () => {
+    expect(base.streak_risk).toEqual({ enabled: false, leadHours: 3 });
+    expect(alertParam("streak_risk")).toBe("leadHours");
+  });
+  it("parses leadHours and rejects bad values", () => {
+    const ok = parseAlertRules(
+      { streak_risk: { enabled: true, leadHours: 5 } },
+      base,
+    );
+    expect(ok.ok && ok.rules.streak_risk).toEqual({
+      enabled: true,
+      leadHours: 5,
+    });
+    for (const raw of [
+      { streak_risk: { leadHours: 0 } },
+      { streak_risk: { leadHours: 13 } },
+      { streak_risk: { leadHours: 2.5 } },
+      { streak_risk: { leadMinutes: 30 } },
+    ]) {
+      expect(parseAlertRules(raw, base).ok).toBe(false);
+    }
+  });
+  it("older stored rules without streak_risk still parse", () => {
+    const old = {
+      contest_soon: { enabled: true, leadMinutes: 5 },
+      composter_fuel_out: { enabled: true },
+      composter_fuel_low: { enabled: false, leadMinutes: 30 },
+      visitors_waiting: { enabled: true, threshold: 5 },
+      greenhouse_water: { enabled: true },
+    };
+    const r = parseAlertRules(old, defaultAlertRules(false));
+    expect(r.ok && r.rules.streak_risk).toEqual({
+      enabled: false,
+      leadHours: 3,
+    });
+  });
+
+  it("derives one candidate inside the window", () => {
+    const out = deriveAlerts(
+      input({ rules: streakRules(), streak: streakInfo() }),
+    ).filter((c) => c.type === "streak_risk");
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({
+      key: "streak:2026-11-10",
+      title: "Your 6-day streak ends in 2 h. One quest keeps it alive.",
+    });
+  });
+  it("uses minutes under an hour", () => {
+    const out = deriveAlerts(
+      input({
+        rules: streakRules(),
+        streak: streakInfo({ resetAt: NOW + 40 * MIN }),
+      }),
+    ).filter((c) => c.type === "streak_risk");
+    expect(out[0]?.title).toBe(
+      "Your 6-day streak ends in 40 min. One quest keeps it alive.",
+    );
+  });
+  it.each([
+    ["rule disabled", { rules: allOn(), streak: streakInfo() }],
+    ["no streak info", { rules: streakRules() }],
+    [
+      "done today",
+      { rules: streakRules(), streak: streakInfo({ doneToday: true }) },
+    ],
+    [
+      "streak below minimum",
+      { rules: streakRules(), streak: streakInfo({ streak: 1 }) },
+    ],
+    [
+      "outside the window",
+      {
+        rules: streakRules(),
+        streak: streakInfo({ resetAt: NOW + 3 * HOUR + MIN }),
+      },
+    ],
+    [
+      "already reset",
+      { rules: streakRules(), streak: streakInfo({ resetAt: NOW }) },
+    ],
+  ])("no candidate when %s", (_n, over) => {
+    expect(
+      deriveAlerts(input(over)).filter((c) => c.type === "streak_risk"),
+    ).toEqual([]);
+  });
+
+  it("computes the window start", () => {
+    expect(streakWindowStart(streakRules(4), NOW + 10 * HOUR)).toBe(
+      NOW + 6 * HOUR,
+    );
+  });
+  it("needs no wake-up: nextSyncAt ignores streak info", () => {
+    const i = input({
+      rules: streakRules(),
+      streak: streakInfo({ resetAt: NOW + 3 * HOUR + 5 * MIN }),
+    });
+    expect(nextSyncAt(i, NOW)).toBe(NOW + 15 * MIN);
+  });
+  it("includes the exact window edge and reads 60 min as 1 h", () => {
+    const edge = deriveAlerts(
+      input({
+        rules: streakRules(),
+        streak: streakInfo({ resetAt: NOW + 3 * HOUR }),
+      }),
+    ).filter((c) => c.type === "streak_risk");
+    expect(edge).toHaveLength(1);
+    const hour = deriveAlerts(
+      input({
+        rules: streakRules(),
+        streak: streakInfo({ resetAt: NOW + HOUR }),
+      }),
+    );
+    expect(hour.find((c) => c.type === "streak_risk")?.title).toContain(
+      "ends in 1 h.",
+    );
+  });
+  it("alerts at the minimum streak of 3 but not 2", () => {
+    const at = (n: number) =>
+      deriveAlerts(
+        input({ rules: streakRules(), streak: streakInfo({ streak: n }) }),
+      ).filter((c) => c.type === "streak_risk").length;
+    expect(at(2)).toBe(0);
+    expect(at(3)).toBe(1);
   });
 });

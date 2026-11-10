@@ -1,8 +1,11 @@
 import {
+  addDays,
   defaultAlertRules,
+  questXp,
   type AlertRules,
   type Contest,
   type GardenState,
+  type SyncOp,
 } from "@garden-hq/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -594,5 +597,234 @@ describe("runSync — housekeeping and secrecy", () => {
     await seed(t.env.DB, { id: "a", garden: emptyFuel() }); // no seeded contests, cache miss, source down
     const summary = await t.run();
     expect(summary.sent).toBe(1); // the fuel alert still goes out
+  });
+});
+
+describe("runSync — streak_risk guard", () => {
+  const HOUR = 60 * MIN;
+  /** 22:00 in Warsaw (CEST): the quest day resets at 22:00Z, two hours away. */
+  const WIN = Date.UTC(2026, 9, 1, 20, 0, 0);
+  const DAY_KEY = "2026-10-01";
+
+  function streakRules(over: Partial<AlertRules["streak_risk"]> = {}) {
+    const rules = defaultAlertRules(true);
+    rules.streak_risk = { enabled: true, leadHours: 3, ...over };
+    return rules;
+  }
+
+  /** `streak` previous quest days done; today's three quests created, not done. */
+  async function seedStreak(
+    t: ReturnType<typeof setup>,
+    opts: {
+      streak: number;
+      todayQuests?: boolean;
+      served?: number;
+      waterQuest?: boolean;
+      rules?: AlertRules;
+      start?: number;
+    },
+  ): Promise<void> {
+    const start = opts.start ?? WIN;
+    await seedContests(t.env, []);
+    await seed(t.env.DB, { id: "a", rules: opts.rules ?? streakRules() });
+    await saveSnapshotStmt(t.env.DB, "a", start - MIN, {
+      ...quiet(),
+      visitorsServedTotal: opts.served ?? 0,
+    }).run();
+    const params = { profileId: LINK.profileId, target: 3 };
+    const ops: SyncOp[] = [];
+    for (let k = 1; k <= opts.streak; k++) {
+      const day = addDays(DAY_KEY, -k);
+      ops.push({
+        t: "setQuests",
+        day,
+        quests: [
+          {
+            day,
+            slot: 0,
+            kind: "serve_visitors",
+            params,
+            baseline: 0,
+            createdAt: start - k * DAY,
+            expiresAt: start - k * DAY + DAY,
+            doneAt: start - k * DAY + HOUR,
+            xp: questXp("serve_visitors"),
+          },
+        ],
+      });
+    }
+    if (opts.todayQuests !== false) {
+      ops.push({
+        t: "setQuests",
+        day: DAY_KEY,
+        quests: [0, 1, 2].map((slot) => ({
+          day: DAY_KEY,
+          slot,
+          kind:
+            opts.waterQuest === true && slot === 1
+              ? "water_greenhouse"
+              : "serve_visitors",
+          params: { ...params, target: slot === 0 ? 3 : 100 },
+          baseline: 0,
+          createdAt: start - 6 * HOUR,
+          expiresAt: start + 2 * HOUR,
+          doneAt: null,
+          xp: questXp("serve_visitors"),
+        })),
+      });
+    }
+    await applyOpsToDb(t.env.DB, "a", ops, start - 7 * HOUR);
+  }
+
+  const revision = async (db: D1Database) =>
+    (
+      await db
+        .prepare("SELECT revision AS r FROM accounts WHERE id = 'a'")
+        .first<{ r: number }>()
+    )?.r;
+  const doneToday = async (db: D1Database) =>
+    (
+      await db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM quest_log WHERE account_id = 'a' AND day = ?1 AND done_at IS NOT NULL",
+        )
+        .bind(DAY_KEY)
+        .first<{ n: number }>()
+    )?.n;
+  const streakKeys = async (db: D1Database) =>
+    (
+      await db
+        .prepare("SELECT key FROM alert_log WHERE type = 'streak_risk'")
+        .all<{ key: string }>()
+    ).results.map((r) => r.key);
+
+  it("sends one alert for a live streak with nothing done, and dedupes", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 5 });
+    await t.run();
+    expect(t.posts()).toBe(1);
+    const payload = JSON.parse(t.bodies[0] ?? "{}") as {
+      embeds: { title: string }[];
+    };
+    expect(payload.embeds[0]?.title).toContain("5-day streak");
+    expect(await streakKeys(t.env.DB)).toEqual([`streak:${DAY_KEY}`]);
+    expect(await doneToday(t.env.DB)).toBe(0);
+
+    t.clock.advance(MIN);
+    await makeDue(t.env.DB);
+    await t.run();
+    expect(t.posts()).toBe(1);
+  });
+
+  it("stays silent and records the completion when the garden already shows it", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 5, served: 5 });
+    const before = await revision(t.env.DB);
+    await t.run();
+    expect(t.posts()).toBe(0);
+    expect(await doneToday(t.env.DB)).toBe(1);
+    expect(await revision(t.env.DB)).toBe((before ?? 0) + 1);
+    expect(await streakKeys(t.env.DB)).toEqual([]);
+  });
+
+  it("treats a streak with no quest rows for today as at risk", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 4, todayQuests: false });
+    await t.run();
+    expect(t.posts()).toBe(1);
+  });
+
+  it("does nothing, and reads no quests, outside the window", async () => {
+    const start = Date.UTC(2026, 9, 1, 12, 0, 0); // reset is 10 h away
+    const t = setup({}, start);
+    await seedStreak(t, { streak: 5, start });
+    const prepare = vi.spyOn(t.env.DB, "prepare");
+    await t.run();
+    expect(t.posts()).toBe(0);
+    expect(
+      prepare.mock.calls.filter(([sql]) => sql.includes("quest_log")),
+    ).toHaveLength(0);
+    expect(t.gardenCalls()).toBe(0);
+  });
+
+  it("stays silent below the minimum streak", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 2 });
+    await t.run();
+    expect(t.posts()).toBe(0);
+  });
+
+  it("stays silent when the rule is off", async () => {
+    const t = setup({}, WIN);
+    const rules = streakRules({ enabled: false });
+    await seedStreak(t, { streak: 5, rules });
+    const prepare = vi.spyOn(t.env.DB, "prepare");
+    await t.run();
+    expect(t.posts()).toBe(0);
+    expect(
+      prepare.mock.calls.filter(([sql]) => sql.includes("quest_log")),
+    ).toHaveLength(0);
+  });
+
+  it("skips the check without alerting or throwing when the budget is short", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 5, served: 5 });
+    const { Budget } = await import("./budget");
+    // Refuse only the guard's own reserve (read 4 + bump 1 + 3 completions + min account cost).
+    const spy = vi
+      .spyOn(Budget.prototype, "canAfford")
+      .mockImplementation((n: number) => n !== 4 + 1 + 3 + 2);
+    const summary = await t.run();
+    const asked = spy.mock.calls.map(([n]) => n);
+    expect(asked).toContain(10);
+    spy.mockRestore();
+    expect(summary.processed).toBe(1);
+    expect(t.posts()).toBe(0);
+    expect(await doneToday(t.env.DB)).toBe(0);
+  });
+
+  it("does not credit user-logged waterings, so the alert still fires", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 5, waterQuest: true });
+    await applyOpsToDb(
+      t.env.DB,
+      "a",
+      [
+        { t: "markGreenhouse", plotId: "beginner_1" },
+        { t: "markGreenhouseWatered", plotId: "beginner_1", at: WIN - HOUR },
+      ],
+      WIN,
+    );
+    await t.run();
+    expect(await doneToday(t.env.DB)).toBe(0);
+    expect(await streakKeys(t.env.DB)).toEqual([`streak:${DAY_KEY}`]);
+  });
+
+  it("never alerts when the check itself fails", async () => {
+    const t = setup({}, WIN);
+    await seedStreak(t, { streak: 5 });
+    const real = t.env.DB;
+    const flaky = Object.assign(Object.create(real) as D1Database, {
+      batch: (stmts: D1PreparedStatement[]) =>
+        stmts.some((s) =>
+          (s as unknown as { sql: string }).sql.includes("FROM quest_log"),
+        )
+          ? Promise.reject(new Error("boom"))
+          : real.batch(stmts),
+    });
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await runSync(
+      { ...t.env, DB: flaky },
+      {
+        fetch: t.net.fetch,
+        now: t.clock.now,
+        sleep: async () => undefined,
+        hypixelState: createRateLimitState(),
+      },
+    );
+    expect(t.posts()).toBe(0);
+    expect(err.mock.calls.flat().join(" ")).toContain(
+      "cron_streak_check_failed",
+    );
   });
 });

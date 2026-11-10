@@ -135,3 +135,11 @@ Each entry: what's uncertain, why, and what would resolve it. Update as items ge
 - **Cross-device quest race** - first `setQuests` for a day wins; a queued `completeQuest` only applies when the stored kind matches, so it cannot complete another device's different quest.
 - **D1 statement count** - the sync pull is a 6-statement batch; each op is one statement (setQuests is one multi-row INSERT). Real D1 behaviour for multi-row VALUES with a reused `?1` is only tested on the node:sqlite stand-in.
 - **Time zone change in the same POST** - progress ops in that batch are day-checked against the previously stored time zone; a rejected op is retried by the client.
+
+## Streak alert (Phase 4C, 2026-11-10)
+
+- **Guard credits only garden-based quests** - before alerting, the cron re-checks today's quests against a fresh garden; only garden-based quests (visitors served, garden XP, plot unlock) can be confirmed. Member-based quests (mutations, contest crop) and user-logged waterings are not confirmable by the cron, so a rare false alarm is possible.
+- **Needs Cloud save progress** - the alert only works for accounts whose quests exist in Cloud save (quests are created when the app opens).
+- **Parameters** - `leadHours` is editable (1..12, default 3, off by default); `minStreak` is fixed at 3 in `data/alerts.json`.
+- **Cost** - each cron tick inside the alert window costs about 4 D1 reads per opted-in account; completions written by the cron count toward the account's daily ops counter and `last_seen_at`.
+- **CPU/budget unmeasured on real D1** - measure the extra statements with `wrangler tail`.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastVerified": "2026-10-29",
+  "lastVerified": "2026-11-10",
   "enabledAfterTest": [
     "contest_soon",
     "composter_fuel_out",
@@ -12,11 +12,14 @@
     "composter_fuel_out": {},
     "composter_fuel_low": { "leadMinutes": 30 },
     "visitors_waiting": { "threshold": 5 },
-    "greenhouse_water": {}
+    "greenhouse_water": {},
+    "streak_risk": { "leadHours": 3 }
   },
   "bounds": {
     "leadMinutes": { "min": 5, "max": 120 },
-    "threshold": { "min": 1, "max": 5 }
+    "threshold": { "min": 1, "max": 5 },
+    "leadHours": { "min": 1, "max": 12 }
   },
-  "sync": { "baselineMinutes": 15, "soonMinutes": 5, "soonHorizonMinutes": 20 }
+  "sync": { "baselineMinutes": 15, "soonMinutes": 5, "soonHorizonMinutes": 20 },
+  "streak": { "minStreak": 3 }
 }

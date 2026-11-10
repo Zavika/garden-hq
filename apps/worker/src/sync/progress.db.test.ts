@@ -15,6 +15,7 @@ import {
   deleteAccount,
   filterProgressOps,
   loadAccount,
+  readProgress,
   readState,
 } from "./db";
 
@@ -109,6 +110,38 @@ describe("progress persistence", () => {
     await apply([done(500)]);
     await apply([done(900)]);
     expect((await state()).progress.quests[0]?.doneAt).toBe(500);
+  });
+
+  it("readProgress returns exactly what readState builds", async () => {
+    const { db, state, apply } = await setup();
+    const old = addDays(TODAY, -QUEST_KEEP_DAYS - 2);
+    await apply([
+      {
+        t: "setQuests",
+        day: old,
+        quests: [quest(old, 0, { doneAt: 5 })],
+      },
+      {
+        t: "setQuests",
+        day: TODAY,
+        quests: [quest(TODAY, 0), quest(TODAY, 1, { doneAt: 7 })],
+      },
+      { t: "unlockAchievement", id: "first_greenhouse", at: 10, xp: 50 },
+    ]);
+    const sizes: number[] = [];
+    const orig = db.batch.bind(db);
+    db.batch = ((stmts: D1PreparedStatement[]) => {
+      sizes.push(stmts.length);
+      return orig(stmts);
+    }) as typeof db.batch;
+    const direct = await readProgress(db, "a1", "Europe/Warsaw", NOW);
+    expect(sizes).toEqual([4]);
+    sizes.length = 0;
+    const viaState = (await state()).progress;
+    expect(sizes).toEqual([6]); // readState keeps its single combined batch
+    expect(direct).toEqual(viaState);
+    expect(direct.archive.doneQuests).toBe(1);
+    expect(direct.quests).toHaveLength(2);
   });
 
   it("unlockAchievement is first-wins", async () => {

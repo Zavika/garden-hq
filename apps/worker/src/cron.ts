@@ -1,12 +1,21 @@
 import {
+  completeQuest,
+  dayKey,
   deriveAlerts,
+  evaluateQuests,
+  nextResetMs,
   nextSyncAt,
   normalizeGarden,
+  streakWindowStart,
+  summarizeProgress,
   unwrapGardenResponse,
   type AlertCandidate,
   type AlertInput,
+  type AlertRules,
   type Contest,
   type GardenState,
+  type StreakInfo,
+  type SyncOp,
 } from "@garden-hq/core";
 import {
   claimStmt,
@@ -45,6 +54,7 @@ import {
 } from "./limits";
 import { logError } from "./log";
 import { alertEmbed, sendDiscord } from "./notify/discord";
+import { applyOpsToDb, readProgress } from "./sync/db";
 
 export interface CronDeps {
   fetch: typeof fetch;
@@ -204,6 +214,86 @@ async function deliver(
   }
 }
 
+/** progress read batch (4) + revision-bumping batch (1) + one statement per completion. */
+const STREAK_READ_COST = 4;
+const STREAK_WRITE_COST = 1;
+
+/**
+ * Streak state for the alert, after crediting any quest the fresh garden already
+ * proves done (so a player who finished in game is never warned). Returns
+ * undefined when outside the window, unaffordable, or on any failure: no streak
+ * info means no streak alert, never a false one.
+ */
+async function checkStreak(
+  ctx: RunContext,
+  account: DueAccount,
+  rules: AlertRules,
+  current: { garden: GardenState; fetchedAt: number },
+): Promise<StreakInfo | undefined> {
+  if (!rules.streak_risk.enabled) return undefined;
+  const { now, budget, env } = ctx;
+  try {
+    const resetAt = nextResetMs(now, account.tz);
+    if (now < streakWindowStart(rules, resetAt)) return undefined;
+    // Reads, then at most a few completions and one revision bump; cap what a
+    // single account can add so the check stays bounded.
+    const reserve = STREAK_READ_COST + STREAK_WRITE_COST + 3;
+    if (!budget.canAfford(reserve + MIN_ACCOUNT_COST)) return undefined;
+
+    const today = dayKey(now, account.tz);
+    let progress = await readProgress(
+      env.DB,
+      account.accountId,
+      account.tz,
+      now,
+    );
+    budget.charge(STREAK_READ_COST);
+    const completions = evaluateQuests(progress.quests, {
+      now,
+      timeZone: account.tz,
+      profileId: account.profileId,
+      garden: current.garden,
+      gardenFetchedAt: current.fetchedAt,
+      member: null,
+      memberFetchedAt: null,
+      // User-logged data is never credited by the cron.
+      greenhouses: {},
+    });
+    const ops: SyncOp[] = [];
+    for (const c of completions) {
+      const record = progress.quests.find(
+        (q) => q.day === c.day && q.slot === c.slot,
+      );
+      const next = completeQuest(progress, c.day, c.slot, c.at);
+      if (record === undefined || next === progress) continue;
+      progress = next;
+      ops.push({
+        t: "completeQuest",
+        day: c.day,
+        slot: c.slot,
+        kind: record.kind,
+        at: c.at,
+      });
+    }
+    if (ops.length > 0) {
+      await applyOpsToDb(env.DB, account.accountId, ops, now);
+      budget.charge(ops.length + STREAK_WRITE_COST);
+    }
+    const summary = summarizeProgress(progress, today);
+    return {
+      day: today,
+      streak: summary.streak,
+      doneToday: summary.doneToday,
+      resetAt,
+    };
+  } catch (err) {
+    logError("cron_streak_check_failed", {
+      name: err instanceof Error ? err.name : "unknown",
+    });
+    return undefined;
+  }
+}
+
 async function processAccount(
   ctx: RunContext,
   account: DueAccount,
@@ -240,6 +330,7 @@ async function processAccount(
     assignments: {},
     greenhouses: {},
   };
+  const streak = await checkStreak(ctx, account, rules, current);
   const input: AlertInput = {
     now,
     garden: current.garden,
@@ -247,6 +338,7 @@ async function processAccount(
     assignments: stored.assignments,
     greenhouses: stored.greenhouses,
     rules,
+    ...(streak === undefined ? {} : { streak }),
   };
 
   const candidates = deriveAlerts(input);

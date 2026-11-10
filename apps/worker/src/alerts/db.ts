@@ -157,6 +157,7 @@ export interface DueAccount {
   webhook: string;
   rules: string | null;
   profileId: string;
+  tz: string;
   snapshotJson: string | null;
   snapshotFetchedAt: number | null;
 }
@@ -166,6 +167,7 @@ interface DbDue {
   discord_webhook: string;
   rules: string | null;
   profile_id: string;
+  tz: string;
   snapshot_json: string | null;
   snapshot_fetched_at: number | null;
 }
@@ -183,7 +185,7 @@ export async function loadDueAccounts(
 ): Promise<DueAccount[]> {
   const res = await db
     .prepare(
-      "SELECT s.account_id, s.discord_webhook, s.rules, a.profile_id, " +
+      "SELECT s.account_id, s.discord_webhook, s.rules, a.profile_id, a.tz, " +
         "g.json AS snapshot_json, g.fetched_at AS snapshot_fetched_at " +
         "FROM alert_settings s " +
         "JOIN accounts a ON a.id = s.account_id " +
@@ -200,6 +202,7 @@ export async function loadDueAccounts(
     webhook: r.discord_webhook,
     rules: r.rules,
     profileId: r.profile_id,
+    tz: r.tz,
     snapshotJson: r.snapshot_json,
     snapshotFetchedAt: r.snapshot_fetched_at,
   }));
