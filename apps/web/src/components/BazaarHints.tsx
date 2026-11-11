@@ -78,7 +78,7 @@ export function BazaarHints({
               <th scope="row">
                 {cropName(v.cropId)}
                 {i === 0 && v.sellOffer !== null ? (
-                  <span className="pill"> Best</span>
+                  <span className="pill">Best</span>
                 ) : null}
               </th>
               <td className="num">{fmt(v.sellOffer)}</td>

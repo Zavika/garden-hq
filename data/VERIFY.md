@@ -223,3 +223,27 @@ Manual device checklist (cannot be unit tested; do on real hardware):
 - VERIFY: iOS delivery with the app closed and notification tap navigation (`WindowClient.navigate` support differs by browser; on failure the window is only focused).
 
 Owner setup checklist: run `pnpm vapid:generate`; `wrangler secret put VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`; optionally add `VAPID_SUBJECT = "https://..."` under `[vars]` in `apps/worker/wrangler.toml` (defaults to `WEB_ORIGIN`); check `GET /api/alerts` shows `push.available: true`. Details in `apps/worker/README.md` ("Web push setup").
+
+## Mobile pass (Phase 5F)
+
+Automated layout audit (scratch harness, NOT in the repo): `.superpowers/sdd/2026-11-10-phase-5f-mobile-pass/audit/` (git-ignored; Playwright + Chromium installed there only). `node audit.mjs [--no-build] [--tag=name]` builds the web app with `VITE_API_URL=http://127.0.0.1:8799`, serves `apps/web/dist`, mocks every `/api/*` call with anonymised fixtures (TestFarmer, all-1 UUIDs), seeds `garden-hq:v1`, and visits `/`, `/greenhouse`, `/contests`, `/achievements`, `/settings`, `/link`, `/privacy`, `/credits` plus the plot-assign sheet and an API-error state at 320x568, 360x740, 380x800, 414x896 and 667x375 (touch emulation, iPhone UA). It reports page overflow, elements past the viewport edge (outside scroll containers), interactive elements under 44 px and form controls under 16 px, and writes `out/report*.json` and full-page screenshots. Exits non-zero on any overflow.
+
+Known exemptions in the audit: the 10x10 Greenhouse grid cells (98 per page; 26 px at 320, up to 32 px; a 44 px grid would be 440 px wide, so the dense editor is exempt and every cell remains tappable), inline links inside running text, and PixiJS' off-screen accessibility activator button (1x1 px, positioned at top -1000px).
+
+Manual device checklist (cannot be automated):
+
+- iPhone Safari and the installed Home Screen app: every screen scrolls vertically only.
+- One-handed reach: the tab bar and primary buttons (Refresh, I watered it, Save to cloud) are comfortable to hit with a thumb.
+- Rotate to landscape: no clipped content; tab bar still usable.
+- Dark mode: parchment/wood contrast stays readable on every screen.
+- Text size set to Large (iOS Settings, Display and Brightness): no overlapping or cut-off text; the tab bar labels at 320 px are tight.
+
+### Mobile pass: iOS zoom, safe areas, touch (Phase 5F, Task 2)
+
+Changed in `apps/web/src/index.css`: form controls get `font-size: max(16px, 1rem)` under `@media (pointer: coarse)` (no `maximum-scale`, pinch zoom stays on); `.app`, `.tab-bar`, `.sheet` and `.update-toast` respect `env(safe-area-inset-*)` (bottom everywhere, left/right in landscape); `100vh` fallbacks before every `100dvh`; `touch-action: manipulation` on links, buttons, inputs, summaries and labels; `-webkit-tap-highlight-color` uses the `--tap` token (gold, with a dark-mode value); `.sheet` has `overscroll-behavior-y: contain` (page-level pull-to-refresh is untouched: the app has no custom handling and no page-level overscroll rule); Alert-rule checkboxes sit beside their labels instead of as 44 px stacked boxes.
+
+Hover audit: the only `:hover` rule is a cosmetic `button:hover` brightness. The map's `pointerover` plot hover is mouse-only (`tracksHover`); the touch path is `pointertap`, which calls `onPlotTap` and shows the locked-plot compost cost via `onPlotHover`. No hover-only information remains.
+
+Harness additions (scratch): synced scenario (sync code, Discord webhook, 2 push devices, installed PWA stub), a dark-mode scenario (Home, Settings, Greenhouse, assign sheet), and static CSS checks (safe-area insets on every bottom-anchored fixed element, `.app.with-tabs` padding, 100vh pairing, 16 px coarse rule, touch-action, tap highlight, sheet overscroll) plus a viewport-meta zoom check. Chromium cannot emulate `env(safe-area-inset-*)` or `display-mode: standalone`, hence the static checks.
+
+Still manual on a real device: notch / Dynamic Island and home-indicator clearance (tab bar, update toast, bottom sheet) in the installed app in portrait and landscape; no input zoom when focusing the sync-code, webhook and number fields in iOS Safari.

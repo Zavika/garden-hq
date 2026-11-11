@@ -36,7 +36,9 @@ export function GreenhouseScreen() {
             No Greenhouse marked yet. Open the map, tap an unlocked plot and
             choose “Mark as Greenhouse”.
           </p>
-          <Link to="/">Go to the map</Link>
+          <Link className="link-target" to="/">
+            Go to the map
+          </Link>
         </div>
       ) : state === undefined ? (
         garden.isError ? (

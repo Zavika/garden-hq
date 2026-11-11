@@ -131,7 +131,9 @@ export function QuestCard({ garden }: { garden: GardenState }) {
         count from when they appear today.
       </p>
       <p>
-        <Link to="/achievements">All achievements</Link>
+        <Link className="link-target" to="/achievements">
+          All achievements
+        </Link>
       </p>
     </section>
   );

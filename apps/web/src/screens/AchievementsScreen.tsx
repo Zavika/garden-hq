@@ -80,7 +80,9 @@ export function AchievementsScreen() {
   return (
     <section className="card" aria-label="Achievements">
       <p>
-        <Link to="/">Back to Home</Link>
+        <Link className="link-target" to="/">
+          Back to Home
+        </Link>
       </p>
       <h2>Achievements</h2>
       <p className="ach-summary">

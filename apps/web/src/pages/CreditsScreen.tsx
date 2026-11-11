@@ -43,7 +43,12 @@ export function CreditsScreen({ data = creditsJson }: { data?: CreditsData }) {
       <ul>
         {data.libraries.map((l) => (
           <li key={l.url}>
-            <a href={l.url} target="_blank" rel="noreferrer">
+            <a
+              className="link-target"
+              href={l.url}
+              target="_blank"
+              rel="noreferrer"
+            >
               {l.name}
             </a>
           </li>

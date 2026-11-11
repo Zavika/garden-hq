@@ -133,7 +133,9 @@ export function LinkScreen() {
         )
       ) : null}
       <p>
-        <Link to="/settings">Restore from a sync code</Link>
+        <Link className="link-target" to="/settings">
+          Restore from a sync code
+        </Link>
       </p>
     </section>
   );

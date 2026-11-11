@@ -35,6 +35,7 @@
   --danger: #b3321e;
   --gold: #f2c230;
   --seg-off: rgb(58 35 19 / 0.18);
+  --tap: rgb(242 194 48 / 0.35);
   --shadow: 3px 3px 0 var(--ink);
   --pixel-font: "Pixel Words", system-ui, sans-serif;
   --tabbar-h: 52px;
@@ -59,11 +60,25 @@
     --danger: #ff8a73;
     --gold: #f2c230;
     --seg-off: rgb(241 223 176 / 0.12);
+    --tap: rgb(242 194 48 / 0.25);
   }
 }
 
 * {
   box-sizing: border-box;
+}
+html {
+  -webkit-tap-highlight-color: var(--tap);
+}
+/* No 300ms double-tap-zoom delay on controls; pinch zoom still works. */
+a,
+button,
+input,
+select,
+summary,
+label,
+[role="button"] {
+  touch-action: manipulation;
 }
 body {
   margin: 0;
@@ -86,16 +101,21 @@ button {
 }
 
 .app {
+  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   max-width: var(--column);
   margin: 0 auto;
-  padding: 0 12px 12px;
+  /* Landscape: keep content clear of the notch / rounded corners. */
+  padding: 0 max(12px, env(safe-area-inset-right, 0px))
+    calc(12px + env(safe-area-inset-bottom, 0px))
+    max(12px, env(safe-area-inset-left, 0px));
 }
 .main {
   flex: 1;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-content: start;
   padding-top: 12px;
@@ -143,9 +163,11 @@ button {
   min-height: 44px;
   padding: 0 12px;
   color: var(--fg);
+  max-width: 100%;
 }
 input,
 select {
+  min-width: 0;
   background: var(--parch-hi);
   border: 2px solid var(--ink);
   border-radius: 0;
@@ -176,8 +198,18 @@ a:focus-visible {
   outline: 3px solid var(--gold);
   outline-offset: 2px;
 }
+/* iOS Safari zooms the page when a focused control is under 16px. Keep zoom
+   enabled (no maximum-scale) and size controls up on touch devices only. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
+}
 label {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   margin-bottom: 8px;
 }
@@ -213,6 +245,8 @@ label {
   border-bottom: 0;
   box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.18);
   padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 .tab-bar a {
   flex: 1;
@@ -444,6 +478,9 @@ label {
   gap: 8px;
 }
 .pill {
+  display: inline-block;
+  white-space: nowrap;
+  margin-left: 6px;
   background: var(--wood);
   color: var(--on-wood);
   border: 2px solid var(--ink);
@@ -483,7 +520,7 @@ label {
 }
 .plot-list button {
   width: 100%;
-  min-height: 36px;
+  min-height: 44px;
   text-align: left;
 }
 
@@ -498,9 +535,12 @@ label {
 .sheet {
   position: fixed;
   z-index: 11;
-  inset: auto 0 0 0;
+  inset: auto env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  max-height: 80vh;
   max-height: 80dvh;
   overflow: auto;
+  /* Scrolling inside the sheet must not chain to the page behind it. */
+  overscroll-behavior-y: contain;
   background: var(--parch);
   color: var(--fg);
   border: 2px solid var(--ink);
@@ -515,6 +555,7 @@ label {
     inset: 50% auto auto 50%;
     transform: translate(-50%, -50%);
     width: min(480px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
     max-height: calc(100dvh - 64px);
     border-bottom: 2px solid var(--ink);
     padding-bottom: 14px;
@@ -550,9 +591,9 @@ label {
 }
 .sheet-close {
   flex: none;
-  width: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   font-family: system-ui, sans-serif;
   font-size: 1.1rem;
@@ -613,17 +654,17 @@ label {
    padding). Separators are inset shadows, not a grid gap. */
 .gh-grid {
   display: grid;
-  grid-template-columns: repeat(10, 32px);
-  width: max-content;
-  max-width: 100%;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  width: min(100%, 324px);
   margin: 8px auto;
   gap: 0;
   border: 2px solid var(--ink);
   image-rendering: pixelated;
 }
 .gh-cell {
-  width: 32px;
-  height: 32px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
   min-width: 0;
   min-height: 0;
   padding: 0;
@@ -814,8 +855,8 @@ label {
 /* PWA update toast: above the tab bar, safe-area aware. */
 .update-toast {
   position: fixed;
-  left: 8px;
-  right: 8px;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
   bottom: calc(var(--tabbar-h) + 8px + env(safe-area-inset-bottom));
   z-index: 50;
   display: flex;
@@ -864,7 +905,9 @@ label {
 }
 .crop-hint {
   display: block;
-  color: var(--muted);
+  /* Inherits the button colour (on-wood / white) so it reads on wood and green. */
+  color: inherit;
+  opacity: 0.9;
   font-size: 0.75rem;
 }
 
@@ -877,4 +920,66 @@ label {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* Mobile pass: 44px hit areas for standalone links and disclosure summaries.
+   Inline links inside running text are exempt. */
+summary {
+  padding: 11px 0;
+  cursor: pointer;
+}
+.link-target,
+.do-next li > strong > a,
+.player-badge,
+.public-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+.public-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+/* Narrow phones: tab labels get breathing room; the 10x10 Greenhouse grid
+   bleeds 10px into the card padding so cells grow (28.8px at 320). */
+@media (max-width: 359px) {
+  .tab-bar a {
+    font-size: 0.8rem;
+    letter-spacing: -0.02em;
+    padding-inline: 2px;
+    min-width: 0;
+  }
+}
+@media (max-width: 375px) {
+  .gh-grid {
+    width: calc(100% + 20px);
+    margin-inline: -10px;
+  }
+}
+
+/* Alert rules: checkbox beside its label (the 44px control rule made it a
+   huge stacked box); the whole label row is the 44px hit area. */
+.alert-rule label {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-height: 44px;
+  margin-bottom: 0;
+}
+.alert-rule input[type="checkbox"] {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+}
+.alert-rule input[type="number"] {
+  flex: 0 0 6rem;
+}
+.alert-rule input[type="checkbox"] {
+  accent-color: var(--gold);
 }
